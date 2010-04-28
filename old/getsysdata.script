@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Script to grep OUTPUT and then pass it to getsysdata.
+# $1 = OUTPUT file name. $2 (if given) is output file name
+
+if [ ! -n "$1" ]
+  then echo "Usage: 'getsysdata OUTPUTfile (resultsfile)'"
+       exit
+fi
+
+if ! [ -e $1 ]
+  then echo "Output file given ("$1") does not exist!".
+       exit
+fi
+
+grep -A3 ' ---' $1 > tmp
+grep "E+" tmp > tmp2
+getsysdata < tmp2 > tmp3
+
+if [ -n $2 ]
+  then cat tmp3
+  else cp tmp3 $2
+fi
+
+/bin/rm tmp tmp2 tmp3
+
+exit

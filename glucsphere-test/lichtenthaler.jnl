@@ -1,0 +1,29 @@
+COMM +----------------------------------------------------------------------+
+COMM | These are comments in the QUEST initialisation file. This file can   |
+COMM | contain QUEST commands, such as terminal type, that are always read. |
+COMM | For more information enter "HELP INITIALISATION FILES" within QUEST. |
+COMM +----------------------------------------------------------------------+
+COMM | For more information on...                                           |
+COMM |    starting the graphical interface,    type "HELP GRAPHICS"         |
+COMM |    the PreQuest data input program,     type "HELP PREQUEST"         |
+COMM |    the CIF/MIF output file,             type "HELP SAVE"             |
+COMM +----------------------------------------------------------------------+
+COMM | Visit the CCDC web site at:             http://www.ccdc.cam.ac.uk/   |
+COMM +----------------------------------------------------------------------+
+COMM  Set better PRINT style:
+      PRINT 10
+COMM +----------------------------------------------------------------------+
+T1 *AUTHOR lichtenthaler
+T2 *AUTHOR lindner
+T3 *PAGE 90
+SAVE 0 FCON
+SAVE 0 FDAT FCON
+SAVE 0 FDAT FCON MOL2
+T4 *PAGE 91
+QUEST T1.AND.T2.AND.T4
+---------+---------+---------+---------+---------+---------+---------+---------+
+TAFHUD
+2,3,4-Tri-O-benzoyl-1,2-dichloro-1-deoxy-beta-D-xylopyranose
+C26 H20 Cl2 O7
+F.W.Lichtenthaler,H.J.Lindner
+Carbohydr.Res., 200, 91,1990
