@@ -7,10 +7,6 @@
 	use dlprw; use utility; use parse
 	implicit none
 	include "mpif.h"
-	!include "/usr/local/mpich/include/mpif.h"
-	!include "/usr/local/include/mpif.h"
-	!include "/u/tristan/src/mpich-1.2.7p1/include/mpif.h"
-	!include "/t/myri/mpich-gm/include/mpif.h"
 
 	! Isotope definitions
 	integer, parameter :: NISOTOPES = 9
