@@ -7,10 +7,6 @@
 	use dlprw; use utility; use parse
 	implicit none
 	include "mpif.h"
-	!include "/usr/local/mpich/include/mpif.h"
-	!include "/usr/local/include/mpif.h"
-	!include "/u/tristan/src/mpich-1.2.7p1/include/mpif.h"
-	!include "/t/myri/mpich-gm/include/mpif.h"
 
 	! Isotope definitions
 	integer, parameter :: NISOTOPES = 9
@@ -63,6 +59,8 @@
 	  write(0,*) "            [-stdev maxframes] [-npt]"
 	  stop
 	end if
+
+
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	if (nargs.GE.3) then
@@ -269,12 +267,17 @@
 	  call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	  if (i.ne.1) goto 999
 	end if
-	  
-	call MPI_BCast(natms,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	if (SLAVE) allocate(typemap(natms))
 
-	call MPI_BCast(typemap,natms,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	call MPI_BCast(ntypes,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+        call MPI_BCast(natms,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+        call MPI_BCast(nfftypes,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+        if (SLAVE) then
+          allocate(typemap(natms))
+          allocate(uniqueiso(nfftypes))
+        end if
+
+        call MPI_BCast(typemap,natms,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+        call MPI_BCast(ntypes,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+        call MPI_BCast(uniqueiso,nfftypes,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 
 	if (MASTER) then
 	  allocate(typepops(ntypes))
