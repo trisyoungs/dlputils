@@ -2,12 +2,11 @@
 # Makefile for DL_POLY and MISC utils
 #=======================================================================
 
-#
 #FC=gfortran
-FC=ifort
+#FC=ifort
 #FFLAGS=-ffree-line-length-180
 #FFLAGS= -i-static -static-libgcc -CB -O0
-FFLAGS= -i-static -static-libgcc -O3
+#FFLAGS= -i-static -static-libgcc -O3
 SHELL=/bin/bash
 
 MODULES = parse.o dlprw.o utility.o fieldread.o
@@ -31,10 +30,10 @@ glucose: $(MODULES) $(GLUCOSE)
 misc: $(MISC) parse.o
 
 sq : sq.f90
-	$(FC) $(FFLAGS) -o $@ $< dlprw.o utility.o parse.o -L/home/tris/src/mpich-1.2.7p1/lib -lmpich
+	$(MPIFC) $(FFLAGS) -o $@ $< dlprw.o utility.o parse.o $(MPIFLAGS)
 
 sqtest : sqtest.f90
-	$(FC) $(FFLAGS) -o $@ $< dlprw.o utility.o parse.o -L/home/tris/src/mpich-1.2.7p1/lib -lmpich
+	$(MPIFC) $(FFLAGS) -o $@ $< dlprw.o utility.o parse.o $(MPIFLAGS)
 
 %.o : %.f90
 	$(FC) $(FFLAGS) -c -o $@ $<

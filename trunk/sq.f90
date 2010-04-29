@@ -59,8 +59,6 @@
 	  write(0,*) "            [-stdev maxframes] [-npt]"
 	  stop
 	end if
-
-
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	if (nargs.GE.3) then
@@ -267,17 +265,17 @@
 	  call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	  if (i.ne.1) goto 999
 	end if
+	  
+	call MPI_BCast(natms,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(nfftypes,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	if (SLAVE) then
+	  allocate(typemap(natms))
+	  allocate(uniqueiso(nfftypes))
+	end if
 
-        call MPI_BCast(natms,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-        call MPI_BCast(nfftypes,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-        if (SLAVE) then
-          allocate(typemap(natms))
-          allocate(uniqueiso(nfftypes))
-        end if
-
-        call MPI_BCast(typemap,natms,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-        call MPI_BCast(ntypes,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-        call MPI_BCast(uniqueiso,nfftypes,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(typemap,natms,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(ntypes,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(uniqueiso,nfftypes,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 
 	if (MASTER) then
 	  allocate(typepops(ntypes))
@@ -628,7 +626,7 @@
 		  end if
 		  c = " "
 		  if (totaladded(n).eq.0) c = "#"
-		  write(9,"(a,1x,F8.5,3x,E14.5,2x,e14.5,2x,I8)") c, (n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n) / totaladded(n) / natms, sd, totaladded(n)
+		  write(9,"(a,1x,F8.5,3x,E14.5,2x,e14.5,I8)") c, (n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n) / totaladded(n) / natms, sd, totaladded(n)
 	        end do
 	        close(9)
 	      end if
@@ -654,7 +652,7 @@
 	        do n=1,nbins
 		  c = " "
 		  if (totaladded(n).eq.0) c = "#"
-		  write(9,"(a,1x,F8.5,3x,E14.5,2x,e14.5,2x,I8)") c,(n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n), sd, totaladded(n)
+		  write(9,"(a,1x,F8.5,3x,E14.5,2x,e14.5,I8)") c,(n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n), sd, totaladded(n)
 	        end do
 	        close(9)
 	      end if
@@ -672,7 +670,6 @@
 
 	  ! Weight total S(Q) against system density *AND* convert between fm (www.ncnr.nist.gov) and 
 	  ! 10**-12 cm units (Alan@RAL) used for the scattering lengths
-	  !sq = sq * 4.0 * pi * numdensity / 100.0
 	  sq = (sq - selfscatter) / 100.0
 
 	  ! Normalise sanity S(Q)
