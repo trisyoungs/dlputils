@@ -20,10 +20,16 @@ if [ "$HOST" = "utopia" ]
 then
   echo "Building on utopia..."
   FC=ifort
-  FFLAGS="-i-static -static-libgcc -O3"
+  FFLAGS="-i-static -static-libgcc $OPTFLAGS"
   MPIFC=ifort
   MPIFLAGS="-I../mpich-1.2.7p1/include -L../mpich-1.2.7p1/lib -lmpich"
-  #ln -sf ~/src/mpich-1.2.7p1/include/mpif.h ./
+elif [ "$HOST" = "n16" ]
+then
+  echo "Building on xcmaster..."
+  FC=ifort
+  FFLAGS="-i-static -static-libgcc $OPTFLAGS"
+  MPIFC=/opt/hpmpi/bin/mpif90
+  MPIFLAGS=""
 fi
 
 # Make
