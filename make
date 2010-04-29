@@ -30,6 +30,13 @@ then
   FFLAGS="-i-static -static-libgcc $OPTFLAGS"
   MPIFC=/opt/hpmpi/bin/mpif90
   MPIFLAGS=""
+elif [ "$HOST" = "gorgon" ]
+then
+  echo "Building on gorgon..."
+  FC=ifort
+  FFLAGS="-i-static -static-libgcc $OPTFLAGS"
+  MPIFC=ifort
+  MPIFLAGS="-I../mpich-1.2.7p1/include -L../mpich-1.2.7p1/lib -lmpich"
 fi
 
 # Make
