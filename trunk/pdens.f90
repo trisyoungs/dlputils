@@ -11,6 +11,7 @@
 	real*8, allocatable :: avggeom(:,:,:)		! Average species coordinates
 	real*8, allocatable :: pdensintra(:,:,:,:)	! Intramolecular species distributions
 	real*8, allocatable :: rrot(:,:)		! Rotated coordinates of axis centres
+	integer, allocatable :: spatoms(:,:), nspatoms(:)! Atoms to use for positions instead of COM
 	integer, allocatable :: nfound(:), ncaught(:)	! Total and 'binned' mols
 	integer, allocatable :: molflags(:)		! Per-frame map of sp1 mols to include in averaging
 	integer, allocatable :: spexp(:)		! Expected species numbers
@@ -22,7 +23,7 @@
 	character*80 :: hisfile,outfile,basename,resfile,temp,flagfile,altheaderfile
 	logical :: altheader = .FALSE.
 	integer :: success,n1,n2,n3
-	integer :: n, nframes, m, o, p
+	integer :: n, nframes, m, o, p, i
 	real*8 :: px, py, pz, mindist, maxdist, dist, tx, ty, tz
 	integer :: centresp,sp1,m1,sp2,m2,startf,endf,n3dcentres
 	integer :: iargc
@@ -34,6 +35,7 @@
 	  write(*,"(a)") "Usage: pdens <HIStory file> <OUTput file> [-options]"
 	  write(*,"(a)") "        [-centre sp]            Set species sp to be the central one"
 	  write(*,"(a)") "        [-axis sp x1 x2 y1 y2]  Atoms to use for axis calculation in species sp"
+	  write(*,"(a)") "        [-atom sp i]            Atoms to consider for positions instead of the axis centre"
 	  write(*,"(a)") "        [-grid npoints]         Grid points in each direction for prob. densities (default = 20)"
 	  write(*,"(a)") "        [-delta spacing]        Spacing between grid points (default = 0.5 Angstrom)"
 	  write(*,"(a)") "        [-pgrid npoints]        Grid points in each direction for species densities (default = 50)"
@@ -55,6 +57,9 @@
 	!call openhis(hisfile,n)
 	write(0,"(A,A)") " Output file : ",outfile
 	if (outinfo(outfile,1).eq.-1) goto 798
+
+	! Allocate some arrays: Atoms to consider
+	allocate(spatoms(nspecies,maxatoms), nspatoms(nspecies))
 
 	! Ascertain length of basename....
 	baselen=-1
@@ -81,12 +86,19 @@
 	startf = 1
 	endf = 0
 	n3dcentres = 0
+	spatoms = 0
+	nspatoms = 0
 
 	n = 2
 	do
 	  n = n + 1; if (n.GT.nargs) exit
 	  call getarg(n,temp)
 	  select case (temp)
+	    case ("-atom") 
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp1
+	      nspatoms(sp1) = nspatoms(sp1) + 1
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") spatoms(sp1,nspatoms(sp1))
+	      write(0,"(a,i2,a,i2,a)") "Will consider atom ", spatoms(sp1,nspatoms(sp1)), " in species ",sp1," instead of axis centre"
 	    case ("-axis") 
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp1
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(sp1,1)
@@ -192,6 +204,8 @@
 	pdensintra = 0.0
 	spexp = 0
 	avggeom = 0.0
+	spatoms = 0
+	nspatoms = 0
 
 	! Read the header of the history file...
         call openhis(hisfile,10)
@@ -254,55 +268,51 @@
 	  end if
 	  n3dcentres = n3dcentres + 1	! Normalisation counter
 	  do sp2=1,nspecies
+	    p = s_start(sp2)
 	    do m2=1,s_nmols(sp2)
 
-	      ! Calculate minimum image position of molecule m2 about 0,0,0
-	      call pbc(axisox(sp2,m2),axisoy(sp2,m2),axisoz(sp2,m2),axisox(sp1,m1),axisoy(sp1,m1),axisoz(sp1,m1),tx,ty,tz)
-	      px = tx - axisox(sp1,m1)
-	      py = ty - axisoy(sp1,m1)
-	      pz = tz - axisoz(sp1,m1)
-	      tx = px*axisx(sp1,m1,1) + py*axisx(sp1,m1,2) + pz*axisx(sp1,m1,3)
-	      ty = px*axisy(sp1,m1,1) + py*axisy(sp1,m1,2) + pz*axisy(sp1,m1,3)
-	      tz = px*axisz(sp1,m1,1) + py*axisz(sp1,m1,2) + pz*axisz(sp1,m1,3)
+	      do n=1,max(1,nspatoms(sp2))
 
-	      ! Get relative coordinates (i.e. centre new coords about 0,0,0)
-	      !tx = axisox(sp2,m2) - axisox(sp1,m1)
-	      !ty = axisoy(sp2,m2) - axisoy(sp1,m1)
-	      !tz = axisoz(sp2,m2) - axisoz(sp1,m1)
-
-	      ! Rotate relative coordinates into local frame of molecule m1
-	      !px = tx*axisx(sp1,m1,1) + ty*axisx(sp1,m1,2) + tz*axisx(sp1,m1,3)
-	      !py = tx*axisy(sp1,m1,1) + ty*axisy(sp1,m1,2) + tz*axisy(sp1,m1,3)
-	      !pz = tx*axisz(sp1,m1,1) + ty*axisz(sp1,m1,2) + tz*axisz(sp1,m1,3)
-
-	      ! Calculate minimum image position of molecule m2 about 0,0,0
-	      !tx = px - cell(1)*NINT(px/cell(1))
-	      !ty = py - cell(5)*NINT(py/cell(5))
-	      !tz = pz - cell(9)*NINT(pz/cell(9))
-
-	      ! Check minimum / maximum separation
-	      dist = sqrt(tx*tx + ty*ty + tz*tz)
-	      if (dist.lt.mindist) cycle
-	      if (dist.gt.maxdist) cycle
-
-	      ! Calculate integer position in grid
-	      n1=NINT(tx/delta)
-	      n2=NINT(ty/delta)
-	      n3=NINT(tz/delta)
-
-	      ! If any of the n's are over grid, then only increase the counter
-	      if (MAX(ABS(n1),MAX(ABS(n2),ABS(n3))).GT.grid) then
-	        nfound(sp2) = nfound(sp2) + 1      ! No position, just count it....
-	      else
-		if ((sp1.eq.sp2).and.(m1.eq.m2)) then
-		  ! Same molecule, so don't add at all
+		! Calculate minimum image position of molecule m2 or one of the defined atoms about the central molecules axis centre
+		! If no spatoms are defined, use axis origin
+		if (nspatoms(sp1).eq.0) then
+		  call pbc(axisox(sp2,m2),axisoy(sp2,m2),axisoz(sp2,m2),axisox(sp1,m1),axisoy(sp1,m1),axisoz(sp1,m1),tx,ty,tz)
 		else
-	          ! Check to make sure the same molecule isn't being consider with itself  XXXXX
-	          pdens(sp2,n1,n2,n3) = pdens(sp2,n1,n2,n3) + 1
-	          nfound(sp2) = nfound(sp2) + 1
-	          ncaught(sp2) = ncaught(sp2) + 1
+		  i = p + spatoms(sp2,n) - 1
+		  call pbc(xpos(i),ypos(i),zpos(i),axisox(sp1,m1),axisoy(sp1,m1),axisoz(sp1,m1),tx,ty,tz)
 		end if
-	      end if
+
+		px = tx - axisox(sp1,m1)
+		py = ty - axisoy(sp1,m1)
+		pz = tz - axisoz(sp1,m1)
+		tx = px*axisx(sp1,m1,1) + py*axisx(sp1,m1,2) + pz*axisx(sp1,m1,3)
+		ty = px*axisy(sp1,m1,1) + py*axisy(sp1,m1,2) + pz*axisy(sp1,m1,3)
+		tz = px*axisz(sp1,m1,1) + py*axisz(sp1,m1,2) + pz*axisz(sp1,m1,3)
+
+		! Check minimum / maximum separation
+		dist = sqrt(tx*tx + ty*ty + tz*tz)
+		if (dist.lt.mindist) cycle
+		if (dist.gt.maxdist) cycle
+
+		! Calculate integer position in grid
+		n1=NINT(tx/delta)
+		n2=NINT(ty/delta)
+		n3=NINT(tz/delta)
+
+		! If any of the n's are over grid, then only increase the counter
+		if (MAX(ABS(n1),MAX(ABS(n2),ABS(n3))).GT.grid) then
+		  nfound(sp2) = nfound(sp2) + 1      ! No position, just count it....
+		else
+		  if ((sp1.eq.sp2).and.(m1.eq.m2)) then
+		  ! Same molecule, so don't add at all
+		  else
+	          ! Check to make sure the same molecule isn't being consider with itself  XXXXX
+	            pdens(sp2,n1,n2,n3) = pdens(sp2,n1,n2,n3) + 1
+	            nfound(sp2) = nfound(sp2) + 1
+	            ncaught(sp2) = ncaught(sp2) + 1
+		  end if
+	        end if
+	      end do
 	      p=p+s_natoms(sp2)
 	    end do
 	  end do
@@ -376,8 +386,8 @@
 	do sp1=1,nspecies
 
 	  ! Calculate expected species numbers
-	  spexp(sp1) = s_nmols(centresp) * s_nmols(sp1) * nframesused
-	  if (centresp.eq.sp1) spexp(sp1) = spexp(sp1) - s_nmols(sp1) * nframesused
+	  spexp(sp1) = s_nmols(centresp) * s_nmols(sp1) * nframesused * max(1,nspatoms(sp1))
+	  if (centresp.eq.sp1) spexp(sp1) = spexp(sp1) - s_nmols(sp1) * nframesused * max(1,nspatoms(sp1))
 
 	  ! Species density about central species
 	  do n1=-grid,grid
