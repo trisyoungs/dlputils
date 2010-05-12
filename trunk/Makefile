@@ -18,16 +18,16 @@ ANALYSE2 = axishist axishist2 legendre cryscomp cluster zangle bident bident2 bi
 GLUCOSE = glucgeom glucanal gluchb gluchbeach glucsphere
 PDENS = pdens pdenstrim pdensmirror pdensint rpairs surfacify
 MISC = prepfm dlpsize point avgconfig pairs probedlp velconfig
-MISCP = genlj 
-ALL = $(MODULES) $(CONVERTERS) $(RDF) $(ANALYSE2) $(ANALYSE) $(GLUCOSE) $(PDENS) $(MISC) $(MISCP) $(SQ)
+MISCP = genlj stats trapezium
+ALL = $(CONVERTERS) $(RDF) $(ANALYSE2) $(ANALYSE) $(GLUCOSE) $(PDENS) $(MISC) $(MISCP) $(SQ)
 
-all: $(ALL)
+all: $(MODULES) $(ALL)
 
 convert: $(MODULES) $(CONVERTERS)
 rdfs: $(MODULES) $(RDF)
 analyse: $(MODULES) $(ANALYSE)
 glucose: $(MODULES) $(GLUCOSE)
-misc: $(MISC) parse.o
+misc: $(MISC)
 
 sq : sq.f90
 	$(MPIFC) $(FFLAGS) -o $@ $< dlprw.o utility.o parse.o $(MPIFLAGS)
