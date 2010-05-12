@@ -9,7 +9,7 @@ for arg in "$*"  # Doesn't work properly if "$*" isn't quoted.
 do
   if [ "$arg" = "install" ]; then
     INSTALL=true
-    echo "... Will install build"
+    echo "... Will install after build"
   elif [ "$arg" = "slow" ]; then
     OPTFLAGS="-CB -O0"
     echo "... Compiling with no optimisation"
