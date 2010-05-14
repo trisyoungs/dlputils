@@ -16,7 +16,7 @@
 	integer :: nsp2atomcontacts(MAXSPECIES,MAXSITES,2)
 	logical :: calc3d = .FALSE., writeone = .FALSE.
 	real*8 :: a(3),b(3),c(3),mima(3),mimb(3),dac,dbc,total,avgmol,avgatom,tx,ty,tz,px,py,pz
-	real*8 :: delta = 0.25, sp2sitemaxdist(MAXSPECIES,MAXSITES)
+	real*8 :: delta = 0.25, sp2sitemaxdist(MAXSPECIES,MAXSITES), cp
 	integer, allocatable :: pattern(:,:,:), nmolcontacts(:), natomcontacts(:), pfreq(:), ptemp(:,:)
 	real*8, allocatable :: geom(:,:,:), gtemp(:,:), pdens(:,:,:,:), pdenstemp(:,:,:)
 
@@ -456,13 +456,15 @@
 	! Output pattern data
 	write(11,*) "Number of distinct contact patterns found:",npatterns
 	write(11,*) ""
-	write(11,"(a)") "  ID        Freq       %   Nm  Nc  Pattern"
-850	FORMAT (i4,2x,f12.4,2x,f6.2,2x,i2,2x,i2,2x,20(i2,'/',i6,','))
+	write(11,"(a)") "  ID       Freq       %     Cumul%  Nm  Nc  Pattern"
+850	FORMAT (i4,2x,f12.4,2x,f6.2,2x,f6.2,2x,i2,2x,i2,2x,20(i2,'/',i6,','))
 	avgatom = 0.0
 	avgmol = 0.0
 	total = 0.0
+	cp = 0.0
 	do n=1,npatterns
-	  write(11,850) n, pfreq(n)*1.0/nframes, 100.0*pfreq(n)/(s_nmols(sp1)*nframes), nmolcontacts(n), natomcontacts(n), (pattern(n,i,1),pattern(n,i,3),i=1,nmolcontacts(n)+1)
+	  cp = cp + 100.0*pfreq(n)/(s_nmols(sp1)*nframes)
+	  write(11,850) n, pfreq(n)*1.0/nframes, 100.0*pfreq(n)/(s_nmols(sp1)*nframes), cp, nmolcontacts(n), natomcontacts(n), (pattern(n,i,1),pattern(n,i,3),i=1,nmolcontacts(n)+1)
 	  total = total + pfreq(n)*1.0/nframes
 	  avgmol = avgmol + nmolcontacts(n) * pfreq(n)*1.0/nframes
 	  avgatom = avgatom + natomcontacts(n) * pfreq(n)*1.0/nframes
