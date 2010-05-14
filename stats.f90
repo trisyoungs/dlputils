@@ -10,7 +10,7 @@
 	ndat = ndat + 1
 	goto 10
 
-100	write(0,*) "Read ",ndat,"data values"
+100	write(6,*) "Read ",ndat,"data values"
 
         ! Calculate range values
 	minx = dat(1)
