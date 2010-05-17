@@ -14,7 +14,7 @@
 	integer :: tth,th,hun,ten,units,natoms, grid = 40, binx, biny, binz, mtemp(3)
 	integer, allocatable :: centralbits(:), nsp1molcontacts(:), sp1molcontacts(:,:,:), nsp1atomcontacts(:)
 	integer :: nsp2atomcontacts(MAXSPECIES,MAXSITES,2)
-	logical :: calc3d = .FALSE., writeone = .FALSE.
+	logical :: calc3d = .FALSE., writeone = .FALSE., siteequiv = .FALSE.
 	real*8 :: a(3),b(3),c(3),mima(3),mimb(3),dac,dbc,total,avgmol,avgatom,tx,ty,tz,px,py,pz
 	real*8 :: delta = 0.25, sp2sitemaxdist(MAXSPECIES,MAXSITES), cp
 	integer, allocatable :: pattern(:,:,:), nmolcontacts(:), natomcontacts(:), pfreq(:), ptemp(:,:)
@@ -25,6 +25,7 @@
 	  write(0,"(a120)") "Usage : bident4 <HISfile> <OUTfile> <sp1> <sp1 atom i> <sp1 atom j>"
 	  write(0,"(a80)") "    [-nframes n] [-discard n] [-site sp2 a b maxdist (e.g. H(a)-O(b))] [-maxpatterns n]"
 	  write(0,"(a80)") "    [-grid n] [-delta d] [-maxatomcontacts n] [-maxmolcontacts n] [-calc3d x1 x2 y1 y2] [-writeone]"
+	  write(0,"(a80)") "    [-equiv]"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -86,6 +87,9 @@
 	      calc3d = .TRUE.
 	    case ("-writeone")
 	      writeone = .TRUE.
+	    case ("-equiv")
+	      write(0,*) "Sites on central species will be treated as equivalent for single contacts."
+	      siteequiv = .TRUE.
             case ("-grid")
               n = n + 1; call getarg(n,temparg); read(temparg,"(i6)") grid
 	      write(0,*) "Grid points in each +/- direction : ", grid
@@ -229,6 +233,18 @@
 
 	      end do
 
+	      ! Equivalency of sites in single and bifurcated contacts
+	      if (siteequiv) then
+		if (ncontacts.eq.1) then
+		  ! Single contact - use lower of the two possible bits
+		  if (closebit.gt.(2**(nsp2sites(sp2)-1))) closebit = closebit / (2**nsp2sites(sp2))
+		else
+		  ! Bidentate, bifurcated, or bridging interaction
+		  ! ???
+		end if
+	      end if
+
+
 	      ! Does this central molecule have any contacts with this outer molecule?
 	      if (ncontacts.gt.0) then
 		nsp1molcontacts(m1) = nsp1molcontacts(m1)+1
@@ -255,7 +271,7 @@
 	do m1=1,s_nmols(sp1)
 
 	  ! Sort contact data by key data
-! 	  write(0,"(a,50i4)") "Data was,",(sp1molcontacts(m1,n,1),sp1molcontacts(m1,n,2),sp1molcontacts(m1,n,3),n=1,nsp1molcontacts(m1))
+!	  write(0,"(a,50i4)") "Data was,",(sp1molcontacts(m1,n,1),sp1molcontacts(m1,n,2),sp1molcontacts(m1,n,3),n=1,nsp1molcontacts(m1))
 	  do sp2 = 1,nspecies
 	    ! Find first and last molecular contact involving this species
 	    do i=1,nsp1molcontacts(m1)
@@ -277,26 +293,29 @@
 	      end do
 	    end do
 	  end do
-! 	  write(0,"(a,50i4)") "------> ",(sp1molcontacts(m1,n,1),sp1molcontacts(m1,n,2),sp1molcontacts(m1,n,3),n=1,nsp1molcontacts(m1))
+!	  write(0,"(a,50i4)") "------> ",(sp1molcontacts(m1,n,1),sp1molcontacts(m1,n,2),sp1molcontacts(m1,n,3),n=1,nsp1molcontacts(m1))
 
 	  ! Each central molecule now has a contact pattern. Search for each to see if we've encountered it before.
 	  ! If not, add a new pattern into the list
 
 	  found = 0
-!  	  write(0,"(a,50i4)") "Contact data is,",(sp1molcontacts(m1,n,1),sp1molcontacts(m1,n,2),sp1molcontacts(m1,n,3),n=1,nsp1molcontacts(m1))
+! 	  write(0,"(a,50i4)") "Contact data is,",(sp1molcontacts(m1,n,1),sp1molcontacts(m1,n,2),sp1molcontacts(m1,n,3),n=1,nsp1molcontacts(m1))
 	  do n=1,npatterns
 	    if (nmolcontacts(n).ne.nsp1molcontacts(m1)) cycle
 	    if (natomcontacts(n).ne.nsp1atomcontacts(m1)) cycle
-	    if (nmolcontacts(n).eq.0) found = n
+	    !if (nmolcontacts(n).eq.0) found = n
+	    t1 = 0
 	    do i=1,nmolcontacts(n)
-	      if (sp1molcontacts(m1,i,1).ne.pattern(n,i,1)) exit
+	      if (sp1molcontacts(m1,i,1).ne.pattern(n,i,1)) cycle
 	      !if (sp1molcontacts(m1,i,2).ne.pattern(n,i,2)) cycle
-	      if (sp1molcontacts(m1,i,3).ne.pattern(n,i,3)) exit
-	      ! If we get to here we've found a match
+	      if (sp1molcontacts(m1,i,3).ne.pattern(n,i,3)) cycle
+	      t1 = t1 + 1
+	    end do
+	    ! Did we succesfully match all contacts?
+	    if (t1.eq.nmolcontacts(n)) then
 	      found = n
 	      exit
-	    end do
-	    if (found.ne.0) exit
+	    end if
 	  end do
 
 	  if (found.ne.0) then
