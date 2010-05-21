@@ -476,7 +476,7 @@
 	write(11,*) "Number of distinct contact patterns found:",npatterns
 	write(11,*) ""
 	write(11,"(a)") "  ID       Freq       %     Cumul%  Nm  Nc  Pattern"
-850	FORMAT (i4,2x,f12.4,2x,f6.2,2x,f6.2,2x,i2,2x,i2,2x,20(i2,'/',i6,','))
+850	FORMAT (i4,2x,f12.8,2x,f6.2,2x,f6.2,2x,i2,2x,i2,2x,20(i2,'/',i6,','))
 	avgatom = 0.0
 	avgmol = 0.0
 	total = 0.0
