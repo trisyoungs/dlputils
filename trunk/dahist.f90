@@ -44,6 +44,9 @@
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") a1(ntriplets)
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") a2(ntriplets)
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") a3(ntriplets)
+	    case default
+	      write(0,*) "Unrecognised command-line argument: ", temp
+	      stop
 	  end select
 	end do
 	     
