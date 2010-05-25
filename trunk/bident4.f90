@@ -499,6 +499,13 @@
 	  end do
 	end do
 
+	write(11,*) ""
+	write(11,"(a,i5,a)") "Total contacts per frame found for defined sites over ",nframes," frames"
+	do sp2=1,nspecies
+	  do site=1,nsp2sites(sp2)
+	    write(11,"(2i4,2f12.5)") sp2, site, nsp2atomcontacts(sp2,site,1)*1.0/nframes, nsp2atomcontacts(sp2,site,2)*1.0/nframes
+	  end do
+	end do
 	close(11)
 
 	! Write out 3d data if requested
