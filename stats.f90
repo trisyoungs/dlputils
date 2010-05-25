@@ -18,7 +18,7 @@
 	avg = 0.0d0
         do n=1,ndat
           minx = min(minx,dat(n))
-          maxx = max(minx,dat(n))
+          maxx = max(maxx,dat(n))
           avg = avg + dat(n)
 	end do
 	avg = avg / real(ndat)
