@@ -33,7 +33,7 @@
 	logical :: MASTER, SLAVE, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE.
 	logical :: npt = .FALSE., calcstdev = .FALSE.
 	integer, allocatable :: frameadded(:), kvectors(:,:), slaveadded(:), totaladded(:)
-	real*8 :: kcut,magx,magy,magz,mag, numdensity, sd, sumxsq, avg
+	real*8 :: kcut,kmin,magx,magy,magz,mag, numdensity, sd, sumxsq, avg
 	real*8, allocatable :: framesq(:,:,:),sq(:),slavesq(:,:,:),partialsq(:,:,:), sanitysq(:), framesanitysq(:)
 	real*8, allocatable :: stdevdata(:,:,:,:), kmag(:)
 	complex*16, allocatable :: rxxx(:,:),ryyy(:,:),rzzz(:,:),pdensity(:)
@@ -47,6 +47,7 @@
 
 	binwidth=0.1   ! In Angstroms
 	kcut = 5.0    ! Reciprocal space cutoff (box integers)
+	kmin = 0.0	! Minimum cutoff
 	frameskip = 1	! Take consecutive frames by default
 	framestodo = -1	! Do all available frames by default
 	discard = 0
@@ -56,7 +57,7 @@
 	  write(0,*) "Usage : sq <DLP HISTORYfile> <DLP OUTPUTfile> ...options"
 	  write(0,*) "            [-bin binwidth] [-frames nframes] [-kcut cutoff] [-discard nframes]"
 	  write(0,*) "            [-skip interval] [-partials] [-readmap <file>] [-altheader <file>]"
-	  write(0,*) "            [-stdev maxframes] [-npt]"
+	  write(0,*) "            [-stdev maxframes] [-npt] [-kmin cutoff]"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -68,6 +69,7 @@
 	    select case (temp)
 	      case ("-bin"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") binwidth
 	      case ("-kcut"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") kcut
+	      case ("-kmin"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") kmin
 	      case ("-frames","-nframes"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
 	      case ("-discard"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") discard
 	      case ("-skip"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
@@ -394,6 +396,7 @@
 	call MPI_BCast(ypos,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
 	call MPI_BCast(zpos,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
 	call MPI_BCast(kcut,1,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(kmin,1,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
 	call MPI_BCast(npt,1,MPI_LOGICAL,0,MPI_COMM_WORLD,err_mpi)
 	
 	! Recalculate number of kvectors (if first frame or variable cell)
@@ -430,7 +433,7 @@
 	        magy = j*rcell(5) 
 	        magz = k*rcell(9)
 	        mag = sqrt(magx**2 + magy**2 + magz**2)
-	        if (mag.LT.kcut) newnvec = newnvec + 1
+	        if ((mag.le.kcut).and.(mag.ge.kmin)) newnvec = newnvec + 1
 	      end do
 	    end do
 	  end do
@@ -447,7 +450,7 @@
 	          magy = j*rcell(5) 
 	          magz = k*rcell(9)
 	          mag = sqrt(magx**2 + magy**2 + magz**2)
-	          if (mag.LT.kcut) then
+	          if ((mag.le.kcut).and.(mag.ge.kmin)) then
  		    nvec = nvec + 1
  		    kvectors(nvec,1) = i
 		    kvectors(nvec,2) = j
@@ -465,7 +468,7 @@
 	  kstart = id_mpi*kpernode + 1
 	  kend = kstart + kpernode - 1
 	  if (id_mpi+1.eq.nproc_mpi) kend = kend + kremain
-	  write(13+id_mpi,"(a,i2,a,e14.6)") "Process ",id_mpi," thinks that kcut is ",kcut
+	  write(13+id_mpi,"(a,i2,a,e14.6,a,e14.6)") "Process ",id_mpi," thinks that kcut is ",kcut, "and kmin is",kmin
 	  write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",nproc_mpi," processes"
 	  write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",nvec," vectors in total"
 	  write(13+id_mpi,"(a,i2,a,i7,a,i7,a)") "Process ",id_mpi," calculating kvec=",kstart,",",kend,"..."
