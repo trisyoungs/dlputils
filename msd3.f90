@@ -257,12 +257,12 @@
 	! Write data
 	do s1=1,nspecies
 	  open(unit=9,file=basename(1:baselen)//"msd"//char(48+s1),form="formatted",status="replace")
-	  write(9,"(a)") "# DeltaT           MSD            SD            Min             Max            Avg"
+	  write(9,"(a)") "# DeltaT            MSD             SD             Min              Max             Avg"
 	  do n=1,maxlength-1
 	    if (maxstats.gt.0) then
-	      write(9,"(8f15.9)") n*deltat,msd_sp(n,s1),sd(n,s1),minimum(n,s1),maximum(n,s1),avg(n,s1),msd_stats_norm(n)*1.0
+	      write(9,"(8f16.9)") n*deltat,msd_sp(n,s1),sd(n,s1),minimum(n,s1),maximum(n,s1),avg(n,s1),msd_stats_norm(n)*1.0
 	    else
-	      write(9,"(8f15.9)") n*deltat,msd_sp(n,s1)
+	      write(9,"(8f16.9)") n*deltat,msd_sp(n,s1)
 	    end if
 	  end do
 	  close(9)
