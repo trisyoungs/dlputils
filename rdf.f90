@@ -261,7 +261,7 @@
 	      integral = integral + sumhist(s1,s2,n) / framesdone / s_nmols(s1)
 	      nrdf(s1,s2,n)=nrdf(s1,s2,n)/framesdone
 	      ! write(9,"(F6.3,3x,F12.8)") (n*binwidth)-binwidth/2.0,nrdf(a1,n)
-	      write(9,"(F8.3,2(3x,F12.8))") (n*binwidth)-binwidth/2.0,nrdf(s1,s2,n),integral
+	      write(9,"(F10.4,2(3x,F12.8))") (n*binwidth)-binwidth/2.0,nrdf(s1,s2,n),integral
 	    end do
 	    close(9)
 	  end do

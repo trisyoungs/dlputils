@@ -182,7 +182,7 @@
 	    integral = integral + sumhist(p,n) / nframes / s_nmols(sp1)
 	    ! write(0,"(i4,2x,e12.6,2x,e12.6,2x,e12.6)") n,rdf(p,n),sumhist(p,n)
 ! 	    write(9,"(f6.3,3x,f12.8,4x,e12.6,2x,e12.6)") (n*binwidth)-binwidth/2.0,rdf(p,n),sumhist(p,n),integral
-	    write(9,"(f6.3,3x,f12.8,4x,e12.6,2x,e12.6)") (n*binwidth)-binwidth/2.0,rdf(p,n),integral,sumhist(p,n)
+	    write(9,"(f10.4,3x,f12.8,4x,e12.6,2x,e12.6)") (n*binwidth)-binwidth/2.0,rdf(p,n),integral,sumhist(p,n)
 	  end do
 	  close(9)
 	end do

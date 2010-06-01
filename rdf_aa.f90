@@ -198,7 +198,7 @@
 	  ! Normalise the RDFs with respect to the number of frames.
 	  do n=1,nbins
 	    integral = integral + sumhist(p,n) / nframes / s_nmols(sp)
-	    write(9,"(f6.3,3x,f12.8,4x,e12.6)") (n*binwidth)-binwidth/2.0,rdf(p,n),integral
+	    write(9,"(f10.4,3x,f12.8,4x,e12.6)") (n*binwidth)-binwidth/2.0,rdf(p,n),integral
 	  end do
 	  close(9)
 	end do
