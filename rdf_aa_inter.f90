@@ -153,7 +153,7 @@
 	    if (nonorm) then
 	      rdf(p,n) = sumhist(p,n) / nframes
 	    else
-	      rdf(p,n) = sumhist(p,n) / norm / numadded
+	      rdf(p,n) = sumhist(p,n) / norm / s_nmols(sp1) / s_nmols(sp2) / nframes
 	    end if
 	  end do
 	end do
