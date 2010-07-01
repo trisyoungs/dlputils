@@ -189,8 +189,8 @@
 	  basename=hisfile(1:baselen)
 	endif
 
-	integral = 0.0
 	do p=1,npairs
+	  integral = 0.0
 	  resfile=basename(1:baselen)//"aardf"//CHAR(48+sp)//"_"//CHAR(48+(atom1(p)/10))//CHAR(48+MOD(atom1(p),10))// &
 		& "_"//CHAR(48+(atom2(p)/10))//CHAR(48+MOD(atom2(p),10))
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
