@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Custom options - modify these for 'unknown' machine builds
+DEFAULTFC=gfortran
+DEFAULTFFLAGS=" -O2 -ffree-line-length-none "
+DEFAULTMPIFC=gfortran
+DEFAULTMPIFLAGS=""
+
 # Build all dlputils, setting up for the host machines listed below
 
 HOST=`hostname`
@@ -37,6 +43,12 @@ then
   FFLAGS="-i-static -static-libgcc $OPTFLAGS"
   MPIFC=ifort
   MPIFLAGS="-I../mpich-1.2.7p1/include -L../mpich-1.2.7p1/lib -lmpich"
+else
+  echo "Building on unknown machine..."
+  FC=$DEFAULTFC
+  FFLAGS=$DEFAULTFFLAGS
+  MPIFC=$DEFAULTMPIFC
+  MPIFLAGS=$DEFAULTMPIFLAGS
 fi
 
 # Make

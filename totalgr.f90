@@ -23,11 +23,11 @@
 	real*8, parameter :: pi = 3.14159265358979, ftpi = 4.188790205d0
 	character*80 :: hisfile,dlpoutfile,basename,resfile,namemap
 	character*20 :: temp
-	integer :: i,j,k,baselen,bin,nframes,success,nargs,framestodo,nfftypes,alpha,beta
+	integer :: i,j,k,baselen,bin,nframes,nargs,framestodo,nfftypes,alpha,beta
 	integer :: n, m, o, nbins, found, frameskip, sumfac, discard, framesdone
-	integer :: iargc
+	integer :: iargc, isuccess
 	real*8 :: binwidth,boxvolume,factor,weight,delta(3),dist,svol
-	logical :: writepartials = .FALSE., readmap = .FALSE.
+	logical :: success, writepartials = .FALSE., readmap = .FALSE.
 	real*8 :: rcut,magx,magy,magz,mag,numdensity, ipos(3), jpos(3)
 	real*8, allocatable :: partialgr(:,:,:),totalgr(:),weightedgr(:,:,:)
 
@@ -240,12 +240,12 @@
 	framesdone = 0
 	numdensity = 0.0
 
-100	success=readframe()
-	if (success.EQ.1) then   ! End of file encountered....
+100	isuccess=readframe()
+	if (isuccess.EQ.1) then   ! End of file encountered....
 	  write(12,*) "End of history file found."
 	  goto 120
 	end if
-	if (success.EQ.-1) then  ! File error....
+	if (isuccess.EQ.-1) then  ! File error....
 	  write(12,*) "History file ended prematurely..."
 	  goto 120
 	end if

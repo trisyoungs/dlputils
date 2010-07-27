@@ -13,8 +13,9 @@
 	character*80 :: dumpfile, basename
 	character*20 :: temparg
 	integer, parameter :: MAXSITES = 20, MAXCONTACTS = 20
-	integer :: nframes,success,nargs,n,m1,m2,site,baselen,framestodo,f,m,c
+	integer :: nframes,nargs,n,m1,m2,site,baselen,framestodo,f,m,c
 	integer :: iargc, bitmask
+	logical :: success
 
 	nargs = iargc()
 	if (nargs.lt.2) then

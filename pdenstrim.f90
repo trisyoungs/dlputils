@@ -156,7 +156,7 @@
 	write(0,"(a,3f12.6)") "Grid origin : ",origin
 	write(0,"(a,3i5)") "Loop order  : ",loop
 
-	if (gnufile.eq..false.) then
+	if (.not.gnufile) then
 
           open(unit=11,file=outfile,form='formatted',status='new')
 	  write(11,*) ngrid
