@@ -477,13 +477,13 @@
 
 	end program rpairs
 
-	recursive integer function lobeselect(pdensi,grid,n,m,o,lobeid)
+	recursive integer function lobeselect(pdensi,grid,n,m,o,lobeid) result(res)
 	implicit none
-	integer :: grid, lobeid, n, m, o
+	integer :: grid, lobeid, n, m, o, res
 	integer, intent(inout) :: pdensi(-grid:grid,-grid:grid,-grid:grid)
 	integer :: nselected
 	nselected = 0
-	lobeselect = 0
+	res = 0
 	! Select target gridpoint
 	if (pdensi(n,m,o).gt.0) then
 	  write(0,*) "Oddness - gridpoint is already selected"
@@ -512,5 +512,5 @@
 	  if (pdensi(n,m,o+1).eq.-1) nselected = nselected + lobeselect(pdensi,grid,n,m,o+1,lobeid)
 	end if
 	!write(0,*) nselected
-	lobeselect = nselected
+	res = nselected
 	end function lobeselect

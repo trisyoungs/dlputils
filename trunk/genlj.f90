@@ -2,12 +2,14 @@
 
 	program genlj
 	use parse
+	implicit none
 
 	integer, parameter :: MAXTYPES=100
 	real*8 :: sigma(MAXTYPES), eps(MAXTYPES)	! Storage for atomic sigma and epsilon from the file
 	real*8 :: newsigma, neweps			! Calculated cross-term epsilon and sigma
 	character*8 :: atomnames(MAXTYPES)		! Storage for atom type names from the file
 	integer :: ntypes,n,m,i
+	logical :: success
 
 	! Open file and read in data
 	ntypes = 0
