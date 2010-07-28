@@ -479,7 +479,7 @@
 
 	recursive integer function lobeselect(pdensi,grid,n,m,o,lobeid) result(res)
 	implicit none
-	integer :: grid, lobeid, n, m, o, res
+	integer :: grid, lobeid, n, m, o
 	integer, intent(inout) :: pdensi(-grid:grid,-grid:grid,-grid:grid)
 	integer :: nselected
 	nselected = 0
