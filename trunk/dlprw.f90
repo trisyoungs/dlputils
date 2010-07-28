@@ -203,7 +203,12 @@
 	  write(0,*) "Reading header from formatted history file..."
 	  ! File header
 	  read(dlpun_his,10,ERR=103,end=103) dlpheader
-	  read(dlpun_his,"(2I10)",ERR=104,end=104) keytrj,imcon
+	  if (dlpheader(1:8).eq."timestep") then
+	    write(0,*) "No HISf header records found, but 'timestep' located on first line..."
+	    rewind(dlpun_his)
+	  else
+	    read(dlpun_his,"(2I10)",ERR=104,end=104) keytrj,imcon
+	  end if
 	  ! Cell params
 	  read(dlpun_his,"(8X,4I10,F12.6)",ERR=105,end=105) nstep, natms, keytrj, imcon, tstep
 	  ! Read in the cell coords if necessary
@@ -238,7 +243,11 @@
 	  ! Now, put the hisfile back to the start of the frames data....
 	  rewind(dlpun_his)
 	  read(dlpun_his,10) dlpheader
-	  read(dlpun_his,"(2I10)",ERR=104,end=104) keytrj,imcon
+	  if (dlpheader(1:8).eq."timestep") then
+	    rewind(dlpun_his)
+	  else
+	    read(dlpun_his,"(2I10)",ERR=104,end=104) keytrj,imcon
+	  end if
 	  !write(0,*) "At end of header read, last discarded line was:"
 	  !write(0,*) discard
 	end if
