@@ -204,8 +204,6 @@
 	pdensintra = 0.0
 	spexp = 0
 	avggeom = 0.0
-	spatoms = 0
-	nspatoms = 0
 
 	! Read the header of the history file...
         call openhis(hisfile,10)
@@ -275,7 +273,7 @@
 
 		! Calculate minimum image position of molecule m2 or one of the defined atoms about the central molecules axis centre
 		! If no spatoms are defined, use axis origin
-		if (nspatoms(sp1).eq.0) then
+		if (nspatoms(sp2).eq.0) then
 		  call pbc(axisox(sp2,m2),axisoy(sp2,m2),axisoz(sp2,m2),axisox(sp1,m1),axisoy(sp1,m1),axisoz(sp1,m1),tx,ty,tz)
 		else
 		  i = p + spatoms(sp2,n) - 1
