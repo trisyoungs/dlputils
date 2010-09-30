@@ -629,7 +629,7 @@
 		  end if
 		  c = " "
 		  if (totaladded(n).eq.0) c = "#"
-		  write(9,"(a,1x,F8.5,3x,E14.5,2x,e14.5,I8)") c, (n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n) / totaladded(n) / natms, sd, totaladded(n)
+		  write(9,"(a,1x,F8.5,3x,E14.5,2x,e14.5,1x,I8)") c, (n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n) / totaladded(n) / natms, sd, totaladded(n)
 	        end do
 	        close(9)
 	      end if
