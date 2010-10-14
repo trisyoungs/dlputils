@@ -1,13 +1,17 @@
 	! Calculate statistics for supplied data
 	program stats
+	use parse
 	implicit none
-	integer :: ndat, n
+	integer :: ndat, n, success
 	real*8 :: dat(100000), avg, sd, minx, maxx, sumxsq
 
 	! Read in data
 	ndat = 0
-10	read(5,*,end=100,err=100) dat(ndat+1)
+10	success = readline(5)
+	if (nargsparsed.eq.-1) goto 100
+	if (nargsparsed.eq.0) goto 10
 	ndat = ndat + 1
+	dat(ndat) = argr(1)
 	goto 10
 
 100	write(6,*) "Read ",ndat,"data values"
