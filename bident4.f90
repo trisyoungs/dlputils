@@ -10,11 +10,11 @@
 	integer :: MAXATOMCONTACTS = 10, MAXPATTERNS = 30000, MAXMOLCONTACTS = 6
 	integer :: nframes,success,nargs,n,m1,m2,i,j,k,baselen,aoff1,aoff2,m
 	integer :: framestodo = -1, framestoskip = 0, sp1, sp2, nsp2sites(MAXSPECIES), sp2sites(MAXSPECIES,MAXSITES,2), sp1sites(2)
-	integer :: iargc, site, closebit, bit, npatterns = 0, ncontacts, found, t1, t2, t3
+	integer :: iargc, site, site2, closebit, bit, npatterns = 0, ncontacts, found, t1, t2, t3
 	integer :: tth,th,hun,ten,units,natoms, grid = 40, binx, biny, binz, mtemp(3)
-	integer, allocatable :: centralbits(:), nsp1molcontacts(:), sp1molcontacts(:,:,:), nsp1atomcontacts(:)
-	integer :: nsp2atomcontacts(MAXSPECIES,MAXSITES,2)
-	logical :: calc3d = .FALSE., writeone = .FALSE., siteequiv = .FALSE.
+	integer, allocatable :: centralbits(:), nsp1molcontacts(:), sp1molcontacts(:,:,:), nsp1atomcontacts(:), sp2molcontacts(:,:), nsp2molcontacts(:)
+	integer :: nsp2atomcontacts(MAXSPECIES,MAXSITES,2), writecontact = -1
+	logical :: done, calc3d = .FALSE., writeone = .FALSE., siteequiv = .FALSE.
 	real*8 :: a(3),b(3),c(3),mima(3),mimb(3),dac,dbc,total,avgmol,avgatom,tx,ty,tz,px,py,pz
 	real*8 :: delta = 0.25, sp2sitemaxdist(MAXSPECIES,MAXSITES), cp
 	integer, allocatable :: pattern(:,:,:), nmolcontacts(:), natomcontacts(:), pfreq(:), ptemp(:,:)
@@ -24,8 +24,8 @@
 	if (nargs.lt.6) then
 	  write(0,"(a120)") "Usage : bident4 <HISfile> <OUTfile> <sp1> <sp1 atom i> <sp1 atom j>"
 	  write(0,"(a80)") "    [-nframes n] [-discard n] [-site sp2 a b maxdist (e.g. H(a)-O(b))] [-maxpatterns n]"
-	  write(0,"(a80)") "    [-grid n] [-delta d] [-maxatomcontacts n] [-maxmolcontacts n] [-calc3d x1 x2 y1 y2] [-writeone]"
-	  write(0,"(a80)") "    [-equiv]"
+	  write(0,"(a80)") "    [-grid n] [-delta d] [-maxatomcontacts n] [-maxmolcontacts n]"
+	  write(0,"(a80)") "    [-calc3d x1 x2 y1 y2] [-writeone] [-writecontact sp]"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -85,11 +85,14 @@
 		axisusecom(sp1) = .false.
 	      end if
 	      calc3d = .TRUE.
-	    case ("-writeone")
-	      writeone = .TRUE.
 	    case ("-equiv")
 	      write(0,*) "Sites on central species will be treated as equivalent for single contacts."
 	      siteequiv = .TRUE.
+	    case ("-writeone")
+	      writeone = .TRUE.
+	    case ("-writecontact")
+	      n = n + 1; call getarg(n,temparg); read(temparg,"(I3)") writecontact 
+	      write(0,*) "Contact patterns around central will be printed per molecule, per frame", writecontact
             case ("-grid")
               n = n + 1; call getarg(n,temparg); read(temparg,"(i6)") grid
 	      write(0,*) "Grid points in each +/- direction : ", grid
@@ -128,10 +131,15 @@
 	end do
 
 	write(11,*) "Max number of contacts is ", maxval(nsp2sites)
+
 	allocate(centralbits(2**(maxval(nsp2sites)*2)))
 	allocate(sp1molcontacts(s_nmols(sp1),MAXMOLCONTACTS,3))
 	allocate(nsp1atomcontacts(s_nmols(sp1)))
 	allocate(nsp1molcontacts(s_nmols(sp1)))
+	if (writecontact.gt.0) then
+	  allocate(sp2molcontacts(s_nmols(writecontact),MAXMOLCONTACTS))
+	  allocate(nsp2molcontacts(s_nmols(writecontact)))
+	end if
 	allocate(pattern(MAXPATTERNS,MAXMOLCONTACTS,3))
 	allocate(ptemp(MAXMOLCONTACTS,3))
 	allocate(pfreq(MAXPATTERNS))
@@ -175,6 +183,10 @@
 	nsp1atomcontacts = 0
 	nsp1molcontacts = 0
 	sp1molcontacts = 0
+	if (writecontact.gt.0) then
+	  nsp2molcontacts = 0
+	  sp2molcontacts = 0
+	end if
 
 	aoff1 = s_start(sp1)-1
 	do m1 = 1,s_nmols(sp1)
@@ -233,17 +245,37 @@
 
 	      end do
 
+ 
 	      ! Equivalency of sites in single and bifurcated contacts
 	      if (siteequiv) then
-		if (ncontacts.eq.1) then
-		  ! Single contact - use lower of the two possible bits
-		  if (closebit.gt.(2**(nsp2sites(sp2)-1))) closebit = closebit / (2**nsp2sites(sp2))
-		else
-		  ! Bidentate, bifurcated, or bridging interaction
-		  ! ???
-		end if
+	        if (ncontacts.eq.1) then
+	          ! Single contact - use lower of the two possible bits
+	          if (closebit.gt.(2**(nsp2sites(sp2)-1))) closebit = closebit / (2**nsp2sites(sp2))
+	        else if (ncontacts.eq.2) then
+	          ! Bidentate interactions need no adjustment
+		  done = .FALSE.
+		  do site = 0,nsp2sites(sp2)-2
+		    do site2 = site+1,nsp2sites(sp2)-1
+		      ! Bridging interactions are equivalent whichever way round they are... choose smaller number...
+		      if (closebit.eq.(2**(site)+2**(site2+nsp2sites(sp2)))) then
+			!write(0,*) "OLD,NEW",closebit,2**site2 + 2**(site+nsp2sites(sp2))
+			closebit = 2**site2 + 2**(site+nsp2sites(sp2))
+			done = .TRUE.
+			exit
+		      end if
+		      ! Bifurcated interactions can use the smaller of the two possible values as well
+		      if (closebit.eq.(2**(site+nsp2sites(sp2))+2**(site2+nsp2sites(sp2)))) then
+			!write(0,*) "BIFOLD,NEW",closebit,2**site2 + 2**site
+			closebit = 2**site + 2**site2
+			done = .TRUE.
+			exit
+		      end if
+		    end do
+		    if (done) exit
+		  end do
+	          ! ???
+	        end if
 	      end if
-
 
 	      ! Does this central molecule have any contacts with this outer molecule?
 	      if (ncontacts.gt.0) then
@@ -253,6 +285,12 @@
 	        sp1molcontacts(m1,nsp1molcontacts(m1),1) = sp2
 	        sp1molcontacts(m1,nsp1molcontacts(m1),2) = m2
 	        sp1molcontacts(m1,nsp1molcontacts(m1),3) = closebit
+	        ! Store contact info around central molecule
+		if (writecontact.eq.sp2) then
+		  nsp2molcontacts(m2) = nsp2molcontacts(m2)+1
+		  if (nsp2molcontacts(m2).gt.MAXMOLCONTACTS) stop "MAXMOLCONTACTS exceeded."
+	          sp2molcontacts(m2,nsp2molcontacts(m2)) = closebit
+		end if
 	      end if
 
 	      aoff2 = aoff2 + s_natoms(sp2)
@@ -261,11 +299,18 @@
 
 	  end do
 
-! 	  write(0,*) "Found ", nsp1molcontacts(m1), "for central molecule ", m1
+!	write(0,*) "Found ", nsp1molcontacts(m1), "for central molecule ", m1
 
 	  aoff1 = aoff1 + s_natoms(sp1)
 
 	end do
+
+	! Write out sp2 contact pattern
+	if (writecontact.gt.0) then
+	  do m2=1,s_nmols(writecontact)
+	    write(55,"(20i6)") m2,sp2molcontacts(m2,1:nsp2molcontacts(m2))
+	  end do
+	end if
 
 	! Enumerate data
 	do m1=1,s_nmols(sp1)
