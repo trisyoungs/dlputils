@@ -1,6 +1,5 @@
 !	** totalgr **
-!	Compute the static, neutron-weighted Faber-Ziman total structure factor S(Q)
-!	Changed 16 March 2009 - Added alternative binning, fixed some MPI bugs.
+!	Compute the static, neutron-weighted total radial distribution function
 !	Changed 13 February 2009 - Partitioning of elements into 'types' implemented
 
 	program totgr
@@ -21,13 +20,13 @@
 
 	! General variables
 	real*8, parameter :: pi = 3.14159265358979, ftpi = 4.188790205d0
-	character*80 :: hisfile,dlpoutfile,basename,resfile,namemap
+	character*80 :: hisfile,dlpoutfile,basename,resfile,namemap,headerfile
 	character*20 :: temp
 	integer :: i,j,k,baselen,bin,nframes,nargs,framestodo,nfftypes,alpha,beta
 	integer :: n, m, o, nbins, found, frameskip, sumfac, discard, framesdone
 	integer :: iargc, isuccess
 	real*8 :: binwidth,boxvolume,factor,weight,delta(3),dist,svol
-	logical :: success, writepartials = .FALSE., readmap = .FALSE.
+	logical :: success, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE.
 	real*8 :: rcut,magx,magy,magz,mag,numdensity, ipos(3), jpos(3)
 	real*8, allocatable :: partialgr(:,:,:),totalgr(:),weightedgr(:,:,:)
 
@@ -62,6 +61,7 @@
 	      case ("-skip"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
 	      case ("-partials"); writepartials = .TRUE.
 	      case ("-readmap"); readmap = .TRUE.; n = n + 1; call getarg(n,namemap)
+	      case ("-altheader"); altheader = .TRUE.; n = n + 1; call getarg(n,headerfile)
 	      case default
 		write(0,*) "Unrecognised command line argument:", temp
 	    end select
@@ -72,6 +72,22 @@
 	
 	! Open trajectory file
 	call openhis(hisfile,10)
+	if (readheader().EQ.-1) then
+	  if (altheader) then
+	    write(6,*) "Restarted trajectory:"
+	    close(dlpun_his)
+	    call openhis(headerfile,10)
+	    if (readheader().EQ.-1) then
+	      write(12,*) "Couldn't read header of alterhative history file."
+	      stop
+	    end if
+	    close(dlpun_his)
+	    call openhis(hisfile,10)
+	  else
+	    write(12,*) "Couldn't read header of history file."
+	    goto 999
+	  end if
+	end if
 
 	! CHeck imcon
 	if (imcon.gt.1) stop "This image convention not properly supported - fix me!"
@@ -94,13 +110,7 @@
 	open(unit=12,file=basename(1:baselen)//"grout",form="formatted",status="replace")
 	write(12,"(A,F6.3,A)") "Using binwidth of ",binwidth," Angstroms"
 	if (outinfo(dlpoutfile,1).EQ.-1) then
-	  write(12,*) "Problem with OUTPUT file."
-	  goto 999
-	end if
-	! Now, read in the history header so that we have cell() and also the atom names
-	if (readheader().EQ.-1) then
-	  write(12,*) "Couldn't read header of history file."
-	  goto 999
+	  stop "Problem with OUTPUT file."
 	end if
 
 	! Read in forcefield names, the related internal types, and the corresponding isotope/element symbols
@@ -157,7 +167,9 @@
 	    write(0,"(a,a,a)") "Atomtype ",atmname(n)," not listed in lengths.dat."
 	    stop
 	  else
+	    write(12,"(a,i6,a,a,a,i2,a,a)") "Atom ",n,", typename ",atmname(n)," matches entry ",found, " in lengths.dat : ",origtype(found)
 	    atmname(n) = newtype(found)
+	    write(12,"(a,a)") "...mapped to new name ",atmname(n)
 	  end if
 	  ! Now compare the name of the atom with those stored in 'typenames' to see if it's 'new'
 	  found = -1
@@ -255,13 +267,14 @@
 	if (nframes.LE.discard) goto 100	! Discard frames at beginning of trajectory if requested
 	if (mod(nframes,frameskip).ne.0) goto 100	! Frame skip interval
 
-	! Increment partial g(r)
-	do i=1,natms-1
+	! Increment partial G(r)s
+	do i=1,natms
 	  ipos(1) = xpos(i)
 	  ipos(2) = ypos(i)
 	  ipos(3) = zpos(i)
 	  alpha = typemap(i)
-	  do j=i+1,natms
+	  do j=1,natms
+	if (i.eq.j) cycle
 	    ! Calculate MIM position of j w.r.t. i
 	    call pbc(xpos(j),ypos(j),zpos(j),ipos(1),ipos(2),ipos(3),jpos(1),jpos(2),jpos(3))
 	    ! Get distance
@@ -271,7 +284,7 @@
 	    bin = dist / binwidth
 	    beta = typemap(j)
 	    partialgr(alpha,beta,bin) = partialgr(alpha,beta,bin) + 1.0
-	    if (alpha.ne.beta) partialgr(beta,alpha,bin) = partialgr(beta,alpha,bin) + 1.0
+	    !if (alpha.ne.beta) partialgr(beta,alpha,bin) = partialgr(beta,alpha,bin) + 1.0
 	  end do
 	end do
 
@@ -287,7 +300,7 @@
 
 	! Get average number density (average over all frames read, not only those used in calc)
 	numdensity = numdensity / nframes
-	write(0,*) "Average atomic number density = ",numdensity
+	write(0,*) "Average total atomic number density = ",numdensity
 
 	! Normalise partials from number density into proper RDFs
 	do alpha=1,ntypes
@@ -297,24 +310,27 @@
 	      partialgr(alpha,beta,n) = partialgr(alpha,beta,n) / (typepops(alpha) * framesdone)
 	    end do
 	    ! Normalisation w.r.t. number density of second species
-	    factor = numdensity * typefrac(beta) * ftpi
-	    if (alpha.eq.beta) factor = factor*2.0
+	    factor = typepops(beta) / (cell(1)*cell(5)*cell(9))
 	    do n=1,nbins
-	      svol = (n*binwidth)**3 - ((n-1)*binwidth)**3
+	      svol = ftpi * ((n*binwidth)**3 - ((n-1)*binwidth)**3)
 	      partialgr(alpha,beta,n) = partialgr(alpha,beta,n) / (factor*svol)
 	    end do
 	  end do
 	end do
 	write(0,*) "Finished normalisation."
 	  
-	! Sum into total S(Q)
+	! Sum into total g(r)
 	totalgr = 0.0d0
 	do alpha=1,ntypes
 	  do beta=1,ntypes
 	    ! Weight factor attributable to scattering length and fractional population
-	    weight = typefrac(alpha)*isoscatter(uniqueiso(alpha))*typefrac(beta)*isoscatter(uniqueiso(beta))
+	    !weight = typefrac(alpha)*isoscatter(uniqueiso(alpha))*typefrac(beta)*isoscatter(uniqueiso(beta))
 	    ! Additional weighting from partitioning of elements into 'sub-types'
-	    weight = weight / sqrt((typefrac(alpha)/isofrac(uniqueiso(alpha)))*(typefrac(beta)/isofrac(uniqueiso(beta))))
+	    !weight = weight / sqrt((typefrac(alpha)/isofrac(uniqueiso(alpha)))*(typefrac(beta)/isofrac(uniqueiso(beta))))
+
+	    ! New weighting 
+	    weight = isoscatter(uniqueiso(alpha))*isoscatter(uniqueiso(beta))
+	    !weight = 1.0
 	    ! Apply weighting to individual partials
 	    do n=1,nbins
 	      weightedgr(alpha,beta,n) = weight * (partialgr(alpha,beta,n) - 1.0)

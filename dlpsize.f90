@@ -37,7 +37,7 @@
 	!if (MOD(nframes,100).EQ.0) write(0,*) nframes
 	goto 10
 15	close(15)  ! end of file..
-	write(0,"(A,I5,A,A)") "Successfully read ",nframes," from file."
+	write(0,"(A,I10,A,A)") "Successfully read ",nframes," from file."
 	  
 	stop "Finished count."
 

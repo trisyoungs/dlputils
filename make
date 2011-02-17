@@ -10,7 +10,8 @@ DEFAULTMPIFLAGS=""
 
 HOST=`hostname`
 INSTALL=false
-OPTFLAGS="-O3 -g "
+#OPTFLAGS="-O3 -g "
+OPTFLAGS="-CB -O0 -g "
 for arg in "$*"  # Doesn't work properly if "$*" isn't quoted.
 do
   if [ "$arg" = "install" ]; then
