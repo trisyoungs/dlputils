@@ -9,10 +9,10 @@
 	character*80 :: hisfile,dlpoutfile,basename,resfile
 	character*20 :: temp
 	integer :: status,  nargs, success, baselen, npairs
-	integer :: nbins,aoff1,aoff2,n,s1,s2,bin,nframes,numadded,sp,atom1(maxpairs),atom2(maxpairs)
+	integer :: nbins,aoff1,aoff2,n,s1,s2,bin,nframes,sp,atom1(maxpairs),atom2(maxpairs)
 	integer :: iargc,p,framestodo, framestoskip = 0
 	logical :: intra = .false., samemol = .false.
-	real*8 :: r1(3), r2(3), r2min(3), r12(3), dist, binwidth, integral
+	real*8 :: r1(3), r2(3), r2min(3), r12(3), dist, binwidth, integral, numadded
 	real*8, allocatable :: hist(:,:), rdf(:,:), sumhist(:,:), norm(:)
 
 	binwidth=0.01   ! In Angstroms
@@ -78,7 +78,7 @@
 	! XXXX Main RDF routine....
 	! XXXX
 	! Set up the vars...
-	numadded = 0
+	numadded = 0.0
 100	nframes=0
 101	success=readframe()
 	if (success.EQ.1) goto 120  ! End of file encountered....
@@ -127,7 +127,7 @@
   
 	      bin = int(dist * (1.0/binwidth))+1
 	      hist(p,bin) = hist(p,bin)+1
-	      numadded = numadded+1
+	      numadded = numadded+1.0
   
 	      aoff2 = aoff2 + s_natoms(sp)
 	    end do
@@ -163,8 +163,8 @@
 800	write(0,*) "End of unformatted HISTORY file found."
 
 801	write(0,*) ""
-	write(0,"(a,i10,a,i10)") "Total numadded = ",numadded,", per frame = ",numadded/nframes
-	write(0,"(a,i10)") "Total numadded per pair ",numadded / npairs
+	write(0,"(a,e12.5,a,e12.5)") "Total numadded = ",numadded,", per frame = ",numadded/nframes
+	write(0,"(a,e12.5)") "Total numadded per pair ",numadded / npairs
 
 	! Normalise data
 	do n=1,nbins

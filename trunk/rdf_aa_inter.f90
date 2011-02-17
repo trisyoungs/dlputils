@@ -9,10 +9,10 @@
 	character*80 :: hisfile,dlpoutfile,basename,resfile
 	character*20 :: temp
 	integer :: status,  nargs, success, baselen, npairs
-	integer :: nbins,aoff1,aoff2,n,s1,s2,bin,nframes,numadded,sp1,sp2,atom1(maxpairs),atom2(maxpairs)
-	integer :: iargc,p,framestodo
+	integer :: nbins,aoff1,aoff2,n,s1,s2,bin,nframes,sp1,sp2,atom1(maxpairs),atom2(maxpairs)
+	integer :: iargc,p,framestodo,framestoskip=0
 	logical :: nonorm = .FALSE.
-	real*8 :: r1(3), r2(3), r2min(3), r12(3), dist, binwidth, norm, integral
+	real*8 :: r1(3), r2(3), r2min(3), r12(3), dist, binwidth, norm, integral, dumpdist = -1.0, numadded
 	real*8, allocatable :: hist(:,:), rdf(:,:), sumhist(:,:)
 
 	binwidth=0.01   ! In Angstroms
@@ -22,7 +22,7 @@
 	npairs = 0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : rdf_aa_inter <HIS file> <OUT file> [-sp1 n] [-sp2 n] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-nonorm]"
+	if (nargs.lt.5) stop "Usage : rdf_aa_inter <HIS file> <OUT file> [-sp1 n] [-sp2 n] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-nonorm] [-dump <dist>]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	n = 2
@@ -36,6 +36,8 @@
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp2
 	    case ("-frames") 
 	      n = n + 1; call getarg(n,temp); read(temp,"(I5)") framestodo
+	    case ("-skip") 
+	      n = n + 1; call getarg(n,temp); read(temp,"(I5)") framestoskip
 	    case ("-pair")
 	      npairs = npairs + 1
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") atom1(npairs)
@@ -43,6 +45,9 @@
             case ("-nonorm")
               write(0,"(A)") "RDFs will not be normalised."
 	      nonorm = .TRUE.
+            case ("-dump")
+	      n = n + 1; call getarg(n,temp); read(temp,"(f12.5)") dumpdist
+              write(0,"(A)") "Dump contacts with distance less than", dumpdist
 	  end select
 	end do
 	     
@@ -73,11 +78,15 @@
 	! XXXX Main RDF routine....
 	! XXXX
 	! Set up the vars...
-	numadded = 0
+	numadded = 0.0
 100	nframes=0
 101	success=readframe()
 	if (success.EQ.1) goto 120  ! End of file encountered....
 	if (success.EQ.-1) goto 799  ! File error....
+	if (framestoskip.gt.0) then
+	  framestoskip = framestoskip -1
+	  goto 101
+	end if
 	nframes=nframes+1
 	if (mod(nframes,100).EQ.0) write(0,*) nframes
 	
@@ -105,12 +114,13 @@
 	      r12 = r2min - r1
 	      dist = sqrt( r12(1)*r12(1) + r12(2)*r12(2) + r12(3)*r12(3) )
   
+	      if (dist.lt.dumpdist) write(66,*) aoff1+atom1(p)-1, aoff2+atom2(p)-1, dist
 	      bin = int(dist * (1.0/binwidth))+1
 	      hist(p,bin) = hist(p,bin)+1
 
 	    end do
   
-	    numadded = numadded+1
+	    numadded = numadded+1.0
 	    aoff2 = aoff2 + s_natoms(sp2)
 	  end do
 
@@ -143,8 +153,8 @@
 
 801	write(0,*) ""
 	write(0,"(a,i6)") "Total frames used = ",nframes
-	write(0,"(a,i10,a,i10)") "Total numadded = ",numadded,", per frame = ",numadded/nframes
-	write(0,"(a,i10)") "Total numadded per pair ",numadded / npairs
+	write(0,"(a,e12.5,a,e12.5)") "Total numadded = ",numadded,", per frame = ",numadded/nframes
+	write(0,"(a,e12.5)") "Total numadded per pair ",numadded / npairs
 
 	! Normalise data
 	do n=1,nbins
