@@ -8,7 +8,7 @@
 	character*80 :: files(100),outfile,arg
 	integer :: nargs,n,success,nframes,totframes
 	integer :: iargc, nfiles = 0
-	logical :: failed_header, skipfirst = .FALSE., skipfirstfirst = .FALSE.
+	logical :: failed_header, skipfirst = .FALSE., skipfirstfirst = .FALSE., skip
 
 	nargs = iargc()
 	if (nargs.lt.2) then
@@ -64,20 +64,23 @@
 	    end if
 	  end if
 
+	  ! Skip first frame of file?
+	  skip = .FALSE.
+	  if (skipfirst) then
+	    ! Skip first frame of *first* file?
+	    if ((n.ne.1) .or. ((n.eq.1).and.skipfirstfirst)) skip = .TRUE.
+	  end if
+	  if (skip) write(6,"(a,i3)") "Skipping first frame of file ", n
+
 10	  success = readframe()
 	  if ((nframes.EQ.0).AND.(failed_header).AND.(success.NE.0)) then
 	    write(6,"(A,A)") "Failed to read header *and* first frame of file ",files(n)
 	    stop "Will quit."
 	  end if
 	  if (success.NE.0) goto 15
-
-	  ! Skip first frame?
-	  if ((nframes.eq.0).and.skipfirst) then
-	    ! Skip first frame of *first* file?
-	    if ((n.ne.1) .or. ((n.eq.1).and.skipfirstfirst)) then
-	      write(6,"(a,i3)") "Skipping first frame of file ", n
-	      continue
-	    end if
+	  if (skip) then
+	    skip = .FALSE.
+	    goto 10
 	  end if
 
 	  ! Increase counters
