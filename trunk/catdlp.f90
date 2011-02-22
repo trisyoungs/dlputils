@@ -5,17 +5,18 @@
 	program catdlp
 	use dlprw
 	implicit none
-	character*80 :: files(100),outfile,arg
+	character*80 :: files(100),outfile,arg,headerfile
 	integer :: nargs,n,success,nframes,totframes
 	integer :: iargc, nfiles = 0
-	logical :: failed_header, skipfirst = .FALSE., skipfirstfirst = .FALSE., skip
+	logical :: failed_header, skipfirst = .FALSE., skipfirstfirst = .FALSE., skip, altheader = .FALSE.
 
 	nargs = iargc()
 	if (nargs.lt.2) then
 	  write(0,*) " Usage: catdlp <file1> <file2> .. <fileN> <target>"
-	  write(0,*) "          -skipfirst  -skipotherfirst"
+	  write(0,*) "          -skipfirst  -skipotherfirst -header <file>"
 	end if
-	do n=1,nargs
+	n = 1
+	do 
 	  call getarg(n,arg)
 	  select case (arg)
 	    case ("-skipfirst")
@@ -24,11 +25,17 @@
 	    case ("-skipotherfirst")
 	      skipfirst = .TRUE.
 	      skipfirstfirst = .FALSE.
+	    case ("-header")
+	      altheader = .TRUE.
+	      n = n + 1
+	      call getarg(n,headerfile)
 	    case default
 	      nfiles = nfiles + 1
 	      files(nfiles) = arg
 	      write(6,"(a,i3,a,a80)") "File ", nfiles, " is : ", files(nfiles)
 	  end select
+	  if (n.eq.nargs) exit
+	  n = n + 1
 	end do
 	! Last specified filename is output filename
 	outfile = files(nfiles)
@@ -48,7 +55,12 @@
           success = readheader()
 	  if (n.EQ.1) then
 	    ! First file, so write the header of the new file
-	    if (success.EQ.-1) stop "Couldn't read header of first file!"
+	    if (success.EQ.-1) then
+	      if (.not.altheader) stop "Couldn't read header of first file!"
+	      call openhis(headerfile,15)
+	      if (readheader().eq.-1) stop "Failed to read header from first file *and* alternate file"
+	      call openhis(files(n),15)
+	    end if
 	    write(6,*) "Writing header of new file..."
 	    if (writeheader(outfile,14,0).EQ.-1) stop "Failed to write new history file header!"
 	  else
