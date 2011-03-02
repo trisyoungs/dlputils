@@ -14,6 +14,7 @@
 	if (nargs.lt.2) then
 	  write(0,*) " Usage: catdlp <file1> <file2> .. <fileN> <target>"
 	  write(0,*) "          -skipfirst  -skipotherfirst -header <file>"
+	  stop
 	end if
 	n = 1
 	do 
@@ -42,7 +43,11 @@
 	nfiles = nfiles - 1
 	if (nfiles.le.0) stop "Error: No input files were given." 
 	write(6,*) "Output file will be : ", outfile
+	! Test open the output file....
+	open(unit=20, file=outfile, status='old', err=5)
+	stop "Will not overwrite existing output file."
 
+5	close(20)
 	write(6,*) "Concatenating..."
 
 	totframes = 0
