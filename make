@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # Custom options - modify these for 'unknown' machine builds
-DEFAULTFC=gfortran
-DEFAULTFFLAGS=" -O2 -ffree-line-length-none "
+DEFAULTFC=ifort
+#DEFAULTFFLAGS=" -O2 -ffree-line-length-none "
+DEFAULTFFLAGS=" -O2 "
 DEFAULTMPIFC=gfortran
 DEFAULTMPIFLAGS=""
 
