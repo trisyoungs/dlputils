@@ -16,7 +16,7 @@
 	integer :: iargc
 	integer :: t_start, t_finish, err_mpi, id_mpi, nproc_mpi
 	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:)
-	real*8, allocatable :: temp_total(:), temp_intra(:), temppart_total(:,:), temppart_intra(:,:)
+	real*8, allocatable :: temp_total(:), temp_intra(:), temppart_total(:,:), temppart_intra(:,:), tempaccum(:)
 	real*8 :: deltat, totmass, dist, vec(3)
 	real*8 :: xx, yy, zz, xy, xz, yz
 	logical :: altheader = .false.
@@ -115,6 +115,7 @@
 	  allocate (temp_intra(0:length-1))
 	  allocate (temppart_total(6,0:length-1))
 	  allocate (temppart_intra(6,0:length-1))
+	  allocate (tempaccum(0:length))
 	end if
 
 	! Calculate atom range for node
@@ -261,11 +262,12 @@
 	  ! Write intermediate results file?
 	  if (mod(nframes-length,100).EQ.0) then
 
-	    ! Gather acf data into temporary arrays on master
+	    ! Reduce acf data into temporary arrays on master
 	    call MPI_Reduce(acf_total,temp_total, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 	    call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 	    call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 	    call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(accum,tempaccum, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 
 	    if (MASTER) then
 	
@@ -279,9 +281,9 @@
 	      write(22,'("# SP,INTVL=",3i5)') sp
 	      write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
 	      do n=0,length-1
-	        write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/accum(n), (temppart_total(m,n)/accum(n),m=1,6), accum(n)
-	        write(21,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/accum(n), (temppart_intra(m,n)/accum(n),m=1,6), accum(n)
-	        write(22,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/accum(n), ((temppart_total(m,n)-temppart_intra(m,n))/accum(n),m=1,6), accum(n)
+	        write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/tempaccum(n), (temppart_total(m,n)/tempaccum(n),m=1,6), tempaccum(n)
+	        write(21,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/tempaccum(n), (temppart_intra(m,n)/tempaccum(n),m=1,6), tempaccum(n)
+	        write(22,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/tempaccum(n), ((temppart_total(m,n)-temppart_intra(m,n))/tempaccum(n),m=1,6), tempaccum(n)
 	      end do
 	      close(20)
 	      close(21)
@@ -309,34 +311,27 @@
 	call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 	call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 	call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(accum,tempaccum, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 	call MPI_Finalize(err_mpi)
 
-	! Write total ACF
+	! Write final functions
 	open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".total",form="formatted",status="replace")
 	write(20,'("# SP,INTVL=",3i5)') sp
 	write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	open(unit=21,file=basename(1:baselen)//namepart//CHAR(48+sp)//".intra",form="formatted",status="replace")
+	write(21,'("# SP,INTVL=",3i5)') sp
+	write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	open(unit=22,file=basename(1:baselen)//namepart//CHAR(48+sp)//".inter",form="formatted",status="replace")
+	write(22,'("# SP,INTVL=",3i5)') sp
+	write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
 	do n=0,length-1
-	  write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/accum(n), (temppart_total(m,n)/accum(n),m=1,6), accum(n)
+	  write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/tempaccum(n), (temppart_total(m,n)/tempaccum(n),m=1,6), tempaccum(n)
+	  write(21,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/tempaccum(n), (temppart_intra(m,n)/tempaccum(n),m=1,6), tempaccum(n)
+	  write(22,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/tempaccum(n), ((temppart_total(m,n)-temppart_intra(m,n))/tempaccum(n),m=1,6), tempaccum(n)
 	end do
 	close(20)
-
-	! Write intramolecular ACF
-	open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".intra",form="formatted",status="replace")
-	write(20,'("# SP,INTVL=",3i5)') sp
-	write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	do n=0,length-1
-	  write(20,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/accum(n), (temppart_intra(m,n)/accum(n),m=1,6), accum(n)
-	end do
-	close(20)
-
-	! Write intermolecular ACF
-	open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".inter",form="formatted",status="replace")
-	write(20,'("# SP,INTVL=",3i5)') sp
-	write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	do n=0,length-1
-	  write(20,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/accum(n), ((temppart_total(m,n)-temppart_intra(m,n))/accum(n),m=1,6), accum(n)
-	end do
-	close(20)
+	close(21)
+	close(22)
       
 	write(0,*) "Finished."
 999	close(10)
