@@ -21,13 +21,11 @@
 
 !	From the first of these files, determine the number of data points we need to read in...
 	open(unit=15,file=files(1),form='formatted',status='old')
-	! Check for the presence of a header...
-	read(15,"(A80)") discard
 	count = 0
 	if (discard(1:4).NE." Bin") rewind(15)
-	! Read through the data until we reach the enf of the file...
-10	read(15,"(F6.3,3x,F12.8)",end=20,err=20) x,x
-	count = count + 1
+	! Read through the data until we reach the end of the file...
+10	if (.not.readline(15)) goto 20
+	if (nargsparsed.ne.0) count = count + 1
 	goto 10
 20	close(15)
 

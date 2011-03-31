@@ -1,23 +1,24 @@
 !	** acf **
 !	Calculate the specified autocorrelation tensor, optionally over a restricted set of molecules
 
-	program acfunc
+	program acf
 	use dlprw; use utility
 	implicit none
-	integer, parameter :: VELOCITY=1, MOLDIPOLE=2, SYSDIPOLE=3
+	integer, parameter :: VELOCITY=1, DIPOLE=2
 	character*80 :: hisfile1, dlpoutfile,basename,resfile,headerfile
 	character*20 :: temp
-	integer :: i,j,n1,n2,m,nframes,success,nargs,baselen,sp,spatom, pos, lastpos
+	character*4 :: namepart
+	integer :: i,j,n1,n2,m,nframes,success,nargs,baselen,sp,spatom, pos, t0, tn, n
 	integer :: count1, bin, n1finish, mfinish, length, acftype = 0, framestodo = -1
 	integer :: iargc
-	real*8, allocatable :: acf(:), accum(:), acfpart(:,:), qx(:,:), qy(:,:), qz(:,:)
+	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:)
 	real*8 :: tx,ty,tz,scalar,deltat, totmass, dist, vec(3)
 	real*8 :: xx, yy, zz, xy, xz, yz
 	logical :: altheader = .false.
 
 	nargs = iargc()
 	if (nargs.ne.8) then
-	  write(0,"(a)") "Usage : acf <HISfile> <DLP OUTPUTfile> <headerfile [0 for none]> <functype=velocity,moldipole,sysdipole> <delta t> <length> <species> <nframes>"
+	  write(0,"(a)") "Usage : acf <HISfile> <DLP OUTPUTfile> <headerfile [0 for none]> <functype=velocity,dipole> <delta t> <length> <species> <nframes>"
 	  stop
 	end if
 	call getarg(1,hisfile1)
@@ -29,8 +30,7 @@
 	end if
 	call getarg(4,temp)
 	if (temp.eq."velocity") acftype = VELOCITY
-	if (temp.eq."moldipole") acftype = MOLDIPOLE
-	if (temp.eq."sysdipole") acftype = SYSDIPOLE
+	if (temp.eq."dipole") acftype = DIPOLE
 	if (acftype.eq.0) stop "Invalid correlation function requested - options are 'velocity' or 'dipole'."
 	call getarg(5,temp); read(temp,"(F10.6)") deltat
 	call getarg(6,temp); read(temp,"(I6)") length
@@ -38,25 +38,41 @@
 	call getarg(8,temp); read(temp,"(I6)") framestodo
 	
 	if (acftype.eq.VELOCITY) write(0,*) "Calculating velocity autocorrelation function."
-	if (acftype.eq.MOLDIPOLE) write(0,*) "Calculating molecular dipole autocorrelation function."
-	if (acftype.eq.SYSDIPOLE) write(0,*) "Calculating system dipole autocorrelation function."
+	if (acftype.eq.DIPOLE) write(0,*) "Calculating molecular dipole autocorrelation function."
 	if (outinfo(dlpoutfile,1).EQ.-1) goto 798
 
-	allocate (acf(0:length))
-	allocate (acfpart(6,0:length))
-	allocate (accum(0:length))
-	if (acftype.eq.SYSDIPOLE) then
-	  allocate (qx(length,1))
-	  allocate (qy(length,1))
-	  allocate (qz(length,1))
+	! Ascertain length of basename....
+	baselen=-1
+	do i=80,1,-1
+	  if (hisfile1(i:i).eq.".") then
+	    baselen=i
+	    goto 50
+	  endif
+	end do
+50     if (baselen.EQ.-1) then
+	  basename="acfresults."
+	  baselen=11
 	else
-	  allocate (qx(length,s_nmols(sp)))
-	  allocate (qy(length,s_nmols(sp)))
-	  allocate (qz(length,s_nmols(sp)))
-	end if
+	  basename=hisfile1(1:baselen)
+	endif
 
-	acf = 0.0
-	acfpart = 0.0
+	! Get part of output filename
+	if (acftype.eq.VELOCITY) namepart = "vacf"
+	if (acftype.eq.DIPOLE) namepart = "dacf"
+
+	allocate (acf_total(0:length-1))
+	allocate (acf_intra(0:length-1))
+	allocate (acfpart_total(6,0:length-1))
+	allocate (acfpart_intra(6,0:length-1))
+	allocate (accum(0:length))
+	allocate (qx(length,s_nmols(sp)))
+	allocate (qy(length,s_nmols(sp)))
+	allocate (qz(length,s_nmols(sp)))
+
+	acf_total = 0.0
+	acf_intra = 0.0
+	acfpart_intra = 0.0
+	acfpart_total = 0.0
 	accum = 0.0
 	qx = 0.0
 	qy = 0.0
@@ -65,10 +81,10 @@
 	! To reduce memory overhead only store 'length' velocities in memory at any one time
 60	write(0,*) "Reading history file...."
 	if (altheader) then
-          call openhis(headerfile,10)
-          if (readheader().EQ.-1) goto 799
-          close(dlpun_his)
-          call openhis(hisfile1,10)
+	  call openhis(headerfile,10)
+	  if (readheader().EQ.-1) goto 799
+	  close(dlpun_his)
+	  call openhis(hisfile1,10)
 	else 
 	  call openhis(hisfile1,10)
 	  if (readheader().EQ.-1) goto 799
@@ -76,17 +92,13 @@
 
 100	nframes=0
 	pos=0
-	lastpos=-1
 101	success=readframe()
 	if (success.ne.0) goto 799  ! End of file encountered, or file error....
 
+	! Calculate array position
+	pos=mod(nframes,length)+1
 	nframes = nframes+1
 	if (mod(nframes,100).EQ.0) write(0,"(i)") nframes
-
-	! Calculate array position and (wrapped) last position
-	pos = mod(nframes-1,length) + 1
-	lastpos = pos - 1
-	if (lastpos.eq.0) lastpos = length
 
 	! Calculate quantities for correlation function
 	qx(pos,:) = 0.0
@@ -109,7 +121,7 @@
 	    qz(pos,m) = qz(pos,m) / totmass
 	    i = i + s_natoms(sp)
 	  end do
-	else if (acftype.eq.MOLDIPOLE) then
+	else if (acftype.eq.DIPOLE) then
 	  ! Take all atom positions relative to first atom in molecule
 	  i = s_start(sp)
 	  do m=1,s_nmols(sp)
@@ -122,70 +134,93 @@
 	    end do
 	    i = i + s_natoms(sp)
 	  end do
-	else if (acftype.eq.SYSDIPOLE) then
-	  ! Take all atom positions relative to first atom in molecule
-	  i = s_start(sp)
-	  do m=1,s_nmols(sp)
-	    do j=i,i+s_natoms(sp)-1
-	      ! Get mim position of this atom with first
-	      call pbc(xpos(j),ypos(j),zpos(j),xpos(i),ypos(i),zpos(i),vec(1),vec(2),vec(3))
-	      qx(pos,1) = qx(pos,1) + charge(j)*vec(1)
-	      qy(pos,1) = qy(pos,1) + charge(j)*vec(2)
-	      qz(pos,1) = qz(pos,1) + charge(j)*vec(3)
-	    end do
-	    i = i + s_natoms(sp)
-	  end do
+	  ! Convert dipole from q.angstrom to Debye (C.m)
+	  qx(pos,:) = qx(pos,:) * 4.80321
+	  qy(pos,:) = qy(pos,:) * 4.80321
+	  qz(pos,:) = qz(pos,:) * 4.80321
 	endif
 
-	! Accumulate VACF.
-	! Loop over target species/atoms and calculate only the consecutive parts of the VACF
-	! Do up to 'length' velocities in succession, starting from arbitrary point 'pos' in the array
-	!write(0,*) "Calculating VACF - current frame = ",nframes, "pos = ",pos
-	mfinish = s_nmols(sp)
-	if (acftype.eq.SYSDIPOLE) mfinish = 1
-	do m=1,mfinish
+	! Accumulate ACF.
 
-	  !write(0,"(i6,a,i6)") m,"/",s_nmols(sp)
-	  ! 'pos' contains the position of the most recently stored velocities.
-	  ! Loop over all other stored velocities, calculating scalars with this point.
+	if (nframes.ge.length) then
+	  ! write(0,*) "Accumulating"
 
-	  ! Step through the velocities *backwards* from the last stored values
-	  n1finish = max(pos-length+1,pos-nframes+1)
-	  do n1=pos,n1finish,-1
+	  ! Variables:
+	  ! 'n' will represent the frame distance
+	  ! 'pos' contains the array position of the last added point
+	  ! 't0' is the t=0 point, with which all scalars are calcd
+	  ! 'tn' is the nth point in time
 
-	    ! 'Fold' n1 into the region 1-length
-	    n2 = n1
-	    if (n2.lt.1) n2 = n2 + length
+	  t0 = pos+1
+	  if (t0.gt.length) t0=t0-length
 
-	    ! Calculate ACF to time t0(n1) -> t1(n2)
-	    ! Calculate products
-	    xx = qx(n2,m)*qx(pos,m)
-	    yy = qy(n2,m)*qy(pos,m)
-	    zz = qz(n2,m)*qz(pos,m)
-	    xy = qx(n2,m)*qy(pos,m) + qy(n2,m)*qx(pos,m)
-	    xz = qx(n2,m)*qz(pos,m) + qz(n2,m)*qx(pos,m)
-	    yz = qy(n2,m)*qz(pos,m) + qz(n2,m)*qy(pos,m)
+	  do n=0,length-1
 
-	    ! Calculate full VACF
-	    scalar = xx + yy + zz
+	    tn = t0+n
+	    if (tn.gt.length) tn=tn-length
 
-	    ! Calculate bin - 'pos' is the last position read, so 'n1' *must* be less than pos when we calculate the bin
-	    bin = pos - n2
-	    if (bin.lt.0) bin = bin + length
-	    !if (bin.eq.0) write(55,"(a,3i4,a,i3,a,4f12.4)") "Acc ",pos,n2,m, "bin ",bin, " scalar ",scalar,comvx(pos,i),comvy(pos,i),comvz(pos,i)
-	    acf(bin) = acf(bin) + scalar
-	    accum(bin) = accum(bin) + 1.0
-	    ! Calculate partial VACFs
-	    acfpart(1,bin) = acfpart(1,bin) + xx
-	    acfpart(2,bin) = acfpart(2,bin) + yy
-	    acfpart(3,bin) = acfpart(3,bin) + zz
-	    acfpart(4,bin) = acfpart(4,bin) + xy
-	    acfpart(5,bin) = acfpart(5,bin) + xz
-	    acfpart(6,bin) = acfpart(6,bin) + yz
+	    ! Calculate total scalar products
+
+	    xx = sum(qx(t0,:))*sum(qx(tn,:))
+	    yy = sum(qy(t0,:))*sum(qy(tn,:))
+	    zz = sum(qz(t0,:))*sum(qz(tn,:))
+	    xy = sum(qx(t0,:))*sum(qy(tn,:)) + sum(qy(t0,:))*sum(qx(tn,:))
+	    xz = sum(qx(t0,:))*sum(qz(tn,:)) + sum(qz(t0,:))*sum(qx(tn,:))
+	    yz = sum(qy(t0,:))*sum(qz(tn,:)) + sum(qz(t0,:))*sum(qy(tn,:))
+
+	    accum(n) = accum(n) + 1.0
+
+	    acf_total(n) = acf_total(n) + xx + yy + zz
+	    ! Accumulate partial ACFs
+	    acfpart_total(1,n) = acfpart_total(1,n) + xx
+	    acfpart_total(2,n) = acfpart_total(2,n) + yy
+	    acfpart_total(3,n) = acfpart_total(3,n) + zz
+	    acfpart_total(4,n) = acfpart_total(4,n) + xy
+	    acfpart_total(5,n) = acfpart_total(5,n) + xz
+	    acfpart_total(6,n) = acfpart_total(6,n) + yz
+
+	    ! Calculate molecular products
+
+	    xx = sum(qx(t0,:)*qx(tn,:))
+	    yy = sum(qy(t0,:)*qy(tn,:))
+	    zz = sum(qz(t0,:)*qz(tn,:))
+	    xy = sum(qx(t0,:)*qy(tn,:)) + sum(qy(t0,:)*qx(tn,:))
+	    xz = sum(qx(t0,:)*qz(tn,:)) + sum(qz(t0,:)*qx(tn,:))
+	    yz = sum(qy(t0,:)*qz(tn,:)) + sum(qz(t0,:)*qy(tn,:))
+
+	    acf_intra(n) = acf_intra(n) + xx + yy + zz
+	    ! Accumulate partial VACFs
+	    acfpart_intra(1,n) = acfpart_intra(1,n) + xx
+	    acfpart_intra(2,n) = acfpart_intra(2,n) + yy
+	    acfpart_intra(3,n) = acfpart_intra(3,n) + zz
+	    acfpart_intra(4,n) = acfpart_intra(4,n) + xy
+	    acfpart_intra(5,n) = acfpart_intra(5,n) + xz
+	    acfpart_intra(6,n) = acfpart_intra(6,n) + yz
 
 	  end do
 
-	end do
+	  ! Write intermediate results file?
+	  if (mod(nframes-length,100).EQ.0) then
+	    open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".total_temp",form="formatted",status="replace")
+	    write(20,'("# SP,INTVL=",3i5)') sp
+	    write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	    open(unit=21,file=basename(1:baselen)//namepart//CHAR(48+sp)//".intra_temp",form="formatted",status="replace")
+	    write(21,'("# SP,INTVL=",3i5)') sp
+	    write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	    open(unit=22,file=basename(1:baselen)//namepart//CHAR(48+sp)//".inter_temp",form="formatted",status="replace")
+	    write(22,'("# SP,INTVL=",3i5)') sp
+	    write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	    do n=0,length-1
+	      write(20,"(9f14.6,e14.6)") n*deltat, acf_total(n)/accum(n), (acfpart_total(m,n)/accum(n),m=1,6), accum(n)
+	      write(21,"(9f14.6,e14.6)") n*deltat, acf_intra(n)/accum(n), (acfpart_intra(m,n)/accum(n),m=1,6), accum(n)
+	      write(22,"(9f14.6,e14.6)") n*deltat, (acf_total(n)-acf_intra(n))/accum(n), ((acfpart_total(m,n)-acfpart_intra(m,n))/accum(n),m=1,6), accum(n)
+	    end do
+	    close(20)
+	    close(21)
+	    close(22)
+	  end if
+
+	endif
 
 	if (nframes.eq.framestodo) goto 801
 	goto 101
@@ -198,35 +233,34 @@
 800	write(0,*) "Framestodo was fulfilled."
 801	write(0,*) ""
 
-	! Ascertain length of basename....
-	baselen=-1
-	do i=80,1,-1
-	  if (hisfile1(i:i).eq.".") then
-	    baselen=i
-	    goto 802
-	  endif
-	end do
-802     if (baselen.EQ.-1) then
-	  basename="vacresults."
-	  baselen=11
-	else
-	  basename=hisfile1(1:baselen)
-	endif
-
-	! Open output file
-	if (acftype.eq.VELOCITY) resfile=basename(1:baselen)//"vacf"//CHAR(48+sp)
-	if (acftype.eq.MOLDIPOLE) resfile=basename(1:baselen)//"mdacf"//CHAR(48+sp)
-	if (acftype.eq.SYSDIPOLE) resfile=basename(1:baselen)//"sdacf"//CHAR(48+sp)
-	open(unit=20,file=resfile,form="formatted",status="replace")
-
-	! Write the data...
-	write(20,"(9a14)") "#t","acf","xx","yy","zz","xy","xz","yz","acc"
-	do n1=0,length-1
-	  write(20,"(8f14.6, e20.6)") n1*deltat, acf(n1) / accum(n1), (acfpart(m,n1) / accum(n1),m=1,6), accum(n1)
+	! Write total ACF
+	open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".total",form="formatted",status="replace")
+	write(20,'("# SP,INTVL=",3i5)') sp
+	write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	do n=0,length-1
+	  write(20,"(9f14.6,e14.6)") n*deltat, acf_total(n)/accum(n), (acfpart_total(m,n)/accum(n),m=1,6), accum(n)
 	end do
 	close(20)
 
+	! Write intramolecular ACF
+	open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".intra",form="formatted",status="replace")
+	write(20,'("# SP,INTVL=",3i5)') sp
+	write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	do n=0,length-1
+	  write(20,"(9f14.6,e14.6)") n*deltat, acf_intra(n)/accum(n), (acfpart_intra(m,n)/accum(n),m=1,6), accum(n)
+	end do
+	close(20)
+
+	! Write intermolecular ACF
+	open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".inter",form="formatted",status="replace")
+	write(20,'("# SP,INTVL=",3i5)') sp
+	write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	do n=0,length-1
+	  write(20,"(9f14.6,e14.6)") n*deltat, (acf_total(n)-acf_intra(n))/accum(n), ((acfpart_total(m,n)-acfpart_intra(m,n))/accum(n),m=1,6), accum(n)
+	end do
+	close(20)
+      
 	write(0,*) "Finished."
 999	close(10)
 	close(13)
-	end program acfunc
+	end program acf
