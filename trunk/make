@@ -4,15 +4,15 @@
 DEFAULTFC=ifort
 #DEFAULTFFLAGS=" -O2 -ffree-line-length-none "
 DEFAULTFFLAGS=" -O2 "
-DEFAULTMPIFC=gfortran
+DEFAULTMPIFC=mpif90
 DEFAULTMPIFLAGS=""
 
 # Build all dlputils, setting up for the host machines listed below
 
 HOST=`hostname`
 INSTALL=false
-#OPTFLAGS="-O3 -g "
-OPTFLAGS="-CB -O0 -g "
+OPTFLAGS="-O3 -g "
+#OPTFLAGS="-CB -O0 -g "
 for arg in "$*"  # Doesn't work properly if "$*" isn't quoted.
 do
   if [ "$arg" = "install" ]; then
