@@ -32,6 +32,9 @@ misc: $(MISC)
 sq : sq.f90
 	$(MPIFC) $(FFLAGS) -o $@ $< dlprw.o utility.o parse.o $(MPIFLAGS)
 
+acf : acf.f90
+	$(MPIFC) $(FFLAGS) -o $@ $< dlprw.o utility.o parse.o $(MPIFLAGS)
+
 sqtest : sqtest.f90
 	$(MPIFC) $(FFLAGS) -o $@ $< dlprw.o utility.o parse.o $(MPIFLAGS)
 

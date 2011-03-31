@@ -4,15 +4,20 @@
 	program acf
 	use dlprw; use utility
 	implicit none
+	include "mpif.h"
+
 	integer, parameter :: VELOCITY=1, DIPOLE=2
+	logical :: MASTER, SLAVE
 	character*80 :: hisfile1, dlpoutfile,basename,resfile,headerfile
 	character*20 :: temp
 	character*4 :: namepart
-	integer :: i,j,n1,n2,m,nframes,success,nargs,baselen,sp,spatom, pos, t0, tn, n
-	integer :: count1, bin, n1finish, mfinish, length, acftype = 0, framestodo = -1
+	integer :: i,j,n,m,nframes,success,nargs,baselen,sp,pos, t0, tn
+	integer :: length, acftype = 0, framestodo = -1
 	integer :: iargc
+	integer :: t_start, t_finish, err_mpi, id_mpi, nproc_mpi
 	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:)
-	real*8 :: tx,ty,tz,scalar,deltat, totmass, dist, vec(3)
+	real*8, allocatable :: temp_total(:), temp_intra(:), temppart_total(:,:), temppart_intra(:,:)
+	real*8 :: deltat, totmass, dist, vec(3)
 	real*8 :: xx, yy, zz, xy, xz, yz
 	logical :: altheader = .false.
 
@@ -77,8 +82,8 @@
 	qx = 0.0
 	qy = 0.0
 	qz = 0.0
-	
-	! To reduce memory overhead only store 'length' velocities in memory at any one time
+
+	! Check history file
 60	write(0,*) "Reading history file...."
 	if (altheader) then
 	  call openhis(headerfile,10)
@@ -90,15 +95,69 @@
 	  if (readheader().EQ.-1) goto 799
 	end if
 
-100	nframes=0
+	nframes=0
 	pos=0
-101	success=readframe()
-	if (success.ne.0) goto 799  ! End of file encountered, or file error....
+
+	! Initialise MPI and determine slave data
+	call MPI_Init(err_mpi)
+	call MPI_Comm_rank(MPI_COMM_WORLD,id_mpi,err_mpi)
+	call MPI_Comm_size(MPI_COMM_WORLD,nproc_mpi,err_mpi)
+
+	if ((nproc_mpi.le.1).or.(id_mpi.eq.0)) then
+	  MASTER = .true.; SLAVE = .false.
+	else
+	  MASTER = .false.; SLAVE = .true.
+	end if
+
+	! Allocate extra arrays for MASTER
+	if (MASTER) then
+	  allocate (temp_total(0:length-1))
+	  allocate (temp_intra(0:length-1))
+	  allocate (temppart_total(6,0:length-1))
+	  allocate (temppart_intra(6,0:length-1))
+	end if
+
+	! Calculate atom range for node
+	!m_start = id_mpi * (s_nmols(sp) / nproc_mpi) + 1
+	!m_finish = m_start + (s_nmols(sp) / nproc_mpi) - 1
+	!if (id_mpi+1.eq.nproc_mpi) m_finish = m_finish + mod(s_nmols(sp),s_nmols(sp)/nproc_mpi)
+	t_start = id_mpi * (length / nproc_mpi)
+	t_finish = t_start + (length / nproc_mpi) - 1
+	if (id_mpi+1.eq.nproc_mpi) t_finish = t_finish + mod(length,length/nproc_mpi)
+	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",nproc_mpi," processes"
+	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",s_nmols(sp)," molecules in the target species"
+	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",length," points in the correlation array"
+	!write(13+id_mpi,"(a,i2,a,i7,a,i7,a)") "Process ",id_mpi," calculating molecules ",m_start," to ",m_finish,"..."
+	write(13+id_mpi,"(a,i2,a,i7,a,i7,a)") "Process ",id_mpi," calculating intervals ",t_start," to ",t_finish,"..."
+
+101	if (MASTER) then
+	  success=readframe()
+	  if (success.ne.0) then
+	    call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	    goto 799  ! End of file encountered, or file error....
+	  end if
+	  ! Send 'continue' flag
+	  call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	else
+	  ! Slaves must wait for the 'continue' flag
+	  call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  if (i.eq.0) goto 799
+	end if
+
+	! Broadcast frame data
+	call MPI_BCast(xpos,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(ypos,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(zpos,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	! Send charge and mass data on frame 1
+	if (nframes.eq.1) then
+	  call MPI_BCast(charge,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(mass,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	end if
 
 	! Calculate array position
 	pos=mod(nframes,length)+1
 	nframes = nframes+1
-	if (mod(nframes,100).EQ.0) write(0,"(i)") nframes
+	if (MASTER.and.mod(nframes,100).EQ.0) write(0,"(i)") nframes
 
 	! Calculate quantities for correlation function
 	qx(pos,:) = 0.0
@@ -106,8 +165,8 @@
 	qz(pos,:) = 0.0
 	if (acftype.eq.VELOCITY) then
 	  call calc_com
-	  i = s_start(sp)
-	  do m=1,s_nmols(sp)
+	  i = s_start(sp)    !+ (m_start-1)*s_natoms(sp)
+	  do m=1, s_nmols(sp)     !m_start,m_finish
 	    totmass = 0.0
 	    do j=i,i+s_natoms(sp)-1
 	      totmass = totmass + mass(j)
@@ -123,8 +182,8 @@
 	  end do
 	else if (acftype.eq.DIPOLE) then
 	  ! Take all atom positions relative to first atom in molecule
-	  i = s_start(sp)
-	  do m=1,s_nmols(sp)
+	  i = s_start(sp)       !+ (m_start-1)*s_natoms(sp)
+	  do m=1,s_nmols(sp)     !m_start,m_finish
 	    do j=i,i+s_natoms(sp)-1
 	      ! Get mim position of this atom with first
 	      call pbc(xpos(j),ypos(j),zpos(j),xpos(i),ypos(i),zpos(i),vec(1),vec(2),vec(3))
@@ -154,7 +213,7 @@
 	  t0 = pos+1
 	  if (t0.gt.length) t0=t0-length
 
-	  do n=0,length-1
+	  do n=t_start, t_finish
 
 	    tn = t0+n
 	    if (tn.gt.length) tn=tn-length
@@ -201,23 +260,35 @@
 
 	  ! Write intermediate results file?
 	  if (mod(nframes-length,100).EQ.0) then
-	    open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".total_temp",form="formatted",status="replace")
-	    write(20,'("# SP,INTVL=",3i5)') sp
-	    write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	    open(unit=21,file=basename(1:baselen)//namepart//CHAR(48+sp)//".intra_temp",form="formatted",status="replace")
-	    write(21,'("# SP,INTVL=",3i5)') sp
-	    write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	    open(unit=22,file=basename(1:baselen)//namepart//CHAR(48+sp)//".inter_temp",form="formatted",status="replace")
-	    write(22,'("# SP,INTVL=",3i5)') sp
-	    write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	    do n=0,length-1
-	      write(20,"(9f14.6,e14.6)") n*deltat, acf_total(n)/accum(n), (acfpart_total(m,n)/accum(n),m=1,6), accum(n)
-	      write(21,"(9f14.6,e14.6)") n*deltat, acf_intra(n)/accum(n), (acfpart_intra(m,n)/accum(n),m=1,6), accum(n)
-	      write(22,"(9f14.6,e14.6)") n*deltat, (acf_total(n)-acf_intra(n))/accum(n), ((acfpart_total(m,n)-acfpart_intra(m,n))/accum(n),m=1,6), accum(n)
-	    end do
-	    close(20)
-	    close(21)
-	    close(22)
+
+	    ! Gather acf data into temporary arrays on master
+	    call MPI_Reduce(acf_total,temp_total, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+
+	    if (MASTER) then
+	
+	      open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".total_temp",form="formatted",status="replace")
+	      write(20,'("# SP,INTVL=",3i5)') sp
+	      write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	      open(unit=21,file=basename(1:baselen)//namepart//CHAR(48+sp)//".intra_temp",form="formatted",status="replace")
+	      write(21,'("# SP,INTVL=",3i5)') sp
+	      write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	      open(unit=22,file=basename(1:baselen)//namepart//CHAR(48+sp)//".inter_temp",form="formatted",status="replace")
+	      write(22,'("# SP,INTVL=",3i5)') sp
+	      write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	      do n=0,length-1
+	        write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/accum(n), (temppart_total(m,n)/accum(n),m=1,6), accum(n)
+	        write(21,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/accum(n), (temppart_intra(m,n)/accum(n),m=1,6), accum(n)
+	        write(22,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/accum(n), ((temppart_total(m,n)-temppart_intra(m,n))/accum(n),m=1,6), accum(n)
+	      end do
+	      close(20)
+	      close(21)
+	      close(22)
+	    else
+	    end if
+
 	  end if
 
 	endif
@@ -233,12 +304,19 @@
 800	write(0,*) "Framestodo was fulfilled."
 801	write(0,*) ""
 
+	! Gather acf data into temporary arrays on master
+	call MPI_Reduce(acf_total,temp_total, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Finalize(err_mpi)
+
 	! Write total ACF
 	open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".total",form="formatted",status="replace")
 	write(20,'("# SP,INTVL=",3i5)') sp
 	write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
 	do n=0,length-1
-	  write(20,"(9f14.6,e14.6)") n*deltat, acf_total(n)/accum(n), (acfpart_total(m,n)/accum(n),m=1,6), accum(n)
+	  write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/accum(n), (temppart_total(m,n)/accum(n),m=1,6), accum(n)
 	end do
 	close(20)
 
@@ -247,7 +325,7 @@
 	write(20,'("# SP,INTVL=",3i5)') sp
 	write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
 	do n=0,length-1
-	  write(20,"(9f14.6,e14.6)") n*deltat, acf_intra(n)/accum(n), (acfpart_intra(m,n)/accum(n),m=1,6), accum(n)
+	  write(20,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/accum(n), (temppart_intra(m,n)/accum(n),m=1,6), accum(n)
 	end do
 	close(20)
 
@@ -256,7 +334,7 @@
 	write(20,'("# SP,INTVL=",3i5)') sp
 	write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
 	do n=0,length-1
-	  write(20,"(9f14.6,e14.6)") n*deltat, (acf_total(n)-acf_intra(n))/accum(n), ((acfpart_total(m,n)-acfpart_intra(m,n))/accum(n),m=1,6), accum(n)
+	  write(20,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/accum(n), ((temppart_total(m,n)-temppart_intra(m,n))/accum(n),m=1,6), accum(n)
 	end do
 	close(20)
       
