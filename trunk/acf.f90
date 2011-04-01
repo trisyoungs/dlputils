@@ -1,20 +1,20 @@
 !	** acf **
-!	Calculate the specified autocorrelation tensor, optionally over a restricted set of molecules
+!	Calculate the specified autocorrelation tensor
 
 	program acf
 	use dlprw; use utility
 	implicit none
 	include "mpif.h"
 
-	integer, parameter :: VELOCITY=1, DIPOLE=2
+	integer, parameter :: VELOCITY=1, DIPOLE=2, FROMFILE=3
 	logical :: MASTER, SLAVE
 	character*80 :: hisfile1, dlpoutfile,basename,resfile,headerfile
 	character*20 :: temp
 	character*4 :: namepart
 	integer :: i,j,n,m,nframes,success,nargs,baselen,sp,pos, t0, tn
 	integer :: length, acftype = 0, framestodo = -1
-	integer :: iargc
-	integer :: t_start, t_finish, err_mpi, id_mpi, nproc_mpi
+	integer :: iargc, idx
+	integer :: t_start, t_finish, err_mpi, id_mpi, nproc_mpi, qmax
 	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:)
 	real*8, allocatable :: temp_total(:), temp_intra(:), temppart_total(:,:), temppart_intra(:,:), tempaccum(:)
 	real*8 :: deltat, totmass, dist, vec(3)
@@ -22,8 +22,8 @@
 	logical :: altheader = .false.
 
 	nargs = iargc()
-	if (nargs.ne.8) then
-	  write(0,"(a)") "Usage : acf <HISfile> <DLP OUTPUTfile> <headerfile [0 for none]> <functype=velocity,dipole> <delta t> <length> <species> <nframes>"
+	if (nargs.ne.7) then
+	  write(0,"(a)") "Usage : acf <HISfile|quantityfile> <DLP OUTPUTfile> <headerfile [0 for none]> <functype=velocity,dipole,file> <delta t> <length> <nframes>"
 	  stop
 	end if
 	call getarg(1,hisfile1)
@@ -36,15 +36,18 @@
 	call getarg(4,temp)
 	if (temp.eq."velocity") acftype = VELOCITY
 	if (temp.eq."dipole") acftype = DIPOLE
+	if (temp.eq."file") acftype = FROMFILE
 	if (acftype.eq.0) stop "Invalid correlation function requested - options are 'velocity' or 'dipole'."
 	call getarg(5,temp); read(temp,"(F10.6)") deltat
 	call getarg(6,temp); read(temp,"(I6)") length
-	call getarg(7,temp); read(temp,"(I6)") sp
-	call getarg(8,temp); read(temp,"(I6)") framestodo
+	call getarg(7,temp); read(temp,"(I6)") framestodo
 	
 	if (acftype.eq.VELOCITY) write(0,*) "Calculating velocity autocorrelation function."
 	if (acftype.eq.DIPOLE) write(0,*) "Calculating molecular dipole autocorrelation function."
+	if (acftype.eq.FROMFILE) write(0,*) "Calculating autocorrelation function from quantities in file."
+
 	if (outinfo(dlpoutfile,1).EQ.-1) goto 798
+	qmax = sum(s_nmols)
 
 	! Ascertain length of basename....
 	baselen=-1
@@ -64,15 +67,16 @@
 	! Get part of output filename
 	if (acftype.eq.VELOCITY) namepart = "vacf"
 	if (acftype.eq.DIPOLE) namepart = "dacf"
+	if (acftype.eq.FROMFILE) namepart = "facf"
 
 	allocate (acf_total(0:length-1))
 	allocate (acf_intra(0:length-1))
 	allocate (acfpart_total(6,0:length-1))
 	allocate (acfpart_intra(6,0:length-1))
 	allocate (accum(0:length))
-	allocate (qx(length,s_nmols(sp)))
-	allocate (qy(length,s_nmols(sp)))
-	allocate (qz(length,s_nmols(sp)))
+	allocate (qx(length,qmax))
+	allocate (qy(length,qmax))
+	allocate (qz(length,qmax))
 
 	acf_total = 0.0
 	acf_intra = 0.0
@@ -83,16 +87,20 @@
 	qy = 0.0
 	qz = 0.0
 
-	! Check history file
-60	write(0,*) "Reading history file...."
-	if (altheader) then
-	  call openhis(headerfile,10)
-	  if (readheader().EQ.-1) goto 799
-	  close(dlpun_his)
-	  call openhis(hisfile1,10)
-	else 
-	  call openhis(hisfile1,10)
-	  if (readheader().EQ.-1) goto 799
+	! Check history file (if not FROMFILE) or open binary quantity file
+	if (acftype.NE.FROMFILE) then
+60	  write(0,*) "Reading history file...."
+ 	  if (altheader) then
+	    call openhis(headerfile,10)
+	    if (readheader().EQ.-1) goto 799
+	    close(dlpun_his)
+	    call openhis(hisfile1,10)
+	  else 
+	    call openhis(hisfile1,10)
+	   if (readheader().EQ.-1) goto 799
+	  end if
+	else
+	  open(unit=11,file=hisfile1,form='unformatted',status='old')
 	end if
 
 	nframes=0
@@ -119,86 +127,109 @@
 	end if
 
 	! Calculate atom range for node
-	!m_start = id_mpi * (s_nmols(sp) / nproc_mpi) + 1
-	!m_finish = m_start + (s_nmols(sp) / nproc_mpi) - 1
-	!if (id_mpi+1.eq.nproc_mpi) m_finish = m_finish + mod(s_nmols(sp),s_nmols(sp)/nproc_mpi)
 	t_start = id_mpi * (length / nproc_mpi)
 	t_finish = t_start + (length / nproc_mpi) - 1
 	if (id_mpi+1.eq.nproc_mpi) t_finish = t_finish + mod(length,length/nproc_mpi)
 	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",nproc_mpi," processes"
-	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",s_nmols(sp)," molecules in the target species"
+	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",qmax," molecules in total"
 	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",length," points in the correlation array"
-	!write(13+id_mpi,"(a,i2,a,i7,a,i7,a)") "Process ",id_mpi," calculating molecules ",m_start," to ",m_finish,"..."
 	write(13+id_mpi,"(a,i2,a,i7,a,i7,a)") "Process ",id_mpi," calculating intervals ",t_start," to ",t_finish,"..."
 
-101	if (MASTER) then
-	  success=readframe()
-	  if (success.ne.0) then
-	    call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	    goto 799  ! End of file encountered, or file error....
-	  end if
-	  ! Send 'continue' flag
-	  call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	else
-	  ! Slaves must wait for the 'continue' flag
-	  call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	  if (i.eq.0) goto 799
-	end if
-
-	! Broadcast frame data
-	call MPI_BCast(xpos,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
-	call MPI_BCast(ypos,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
-	call MPI_BCast(zpos,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
-	! Send charge and mass data on frame 1
-	if (nframes.eq.1) then
-	  call MPI_BCast(charge,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
-	  call MPI_BCast(mass,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
-	end if
 
 	! Calculate array position
-	pos=mod(nframes,length)+1
+101	pos=mod(nframes,length)+1
 	nframes = nframes+1
+	if (acftype.eq.FROMFILE) then
+	  if (MASTER) then
+	    read(11,end=102,err=102) qx(pos,:)
+	    read(11,end=102,err=102) qy(pos,:)
+	    read(11,end=102,err=102) qz(pos,:)
+	    goto 105
+102	    call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	    goto 799  ! End of file encountered, or file error....
+	    ! Send 'continue' flag
+105	    call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  else
+	    ! Slaves must wait for the 'continue' flag
+	    call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	    if (i.eq.0) goto 799
+	  end if
+	  call MPI_BCast(qx(pos,:),qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(qy(pos,:),qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(qz(pos,:),qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	else
+	  if (MASTER) then
+	    success=readframe()
+	    if (success.ne.0) then
+	      call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	      goto 799  ! End of file encountered, or file error....
+	    end if
+	    ! Send 'continue' flag
+	    call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  else
+	    ! Slaves must wait for the 'continue' flag
+	    call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	    if (i.eq.0) goto 799
+	  end if
+	  ! Broadcast frame data
+	  call MPI_BCast(xpos,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(ypos,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(zpos,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  ! Send charge and mass data on frame 1
+	  if (nframes.eq.1) then
+	    call MPI_BCast(charge,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	    call MPI_BCast(mass,natms,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  end if
+	end if
+
 	if (MASTER.and.mod(nframes,100).EQ.0) write(0,"(i)") nframes
 
-	! Calculate quantities for correlation function
-	qx(pos,:) = 0.0
-	qy(pos,:) = 0.0
-	qz(pos,:) = 0.0
-	if (acftype.eq.VELOCITY) then
-	  call calc_com
-	  i = s_start(sp)    !+ (m_start-1)*s_natoms(sp)
-	  do m=1, s_nmols(sp)     !m_start,m_finish
-	    totmass = 0.0
-	    do j=i,i+s_natoms(sp)-1
-	      totmass = totmass + mass(j)
-	      qx(pos,m) = qx(pos,m) + mass(j)*xvel(j)
-	      qy(pos,m) = qy(pos,m) + mass(j)*yvel(j)
-	      qz(pos,m) = qz(pos,m) + mass(j)*zvel(j)
-	    end do
-	    !if (m.eq.1) write(0,*) "Frame ",pos, "comvx(mol1) = ",comvx(pos,1)
-	    qx(pos,m) = qx(pos,m) / totmass
-	    qy(pos,m) = qy(pos,m) / totmass
-	    qz(pos,m) = qz(pos,m) / totmass
-	    i = i + s_natoms(sp)
+	! Calculate quantities for correlation function (only if acftype != FROMFILE)
+	if (acftype.ne.FROMFILE) then
+	  qx(pos,:) = 0.0
+	  qy(pos,:) = 0.0
+	  qz(pos,:) = 0.0
+	  idx = 1
+	  do sp=1,nspecies
+	    if (acftype.eq.VELOCITY) then
+	     call calc_com
+	     i = s_start(sp)
+	     do m=1,s_nmols(sp)
+	       totmass = 0.0
+	       do j=i,i+s_natoms(sp)-1
+	         totmass = totmass + mass(j)
+	         qx(pos,idx) = qx(pos,idx) + mass(j)*xvel(j)
+	         qy(pos,idx) = qy(pos,idx) + mass(j)*yvel(j)
+	         qz(pos,idx) = qz(pos,idx) + mass(j)*zvel(j)
+	       end do
+	       !if (m.eq.1) write(0,*) "Frame ",pos, "comvx(mol1) = ",comvx(pos,1)
+	       qx(pos,idx) = qx(pos,idx) / totmass
+  	       qy(pos,idx) = qy(pos,idx) / totmass
+	       qz(pos,idx) = qz(pos,idx) / totmass
+	       idx = idx + 1
+	       i = i + s_natoms(sp)
+	     end do
+	   else if (acftype.eq.DIPOLE) then
+	     ! Take all atom positions relative to first atom in molecule
+	     i = s_start(sp)
+	     do m=1,s_nmols(sp)
+	       do j=i,i+s_natoms(sp)-1
+	         ! Get mim position of this atom with first
+	         call pbc(xpos(j),ypos(j),zpos(j),xpos(i),ypos(i),zpos(i),vec(1),vec(2),vec(3))
+	         qx(pos,idx) = qx(pos,idx) + charge(j)*vec(1)
+	         qy(pos,idx) = qy(pos,idx) + charge(j)*vec(2)
+	         qz(pos,idx) = qz(pos,idx) + charge(j)*vec(3)
+	       end do
+	       ! Convert dipole from q.angstrom to Debye (C.m)
+	       qx(pos,idx) = qx(pos,idx) * 4.80321
+	       qy(pos,idx) = qy(pos,idx) * 4.80321
+	       qz(pos,idx) = qz(pos,idx) * 4.80321
+	       idx = idx + 1
+	       i = i + s_natoms(sp)
+	     end do
+	    endif
 	  end do
-	else if (acftype.eq.DIPOLE) then
-	  ! Take all atom positions relative to first atom in molecule
-	  i = s_start(sp)       !+ (m_start-1)*s_natoms(sp)
-	  do m=1,s_nmols(sp)     !m_start,m_finish
-	    do j=i,i+s_natoms(sp)-1
-	      ! Get mim position of this atom with first
-	      call pbc(xpos(j),ypos(j),zpos(j),xpos(i),ypos(i),zpos(i),vec(1),vec(2),vec(3))
-	      qx(pos,m) = qx(pos,m) + charge(j)*vec(1)
-	      qy(pos,m) = qy(pos,m) + charge(j)*vec(2)
-	      qz(pos,m) = qz(pos,m) + charge(j)*vec(3)
-	    end do
-	    i = i + s_natoms(sp)
-	  end do
-	  ! Convert dipole from q.angstrom to Debye (C.m)
-	  qx(pos,:) = qx(pos,:) * 4.80321
-	  qy(pos,:) = qy(pos,:) * 4.80321
-	  qz(pos,:) = qz(pos,:) * 4.80321
-	endif
+	end if
 
 	! Accumulate ACF.
 
@@ -300,10 +331,9 @@
 
 798	write(0,*) "Problem with OUTPUT file."
 	goto 999
-799	write(0,*) "HISTORY file ended before 'length*2' was fulfilled..."
+799	write(0,*) "HISTORY file ended."
 	write(0,"(A,I4,A,I4,A)") "Frames read in : ",nframes," (wanted ",nframes,")"
 	goto 801
-800	write(0,*) "Framestodo was fulfilled."
 801	write(0,*) ""
 
 	! Gather acf data into temporary arrays on master
