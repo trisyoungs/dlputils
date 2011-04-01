@@ -12,7 +12,7 @@
 	character*20 :: temp
 	character*4 :: namepart
 	integer :: i,j,n,m,nframes,success,nargs,baselen,sp,pos, t0, tn
-	integer :: length, acftype = 0, framestodo = -1
+	integer :: length, acftype = 0, framestodo = -1, framestoskip = -1
 	integer :: iargc, idx
 	integer :: t_start, t_finish, err_mpi, id_mpi, nproc_mpi, qmax
 	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:)
@@ -22,8 +22,8 @@
 	logical :: altheader = .false.
 
 	nargs = iargc()
-	if (nargs.ne.7) then
-	  write(0,"(a)") "Usage : acf <HISfile|quantityfile> <DLP OUTPUTfile> <headerfile [0 for none]> <functype=velocity,dipole,file> <delta t> <length> <nframes>"
+	if (nargs.lt.7) then
+	  write(0,"(a)") "Usage : acf <HISfile|quantityfile> <DLP OUTPUTfile> <headerfile [0 for none]> <functype=velocity,dipole,file> <delta t> <length> <framestodo> [skip]"
 	  stop
 	end if
 	call getarg(1,hisfile1)
@@ -41,6 +41,9 @@
 	call getarg(5,temp); read(temp,"(F10.6)") deltat
 	call getarg(6,temp); read(temp,"(I6)") length
 	call getarg(7,temp); read(temp,"(I6)") framestodo
+	if (nargs.eq.8) then
+	  call getarg(8,temp); read(temp,"(I6)") framestoskip
+	end if
 	
 	if (acftype.eq.VELOCITY) write(0,*) "Calculating velocity autocorrelation function."
 	if (acftype.eq.DIPOLE) write(0,*) "Calculating molecular dipole autocorrelation function."
@@ -138,7 +141,6 @@
 
 	! Calculate array position
 101	pos=mod(nframes,length)+1
-	nframes = nframes+1
 	if (acftype.eq.FROMFILE) then
 	  if (MASTER) then
 	    read(11,end=102,err=102) qx(pos,:)
@@ -182,6 +184,13 @@
 	  end if
 	end if
 
+	if (framestoskip.gt.0) then
+	  if (MASTER.and.mod(framestoskip,100).EQ.0) write(0,"('Skipping ',i)") framestoskip
+	  framestoskip = framestoskip - 1
+	  goto 101
+	end if
+
+	nframes = nframes+1
 	if (MASTER.and.mod(nframes,100).EQ.0) write(0,"(i)") nframes
 
 	! Calculate quantities for correlation function (only if acftype != FROMFILE)
@@ -302,14 +311,11 @@
 
 	    if (MASTER) then
 	
-	      open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".total_temp",form="formatted",status="replace")
-	      write(20,'("# SP,INTVL=",3i5)') sp
+	      open(unit=20,file=basename(1:baselen)//namepart//".total_temp",form="formatted",status="replace")
 	      write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	      open(unit=21,file=basename(1:baselen)//namepart//CHAR(48+sp)//".intra_temp",form="formatted",status="replace")
-	      write(21,'("# SP,INTVL=",3i5)') sp
+	      open(unit=21,file=basename(1:baselen)//namepart//".intra_temp",form="formatted",status="replace")
 	      write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	      open(unit=22,file=basename(1:baselen)//namepart//CHAR(48+sp)//".inter_temp",form="formatted",status="replace")
-	      write(22,'("# SP,INTVL=",3i5)') sp
+	      open(unit=22,file=basename(1:baselen)//namepart//".inter_temp",form="formatted",status="replace")
 	      write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
 	      do n=0,length-1
 	        write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/tempaccum(n), (temppart_total(m,n)/tempaccum(n),m=1,6), tempaccum(n)
@@ -324,9 +330,11 @@
 
 	  end if
 
+	  framestodo = framestodo -1
+
 	endif
 
-	if (nframes.eq.framestodo) goto 801
+	if (framestodo.eq.0) goto 801
 	goto 101
 
 798	write(0,*) "Problem with OUTPUT file."
@@ -345,14 +353,11 @@
 	call MPI_Finalize(err_mpi)
 
 	! Write final functions
-	open(unit=20,file=basename(1:baselen)//namepart//CHAR(48+sp)//".total",form="formatted",status="replace")
-	write(20,'("# SP,INTVL=",3i5)') sp
+	open(unit=20,file=basename(1:baselen)//namepart//".total",form="formatted",status="replace")
 	write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	open(unit=21,file=basename(1:baselen)//namepart//CHAR(48+sp)//".intra",form="formatted",status="replace")
-	write(21,'("# SP,INTVL=",3i5)') sp
+	open(unit=21,file=basename(1:baselen)//namepart//".intra",form="formatted",status="replace")
 	write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	open(unit=22,file=basename(1:baselen)//namepart//CHAR(48+sp)//".inter",form="formatted",status="replace")
-	write(22,'("# SP,INTVL=",3i5)') sp
+	open(unit=22,file=basename(1:baselen)//namepart//".inter",form="formatted",status="replace")
 	write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
 	do n=0,length-1
 	  write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/tempaccum(n), (temppart_total(m,n)/tempaccum(n),m=1,6), tempaccum(n)
