@@ -44,33 +44,74 @@
 	if (nargs.eq.8) then
 	  call getarg(8,temp); read(temp,"(I6)") framestoskip
 	end if
-	
-	if (acftype.eq.VELOCITY) write(0,*) "Calculating velocity autocorrelation function."
-	if (acftype.eq.DIPOLE) write(0,*) "Calculating molecular dipole autocorrelation function."
-	if (acftype.eq.FROMFILE) write(0,*) "Calculating autocorrelation function from quantities in file."
 
-	if (outinfo(dlpoutfile,1).EQ.-1) goto 798
-	qmax = sum(s_nmols)
+	! Initialise MPI and determine slave data
+	call MPI_Init(err_mpi)
+	call MPI_Comm_rank(MPI_COMM_WORLD,id_mpi,err_mpi)
+	call MPI_Comm_size(MPI_COMM_WORLD,nproc_mpi,err_mpi)
 
-	! Ascertain length of basename....
-	baselen=-1
-	do i=80,1,-1
-	  if (hisfile1(i:i).eq.".") then
-	    baselen=i
-	    goto 50
-	  endif
-	end do
-50     if (baselen.EQ.-1) then
-	  basename="acfresults."
-	  baselen=11
+	if ((nproc_mpi.le.1).or.(id_mpi.eq.0)) then
+	  MASTER = .true.; SLAVE = .false.
 	else
-	  basename=hisfile1(1:baselen)
-	endif
+	  MASTER = .false.; SLAVE = .true.
+	end if
 
-	! Get part of output filename
-	if (acftype.eq.VELOCITY) namepart = "vacf"
-	if (acftype.eq.DIPOLE) namepart = "dacf"
-	if (acftype.eq.FROMFILE) namepart = "facf"
+	if (MASTER) then
+	  if (acftype.eq.VELOCITY) write(0,*) "Calculating velocity autocorrelation function."
+	  if (acftype.eq.DIPOLE) write(0,*) "Calculating molecular dipole autocorrelation function."
+	  if (acftype.eq.FROMFILE) write(0,*) "Calculating autocorrelation function from quantities in file."
+	  if (outinfo(dlpoutfile,1).EQ.-1) then
+	    write(0,*) "Problem with OUTPUT file."
+	    ! Send 'failed' flag
+	    call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	    goto 801
+	  end if
+	  ! Send 'continue' flag and pass necessary data to slaves
+	  call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  write(13+id_mpi,*) "Nspecies = ", nspecies
+	  call MPI_BCast(nspecies,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  write(13+id_mpi,*) "s_mols = ", s_nmols
+	  call MPI_BCast(s_nmols,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  write(13+id_mpi,*) "s_natoms = ", s_natoms
+	  call MPI_BCast(s_natoms,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  write(13+id_mpi,*) "s_start = ", s_start
+	  call MPI_BCast(s_start,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  ! Ascertain length of basename....
+	  baselen=-1
+	  do i=80,1,-1
+	    if (hisfile1(i:i).eq.".") then
+	      baselen=i
+	      goto 50
+	    endif
+	  end do
+50	  if (baselen.EQ.-1) then
+	    basename="acfresults."
+	    baselen=11
+	  else
+	    basename=hisfile1(1:baselen)
+	  endif
+
+	  ! Get part of output filename
+	  if (acftype.eq.VELOCITY) namepart = "vacf"
+	  if (acftype.eq.DIPOLE) namepart = "dacf"
+	  if (acftype.eq.FROMFILE) namepart = "facf"
+
+	else
+	  ! Slaves must wait for the 'continue' flag
+	  call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  if (i.eq.0) goto 801
+	  call MPI_BCast(nspecies,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  write(13+id_mpi,*) "Nspecies = ", nspecies
+	  allocate(s_nmols(nspecies),s_natoms(nspecies),s_start(nspecies))
+	  call MPI_BCast(s_nmols,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  write(13+id_mpi,*) "s_mols = ", s_nmols
+	  call MPI_BCast(s_natoms,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  write(13+id_mpi,*) "s_natoms = ", s_natoms
+	  call MPI_BCast(s_start,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  write(13+id_mpi,*) "s_start = ", s_natoms
+	end if
+	qmax = sum(s_nmols)
+	  
 
 	allocate (acf_total(0:length-1))
 	allocate (acf_intra(0:length-1))
@@ -90,35 +131,39 @@
 	qy = 0.0
 	qz = 0.0
 
-	! Check history file (if not FROMFILE) or open binary quantity file
-	if (acftype.NE.FROMFILE) then
-60	  write(0,*) "Reading history file...."
- 	  if (altheader) then
-	    call openhis(headerfile,10)
-	    if (readheader().EQ.-1) goto 799
-	    close(dlpun_his)
-	    call openhis(hisfile1,10)
-	  else 
-	    call openhis(hisfile1,10)
-	   if (readheader().EQ.-1) goto 799
+	if (MASTER) then
+	  ! Check history file (if not FROMFILE) or open binary quantity file
+	  if (acftype.NE.FROMFILE) then
+60	    write(0,*) "Reading history file...."
+ 	    if (altheader) then
+	      call openhis(headerfile,10)
+	      if (readheader().EQ.-1) then
+		! Send 'fail' flag
+		call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+		goto 799
+	      end if
+	      close(dlpun_his)
+	      call openhis(hisfile1,10)
+	    else 
+	      call openhis(hisfile1,10)
+	     if (readheader().EQ.-1) then
+		! Send 'fail' flag
+		call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+		goto 799
+	      end if
+	    end if
+	  else
+	    open(unit=11,file=hisfile1,form='unformatted',status='old')
 	  end if
+	  ! Send 'continue' flag
+	  call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	else
-	  open(unit=11,file=hisfile1,form='unformatted',status='old')
+	  ! Slaves must wait for the 'continue' flag
+	  call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	end if
 
 	nframes=0
 	pos=0
-
-	! Initialise MPI and determine slave data
-	call MPI_Init(err_mpi)
-	call MPI_Comm_rank(MPI_COMM_WORLD,id_mpi,err_mpi)
-	call MPI_Comm_size(MPI_COMM_WORLD,nproc_mpi,err_mpi)
-
-	if ((nproc_mpi.le.1).or.(id_mpi.eq.0)) then
-	  MASTER = .true.; SLAVE = .false.
-	else
-	  MASTER = .false.; SLAVE = .true.
-	end if
 
 	! Allocate extra arrays for MASTER
 	if (MASTER) then
@@ -337,11 +382,10 @@
 	if (framestodo.eq.0) goto 801
 	goto 101
 
-798	write(0,*) "Problem with OUTPUT file."
-	goto 999
-799	write(0,*) "HISTORY file ended."
-	write(0,"(A,I4,A,I4,A)") "Frames read in : ",nframes," (wanted ",nframes,")"
-	goto 801
+799	if (MASTER) then
+	  write(0,*) "HISTORY file ended."
+	  write(0,"(A,I4,A,I4,A)") "Frames read in : ",nframes," (wanted ",nframes,")"
+	end if
 801	write(0,*) ""
 
 	! Gather acf data into temporary arrays on master
@@ -350,23 +394,26 @@
 	call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 	call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 	call MPI_Reduce(accum,tempaccum, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Finalize(err_mpi)
+ 
+	if (MASTER) then
+	  ! Write final functions
+	  open(unit=20,file=basename(1:baselen)//namepart//".total",form="formatted",status="replace")
+	  write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	  open(unit=21,file=basename(1:baselen)//namepart//".intra",form="formatted",status="replace")
+	  write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	  open(unit=22,file=basename(1:baselen)//namepart//".inter",form="formatted",status="replace")
+	  write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	  do n=0,length-1
+	    write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/tempaccum(n), (temppart_total(m,n)/tempaccum(n),m=1,6), tempaccum(n)
+	    write(21,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/tempaccum(n), (temppart_intra(m,n)/tempaccum(n),m=1,6), tempaccum(n)
+	    write(22,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/tempaccum(n), ((temppart_total(m,n)-temppart_intra(m,n))/tempaccum(n),m=1,6), tempaccum(n)
+	  end do
+	  close(20)
+	  close(21)
+	  close(22)
+	end if
 
-	! Write final functions
-	open(unit=20,file=basename(1:baselen)//namepart//".total",form="formatted",status="replace")
-	write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	open(unit=21,file=basename(1:baselen)//namepart//".intra",form="formatted",status="replace")
-	write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	open(unit=22,file=basename(1:baselen)//namepart//".inter",form="formatted",status="replace")
-	write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	do n=0,length-1
-	  write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/tempaccum(n), (temppart_total(m,n)/tempaccum(n),m=1,6), tempaccum(n)
-	  write(21,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/tempaccum(n), (temppart_intra(m,n)/tempaccum(n),m=1,6), tempaccum(n)
-	  write(22,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/tempaccum(n), ((temppart_total(m,n)-temppart_intra(m,n))/tempaccum(n),m=1,6), tempaccum(n)
-	end do
-	close(20)
-	close(21)
-	close(22)
+	call MPI_Finalize(err_mpi)
       
 	write(0,*) "Finished."
 999	close(10)
