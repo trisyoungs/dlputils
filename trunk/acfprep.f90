@@ -12,7 +12,7 @@
 	integer :: i,j,n,m,nframes,success,nargs,baselen,sp,idx
 	integer :: length, acftype = 0, framestodo = -1
 	integer :: iargc, qmax
-	real*8, allocatable :: qx(:), qy(:), qz(:)
+	real*4, allocatable :: qx(:), qy(:), qz(:)
 	real*8 :: totmass, dist, vec(3)
 	real*8 :: xx, yy, zz, xy, xz, yz
 	logical :: altheader = .false.
