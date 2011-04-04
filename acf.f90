@@ -15,8 +15,8 @@
 	integer :: length, acftype = 0, framestodo = -1, framestoskip = -1
 	integer :: iargc, idx
 	integer :: t_start, t_finish, err_mpi, id_mpi, nproc_mpi, qmax
-	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:)
-	real*8, allocatable :: temp_total(:), temp_intra(:), temppart_total(:,:), temppart_intra(:,:), tempaccum(:)
+	real*4, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:)
+	real*4, allocatable :: temp_total(:), temp_intra(:), temppart_total(:,:), temppart_intra(:,:), tempaccum(:)
 	real*8 :: deltat, totmass, dist, vec(3)
 	real*8 :: xx, yy, zz, xy, xz, yz
 	logical :: altheader = .false.
@@ -201,9 +201,9 @@
 	    call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	    if (i.eq.0) goto 799
 	  end if
-	  call MPI_BCast(qx(pos,:),qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
-	  call MPI_BCast(qy(pos,:),qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
-	  call MPI_BCast(qz(pos,:),qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(qx(pos,:),qmax,MPI_REAL4,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(qy(pos,:),qmax,MPI_REAL4,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(qz(pos,:),qmax,MPI_REAL4,0,MPI_COMM_WORLD,err_mpi)
 	else
 	  if (MASTER) then
 	    success=readframe()
@@ -348,11 +348,11 @@
 	  if (mod(nframes-length,100).EQ.0) then
 
 	    ! Reduce acf data into temporary arrays on master
-	    call MPI_Reduce(acf_total,temp_total, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(accum,tempaccum, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(acf_total,temp_total, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(accum,tempaccum, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 
 	    if (MASTER) then
 	
@@ -389,11 +389,11 @@
 801	write(0,*) ""
 
 	! Gather acf data into temporary arrays on master
-	call MPI_Reduce(acf_total,temp_total, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Reduce(accum,tempaccum, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(acf_total,temp_total, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(accum,tempaccum, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
  
 	if (MASTER) then
 	  ! Write final functions
