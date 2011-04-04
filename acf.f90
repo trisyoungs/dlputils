@@ -1,5 +1,6 @@
 !	** acf **
 !	Calculate the specified autocorrelation tensor
+!	04/04/2011 - Modified so slaves only store part of matrix (t,q)
 
 	program acf
 	use dlprw; use utility
@@ -14,9 +15,10 @@
 	integer :: i,j,n,m,nframes,success,nargs,baselen,sp,pos, t0, tn
 	integer :: length, acftype = 0, framestodo = -1, framestoskip = -1
 	integer :: iargc, idx
-	integer :: t_start, t_finish, err_mpi, id_mpi, nproc_mpi, qmax
-	real*4, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:)
-	real*4, allocatable :: temp_total(:), temp_intra(:), temppart_total(:,:), temppart_intra(:,:), tempaccum(:)
+	integer :: t_first, t_last, err_mpi, id_mpi, nproc_mpi, qmax
+	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:)
+	real*8, allocatable :: qxcurrent(:), qycurrent(:), qzcurrent(:)
+	real*8, allocatable :: temp_total(:), temp_intra(:), temppart_total(:,:), temppart_intra(:,:), tempaccum(:)
 	real*8 :: deltat, totmass, dist, vec(3)
 	real*8 :: xx, yy, zz, xy, xz, yz
 	logical :: altheader = .false.
@@ -68,13 +70,9 @@
 	  end if
 	  ! Send 'continue' flag and pass necessary data to slaves
 	  call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	  write(13+id_mpi,*) "Nspecies = ", nspecies
 	  call MPI_BCast(nspecies,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	  write(13+id_mpi,*) "s_mols = ", s_nmols
 	  call MPI_BCast(s_nmols,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	  write(13+id_mpi,*) "s_natoms = ", s_natoms
 	  call MPI_BCast(s_natoms,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	  write(13+id_mpi,*) "s_start = ", s_start
 	  call MPI_BCast(s_start,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	  ! Ascertain length of basename....
 	  baselen=-1
@@ -101,14 +99,10 @@
 	  call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	  if (i.eq.0) goto 801
 	  call MPI_BCast(nspecies,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	  write(13+id_mpi,*) "Nspecies = ", nspecies
 	  allocate(s_nmols(nspecies),s_natoms(nspecies),s_start(nspecies))
 	  call MPI_BCast(s_nmols,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	  write(13+id_mpi,*) "s_mols = ", s_nmols
 	  call MPI_BCast(s_natoms,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	  write(13+id_mpi,*) "s_natoms = ", s_natoms
 	  call MPI_BCast(s_start,nspecies,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	  write(13+id_mpi,*) "s_start = ", s_natoms
 	end if
 	qmax = sum(s_nmols)
 	  
@@ -118,9 +112,22 @@
 	allocate (acfpart_total(6,0:length-1))
 	allocate (acfpart_intra(6,0:length-1))
 	allocate (accum(0:length))
-	allocate (qx(length,qmax))
-	allocate (qy(length,qmax))
-	allocate (qz(length,qmax))
+
+	! Calculate time range for node and assign arrays
+	t_first = id_mpi * (length / nproc_mpi) + 1
+	t_last = t_first + (length / nproc_mpi) - 1
+	if (id_mpi+1.eq.nproc_mpi) t_last = t_last + mod(length,length/nproc_mpi)
+	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",nproc_mpi," processes"
+	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",qmax," molecules in total"
+	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",length," points in the correlation array"
+	write(13+id_mpi,"(a,i2,a,i7,a,i7,a)") "Process ",id_mpi," stores intervals ",t_first," to ",t_last,"..."
+
+	allocate (qx(t_first:t_last,qmax))
+	allocate (qy(t_first:t_last,qmax))
+	allocate (qz(t_first:t_last,qmax))
+	allocate (qxcurrent(qmax))
+	allocate (qycurrent(qmax))
+	allocate (qzcurrent(qmax))
 
 	acf_total = 0.0
 	acf_intra = 0.0
@@ -130,6 +137,9 @@
 	qx = 0.0
 	qy = 0.0
 	qz = 0.0
+	qxcurrent = 0.0
+	qycurrent = 0.0
+	qzcurrent = 0.0
 
 	if (MASTER) then
 	  ! Check history file (if not FROMFILE) or open binary quantity file
@@ -174,23 +184,14 @@
 	  allocate (tempaccum(0:length))
 	end if
 
-	! Calculate atom range for node
-	t_start = id_mpi * (length / nproc_mpi)
-	t_finish = t_start + (length / nproc_mpi) - 1
-	if (id_mpi+1.eq.nproc_mpi) t_finish = t_finish + mod(length,length/nproc_mpi)
-	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",nproc_mpi," processes"
-	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",qmax," molecules in total"
-	write(13+id_mpi,"(a,i2,a,i7,a)") "Process ",id_mpi," thinks there are ",length," points in the correlation array"
-	write(13+id_mpi,"(a,i2,a,i7,a,i7,a)") "Process ",id_mpi," calculating intervals ",t_start," to ",t_finish,"..."
-
-
 	! Calculate array position
 101	pos=mod(nframes,length)+1
 	if (acftype.eq.FROMFILE) then
 	  if (MASTER) then
-	    read(11,end=102,err=102) qx(pos,:)
-	    read(11,end=102,err=102) qy(pos,:)
-	    read(11,end=102,err=102) qz(pos,:)
+	    read(11,end=102,err=102) qxcurrent
+	    read(11,end=102,err=102) qycurrent
+	    read(11,end=102,err=102) qzcurrent
+	!write(0,"(a,5f12.6)") "Just read ",qxcurrent(1:5)
 	    goto 105
 102	    call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	    goto 799  ! End of file encountered, or file error....
@@ -201,9 +202,9 @@
 	    call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	    if (i.eq.0) goto 799
 	  end if
-	  call MPI_BCast(qx(pos,:),qmax,MPI_REAL4,0,MPI_COMM_WORLD,err_mpi)
-	  call MPI_BCast(qy(pos,:),qmax,MPI_REAL4,0,MPI_COMM_WORLD,err_mpi)
-	  call MPI_BCast(qz(pos,:),qmax,MPI_REAL4,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(qxcurrent,qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(qycurrent,qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(qzcurrent,qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
 	else
 	  if (MASTER) then
 	    success=readframe()
@@ -240,9 +241,9 @@
 
 	! Calculate quantities for correlation function (only if acftype != FROMFILE)
 	if (acftype.ne.FROMFILE) then
-	  qx(pos,:) = 0.0
-	  qy(pos,:) = 0.0
-	  qz(pos,:) = 0.0
+	  qxcurrent = 0.0
+	  qycurrent = 0.0
+	  qzcurrent = 0.0
 	  idx = 1
 	  do sp=1,nspecies
 	    if (acftype.eq.VELOCITY) then
@@ -252,14 +253,14 @@
 	       totmass = 0.0
 	       do j=i,i+s_natoms(sp)-1
 	         totmass = totmass + mass(j)
-	         qx(pos,idx) = qx(pos,idx) + mass(j)*xvel(j)
-	         qy(pos,idx) = qy(pos,idx) + mass(j)*yvel(j)
-	         qz(pos,idx) = qz(pos,idx) + mass(j)*zvel(j)
+	         qxcurrent(idx) = qxcurrent(idx) + mass(j)*xvel(j)
+	         qycurrent(idx) = qycurrent(idx) + mass(j)*yvel(j)
+	         qzcurrent(idx) = qzcurrent(idx) + mass(j)*zvel(j)
 	       end do
 	       !if (m.eq.1) write(0,*) "Frame ",pos, "comvx(mol1) = ",comvx(pos,1)
-	       qx(pos,idx) = qx(pos,idx) / totmass
-  	       qy(pos,idx) = qy(pos,idx) / totmass
-	       qz(pos,idx) = qz(pos,idx) / totmass
+	       qxcurrent(idx) = qxcurrent(idx) / totmass
+  	       qycurrent(idx) = qycurrent(idx) / totmass
+	       qzcurrent(idx) = qzcurrent(idx) / totmass
 	       idx = idx + 1
 	       i = i + s_natoms(sp)
 	     end do
@@ -270,14 +271,14 @@
 	       do j=i,i+s_natoms(sp)-1
 	         ! Get mim position of this atom with first
 	         call pbc(xpos(j),ypos(j),zpos(j),xpos(i),ypos(i),zpos(i),vec(1),vec(2),vec(3))
-	         qx(pos,idx) = qx(pos,idx) + charge(j)*vec(1)
-	         qy(pos,idx) = qy(pos,idx) + charge(j)*vec(2)
-	         qz(pos,idx) = qz(pos,idx) + charge(j)*vec(3)
+	         qxcurrent(idx) = qxcurrent(idx) + charge(j)*vec(1)
+	         qycurrent(idx) = qycurrent(idx) + charge(j)*vec(2)
+	         qzcurrent(idx) = qzcurrent(idx) + charge(j)*vec(3)
 	       end do
 	       ! Convert dipole from q.angstrom to Debye (C.m)
-	       qx(pos,idx) = qx(pos,idx) * 4.80321
-	       qy(pos,idx) = qy(pos,idx) * 4.80321
-	       qz(pos,idx) = qz(pos,idx) * 4.80321
+	       qxcurrent(idx) = qxcurrent(idx) * 4.80321
+	       qycurrent(idx) = qycurrent(idx) * 4.80321
+	       qzcurrent(idx) = qzcurrent(idx) * 4.80321
 	       idx = idx + 1
 	       i = i + s_natoms(sp)
 	     end do
@@ -285,33 +286,54 @@
 	  end do
 	end if
 
-	! Accumulate ACF.
+	! Store new quantity data, but only if falls within the frame range stored by this slave
+	if ((pos.ge.t_first).and.(pos.le.t_last)) then
+	  qx(pos,:) = qxcurrent(:)
+	  qy(pos,:) = qycurrent(:)
+	  qz(pos,:) = qzcurrent(:)
+	end if
 
+	! Now, determine new origin and who owns, and then send it out to all processes
+	t0 = pos + 1
+	if (t0.gt.length) t0=t0-length
+	if ((t0.ge.t_first).and.(t0.le.t_last)) then
+	  ! Send data
+	  qxcurrent(:) = qx(t0,:)
+	  qycurrent(:) = qy(t0,:)
+	  qzcurrent(:) = qz(t0,:)
+	end if
+	! Work out who has the data... (take care, since the last process may have slightly more data than the others)
+	i = t0 / (length/nproc_mpi)
+	if (i.ge.nproc_mpi) i = nproc_mpi-1
+	call MPI_BCast(qxcurrent,qmax,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(qycurrent,qmax,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(qzcurrent,qmax,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
+
+	! Accumulate ACF.
 	if (nframes.ge.length) then
 	  ! write(0,*) "Accumulating"
 
 	  ! Variables:
-	  ! 'n' will represent the frame distance
-	  ! 'pos' contains the array position of the last added point
-	  ! 't0' is the t=0 point, with which all scalars are calcd
-	  ! 'tn' is the nth point in time
+	  ! 'n' will represent the correlation 'distance'
+	  ! 't0' contains the current time origin that we're considering
+	  ! 'tn' is the nth point in time available on this slave
 
-	  t0 = pos+1
-	  if (t0.gt.length) t0=t0-length
+	  do tn=t_first,t_last
 
-	  do n=t_start, t_finish
-
-	    tn = t0+n
-	    if (tn.gt.length) tn=tn-length
+	    ! Determine distance between this data 'tn' and the 'current' quantity data
+	    n = tn-t0
+	    if (n.lt.0) n=n+length
+	  !write(0,"(a,4i4)") "Current tn / frame / position / n = ", tn, nframes, pos, n
 
 	    ! Calculate total scalar products
 
-	    xx = sum(qx(t0,:))*sum(qx(tn,:))
-	    yy = sum(qy(t0,:))*sum(qy(tn,:))
-	    zz = sum(qz(t0,:))*sum(qz(tn,:))
-	    xy = sum(qx(t0,:))*sum(qy(tn,:)) + sum(qy(t0,:))*sum(qx(tn,:))
-	    xz = sum(qx(t0,:))*sum(qz(tn,:)) + sum(qz(t0,:))*sum(qx(tn,:))
-	    yz = sum(qy(t0,:))*sum(qz(tn,:)) + sum(qz(t0,:))*sum(qy(tn,:))
+	  !if (n.eq.0) write(0,"(5f12.6)") qxcurrent(1:5), qx(tn,1:5)
+	    xx = sum(qxcurrent(:))*sum(qx(tn,:))
+	    yy = sum(qycurrent(:))*sum(qy(tn,:))
+	    zz = sum(qzcurrent(:))*sum(qz(tn,:))
+	    xy = sum(qxcurrent(:))*sum(qy(tn,:)) + sum(qycurrent(:))*sum(qx(tn,:))
+	    xz = sum(qxcurrent(:))*sum(qz(tn,:)) + sum(qzcurrent(:))*sum(qx(tn,:))
+	    yz = sum(qycurrent(:))*sum(qz(tn,:)) + sum(qzcurrent(:))*sum(qy(tn,:))
 
 	    accum(n) = accum(n) + 1.0
 
@@ -326,12 +348,12 @@
 
 	    ! Calculate molecular products
 
-	    xx = sum(qx(t0,:)*qx(tn,:))
-	    yy = sum(qy(t0,:)*qy(tn,:))
-	    zz = sum(qz(t0,:)*qz(tn,:))
-	    xy = sum(qx(t0,:)*qy(tn,:)) + sum(qy(t0,:)*qx(tn,:))
-	    xz = sum(qx(t0,:)*qz(tn,:)) + sum(qz(t0,:)*qx(tn,:))
-	    yz = sum(qy(t0,:)*qz(tn,:)) + sum(qz(t0,:)*qy(tn,:))
+	    xx = sum(qxcurrent(:)*qx(tn,:))
+	    yy = sum(qycurrent(:)*qy(tn,:))
+	    zz = sum(qzcurrent(:)*qz(tn,:))
+	    xy = sum(qxcurrent(:)*qy(tn,:)) + sum(qycurrent(:)*qx(tn,:))
+	    xz = sum(qxcurrent(:)*qz(tn,:)) + sum(qzcurrent(:)*qx(tn,:))
+	    yz = sum(qycurrent(:)*qz(tn,:)) + sum(qzcurrent(:)*qy(tn,:))
 
 	    acf_intra(n) = acf_intra(n) + xx + yy + zz
 	    ! Accumulate partial VACFs
@@ -348,11 +370,11 @@
 	  if (mod(nframes-length,100).EQ.0) then
 
 	    ! Reduce acf data into temporary arrays on master
-	    call MPI_Reduce(acf_total,temp_total, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(accum,tempaccum, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(acf_total,temp_total, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	    call MPI_Reduce(accum,tempaccum, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 
 	    if (MASTER) then
 	
@@ -389,11 +411,11 @@
 801	write(0,*) ""
 
 	! Gather acf data into temporary arrays on master
-	call MPI_Reduce(acf_total,temp_total, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Reduce(accum,tempaccum, length, MPI_REAL4, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(acf_total,temp_total, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	call MPI_Reduce(accum,tempaccum, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
  
 	if (MASTER) then
 	  ! Write final functions
