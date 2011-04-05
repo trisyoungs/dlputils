@@ -5,15 +5,17 @@
 	implicit none
 	character*80, allocatable :: files(:)
 	character*80 :: discard
-	integer :: nargs,n,m,count,i
+	integer :: nargs,n,i, ndata, nexpected
 	logical :: success
 	integer :: iargc
 	real*8, allocatable :: acf(:,:), t(:), accum(:)
-	real*8 :: acc
+	real*8 :: acc, val(7), time
 
         nargs = iargc()
         if (nargs.EQ.0) stop " Usage : acfsum <file1> <file2> ... <fileN>  (results written to stdout)"
 	if (nargs.EQ.1) write(0,*) "Warning! Only one file supplied - results will be a copy."
+	
+	write(0,"(a,i5,a)") "Performing average of ", nargs, " files"
 	allocate(files(nargs))
         do n=1,nargs
           call getarg(n,files(n))
@@ -24,16 +26,17 @@
 	! Skip first line since it is the commented column header
 	success = readline(15)
 	! Read through the data until we reach the end of the file...
-	count = 0
+	nexpected = 0
 10	if (.not.readline(15)) goto 20
-	if (nargsparsed.ne.0) count = count + 1
+	if (nargsparsed.ne.0) nexpected = nexpected + 1
 	goto 10
 20	close(15)
+	write(0,*) "Number of points in the first file : ", nexpected
 
 	! Can now assign the arrays
-	allocate(acf(count,7)) 
-	allocate(accum(count))
-	allocate(t(count))
+	allocate(acf(nexpected,7)) 
+	allocate(accum(nexpected))
+	allocate(t(nexpected))
 
 	acf = 0.0
 	accum = 0.0
@@ -42,31 +45,36 @@
 	! Process the files given
 	do n=1,nargs
 	  open(unit=15,file=files(n),form='formatted',status='old')
+	write(0,*) "Processing file ",n
 	  ! Discard header
 	  success = readline(15)
-	  do m=1,count
-	    if (.not.readline(15)) exit
-! 	    read(15,"(F6.3,3x,F12.8)",end=20,err=20) a,c,i
-	    t(m) = argr(1)
-	    acc = argr(9)
-	    accum(m) = accum(m) + acc
-	    do i=1,7
-	      acf(m,i) = acf(m,i) + argr(i+1) * acc
-	    end do
+	  ndata = 0
+	  !if (.not.readline(15)) exit
+25	  read(15,*,end=50,err=50) time, val(1), val(2), val(3), val(4), val(5), val(6), val(7), acc
+	  ndata = ndata + 1
+	  if (ndata.gt.nexpected) then
+	    write(0,*) "WARNING - This file contains more data than the first...\n"
+	    goto 50
+	  end if
+	  t(ndata) = time
+	  accum(ndata) = accum(ndata) + acc
+	  do i=1,7
+	    acf(ndata,i) = acf(ndata,i) + val(i) * acc
 	  end do
-	  close(15)
+	  goto 25
+50	  close(15)
 	end do
 
 	! Form averages
-	do m=1,count
-	  acf(m,1:7) = acf(m,1:7) / accum(m)
+	do n=1,nexpected
+	  acf(n,1:7) = acf(n,1:7) / accum(n)
 	end do
-	write(0,"(A,I2,A)") "Averaged ACF over ",nargs," files"
+	write(0,"(A,i,A)") "Averaged ACF over ",nargs," files"
 
 	! Print out the data
 	write(6,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	do m=1,count
-	  write(6,"(9f14.6,e14.6)") t(m), (acf(m,n),n=1,7), accum(m)
+	do n=1,nexpected
+	  write(6,"(9f14.6,e14.6)") t(n), (acf(n,i),i=1,7), accum(n)
 	end do
 
 	end program acfsum
