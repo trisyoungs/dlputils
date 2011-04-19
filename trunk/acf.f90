@@ -149,7 +149,7 @@
 	      call openhis(headerfile,10)
 	      if (readheader().EQ.-1) then
 		! Send 'fail' flag
-		call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+		call MPI_BCast(799,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 		goto 799
 	      end if
 	      close(dlpun_his)
@@ -158,18 +158,24 @@
 	      call openhis(hisfile1,10)
 	     if (readheader().EQ.-1) then
 		! Send 'fail' flag
-		call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+		call MPI_BCast(799,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 		goto 799
 	      end if
 	    end if
 	  else
-	    open(unit=11,file=hisfile1,form='unformatted',status='old')
-	  end if
+	    open(unit=11,file=hisfile1,form='unformatted',status='old',err=65)
+	    goto 70
+	    ! Send 'fail' flag
+65	    call MPI_BCast(798,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	    write(0,*) "Couldn't open quantity file."
+70	  end if
 	  ! Send 'continue' flag
 	  call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	else
 	  ! Slaves must wait for the 'continue' flag
 	  call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+	  if (i.eq.799) goto 799
+	  if (i.eq.798) goto 798
 	end if
 
 	nframes=0
@@ -188,19 +194,20 @@
 101	pos=mod(nframes,length)+1
 	if (acftype.eq.FROMFILE) then
 	  if (MASTER) then
+	write(0,*) "Attempting to read from file   ", qmax
 	    read(11,end=102,err=102) qxcurrent
 	    read(11,end=102,err=102) qycurrent
 	    read(11,end=102,err=102) qzcurrent
 	!write(0,"(a,5f12.6)") "Just read ",qxcurrent(1:5)
 	    goto 105
 102	    call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	    goto 799  ! End of file encountered, or file error....
+	    goto 798  ! End of file encountered, or file error....
 	    ! Send 'continue' flag
 105	    call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	  else
 	    ! Slaves must wait for the 'continue' flag
 	    call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	    if (i.eq.0) goto 799
+	    if (i.eq.0) goto 798
 	  end if
 	  call MPI_BCast(qxcurrent,qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
 	  call MPI_BCast(qycurrent,qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
@@ -404,6 +411,11 @@
 	if (framestodo.eq.0) goto 801
 	goto 101
 
+798	if (MASTER) then
+	  write(0,*) "Quantity file ended."
+	  write(0,"(A,I4,A,I4,A)") "Frames read in : ",nframes," (wanted ",nframes,")"
+	end if
+	goto 801
 799	if (MASTER) then
 	  write(0,*) "HISTORY file ended."
 	  write(0,"(A,I4,A,I4,A)") "Frames read in : ",nframes," (wanted ",nframes,")"
