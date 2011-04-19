@@ -40,6 +40,7 @@
 
 	if (outinfo(dlpoutfile,1).EQ.-1) goto 798
 	qmax = sum(s_nmols)
+	write(0,*) "Total number of molecules is ", qmax
 
 	allocate (qx(qmax))
 	allocate (qy(qmax))
