@@ -34,7 +34,7 @@
           select case (temp)
             case ("-bin")
               n = n + 1; call getarg(n,temp); read(temp,"(F10.4)") binwidth
-              write(0,"(A,I4)") "Binwidth set to ",binwidth
+              write(0,"(A,f6.2)") "Binwidth set to ",binwidth
             case ("-header")
               n = n + 1; call getarg(n,altheaderfile)
               write(0,"(A,I4)") "Alternative header file supplied."
@@ -147,7 +147,7 @@
 		if (zminus.and.(tz.lt.c1z)) cycle
 		dist=sqrt( (tx-c1x)**2 + (ty-c1y)**2 + (tz-c1z)**2 )
 		! 'Add' this distance...
-		bin=INT(dist*10)+1
+		bin=INT(dist/binwidth)+1
 		if (bin.lt.nbins) irdf(s1,s2,bin) = irdf(s1,s2,bin) + 1
 		numadded=numadded+1
 	      end do
