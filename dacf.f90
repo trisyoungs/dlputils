@@ -15,11 +15,11 @@
 	integer :: length, acftype = 0, framestodo = -1, framestoskip = -1
 	integer :: iargc, idx
 	integer :: t_first, t_last, err_mpi, id_mpi, nproc_mpi, qmax
-	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:), qtot(:)
+	real*8, allocatable :: acf_total(:), accum(:), qx(:,:), qy(:,:), qz(:,:), qtot(:)
 	real*8, allocatable :: qxcurrent(:), qycurrent(:), qzcurrent(:)
-	real*8, allocatable :: temp_total(:), temp_intra(:), temppart_total(:,:), temppart_intra(:,:), tempaccum(:)
-	real*8 :: deltat, totmass, dist, vec(3), qtotcurrent
-	real*8 :: xx, yy, zz, xy, xz, yz
+	real*8, allocatable :: temp_total(:), tempaccum(:)
+	real*8 :: deltat, dist, vec(3), qtotcurrent
+	real*8 :: xx, yy, zz
 	logical :: altheader = .false.
 
 	nargs = iargc()
@@ -104,9 +104,6 @@
 	  
 
 	allocate (acf_total(0:length-1))
-	allocate (acf_intra(0:length-1))
-	allocate (acfpart_total(6,0:length-1))
-	allocate (acfpart_intra(6,0:length-1))
 	allocate (accum(0:length))
 
 	! Calculate time range for node and assign arrays
@@ -127,9 +124,6 @@
 	allocate (qzcurrent(qmax))
 
 	acf_total = 0.0
-	acf_intra = 0.0
-	acfpart_intra = 0.0
-	acfpart_total = 0.0
 	accum = 0.0
 	qx = 0.0
 	qy = 0.0
@@ -177,15 +171,13 @@
 	  if (i.eq.798) goto 798
 	end if
 
+	write(0,*) "Process is ready", id_mpi
 	nframes=0
 	pos=0
 
 	! Allocate extra arrays for MASTER
 	if (MASTER) then
 	  allocate (temp_total(0:length-1))
-	  allocate (temp_intra(0:length-1))
-	  allocate (temppart_total(6,0:length-1))
-	  allocate (temppart_intra(6,0:length-1))
 	  allocate (tempaccum(0:length))
 	end if
 
@@ -289,7 +281,7 @@
 	! Work out who has the data... (take care, since the last process may have slightly more data than the others)
 	i = t0 / (length/nproc_mpi)
 	if (i.ge.nproc_mpi) i = nproc_mpi-1
-	call MPI_BCast(qtotcurrent,qmax,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(qtotcurrent,1,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
 
 	! Accumulate ACF.
 	if (nframes.ge.length) then
@@ -331,31 +323,20 @@
 	  write(0,*) "HISTORY file ended."
 	  write(0,"(A,I4,A,I4,A)") "Frames read in : ",nframes," (wanted ",nframes,")"
 	end if
-801	write(0,*) ""
+801	write(0,*) "Done", id_mpi
 
 	! Gather acf data into temporary arrays on master
 	call MPI_Reduce(acf_total,temp_total, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	!call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	!call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	!call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 	call MPI_Reduce(accum,tempaccum, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
  
 	if (MASTER) then
 	  ! Write final functions
 	  open(unit=20,file=basename(1:baselen)//namepart//".total",form="formatted",status="replace")
 	  write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	  !open(unit=21,file=basename(1:baselen)//namepart//".intra",form="formatted",status="replace")
-	  !write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	  !open(unit=22,file=basename(1:baselen)//namepart//".inter",form="formatted",status="replace")
-	  !write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
 	  do n=0,length-1
-	    write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/tempaccum(n), (temppart_total(m,n)/tempaccum(n),m=1,6), tempaccum(n)
-	   ! write(21,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/tempaccum(n), (temppart_intra(m,n)/tempaccum(n),m=1,6), tempaccum(n)
-	   ! write(22,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/tempaccum(n), ((temppart_total(m,n)-temppart_intra(m,n))/tempaccum(n),m=1,6), tempaccum(n)
+	    write(20,"(2f14.6,e14.6)") n*deltat, temp_total(n)/tempaccum(n), tempaccum(n)
 	  end do
 	  close(20)
-	  !close(21)
-	  !close(22)
 	end if
 
 	call MPI_Finalize(err_mpi)

@@ -16,8 +16,8 @@
 	integer :: length, acftype = 0, framestodo = -1, framestoskip = -1
 	integer :: iargc, idx
 	integer :: t_first, t_last, err_mpi, id_mpi, nproc_mpi, qmax
-	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:), qtot(:,:)
-	real*8, allocatable :: qxcurrent(:), qycurrent(:), qzcurrent(:), qtotcurrent(:,:)
+	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:)
+	real*8, allocatable :: qxcurrent(:), qycurrent(:), qzcurrent(:)
 	real*8, allocatable :: temp_total(:), temp_intra(:), temppart_total(:,:), temppart_intra(:,:), tempaccum(:)
 	real*8 :: deltat, totmass, dist, vec(3)
 	real*8 :: xx, yy, zz, xy, xz, yz
@@ -334,12 +334,9 @@
 	    ! Calculate total scalar products
 
 	  !if (n.eq.0) write(0,"(5f12.6)") qxcurrent(1:5), qx(tn,1:5)
-	    ! BEGIN TEST
-	    !xx = sum(qxcurrent(:))*sum(qx(tn,:))
-	    !yy = sum(qycurrent(:))*sum(qy(tn,:))
-	    !zz = sum(qzcurrent(:))*sum(qz(tn,:))
-	    yy = 0.0
-	    zz = 0.0
+	    xx = sum(qxcurrent(:))*sum(qx(tn,:))
+	    yy = sum(qycurrent(:))*sum(qy(tn,:))
+	    zz = sum(qzcurrent(:))*sum(qz(tn,:))
 	    xy = sum(qxcurrent(:))*sum(qy(tn,:)) + sum(qycurrent(:))*sum(qx(tn,:))
 	    xz = sum(qxcurrent(:))*sum(qz(tn,:)) + sum(qzcurrent(:))*sum(qx(tn,:))
 	    yz = sum(qycurrent(:))*sum(qz(tn,:)) + sum(qzcurrent(:))*sum(qy(tn,:))
