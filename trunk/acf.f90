@@ -194,7 +194,6 @@
 101	pos=mod(nframes,length)+1
 	if (acftype.eq.FROMFILE) then
 	  if (MASTER) then
-	write(0,*) "Attempting to read from file   ", qmax
 	    read(11,end=102,err=102) qxcurrent
 	    read(11,end=102,err=102) qycurrent
 	    read(11,end=102,err=102) qzcurrent
