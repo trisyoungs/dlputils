@@ -75,10 +75,10 @@
 
 	! Calculate quantities for correlation function, writing after each species
 	idx = 1
+	qx = 0.0
+	qy = 0.0
+	qz = 0.0
 	do sp=1,nspecies
-	  qx = 0.0
-	  qy = 0.0
-	  qz = 0.0
 	  if (acftype.eq.VELOCITY) then
 	    call calc_com
 	    i = s_start(sp)
@@ -110,12 +110,15 @@
 	      idx = idx + 1
 	      i = i + s_natoms(sp)
 	    end do
-	    ! Convert dipole from q.angstrom to Debye (C.m)
-	    qx = qx * 4.80321
-	    qy = qy * 4.80321
-	    qz = qz * 4.80321
 	  end if
 	end do
+
+	! Convert dipole from q.angstrom to Debye (C.m)
+	if (acftype.eq.DIPOLE) then
+	  qx = qx * 4.80321d0
+	  qy = qy * 4.80321d0
+	  qz = qz * 4.80321d0
+	end if
 
 	! Write data for all molecules
 	write(15) qx

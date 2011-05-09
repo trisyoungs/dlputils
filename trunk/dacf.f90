@@ -1,13 +1,12 @@
-!	** acf **
-!	Calculate the specified autocorrelation tensor
-!	04/04/2011 - Modified so slaves only store part of matrix (t,q)
+!	** dacf **
+!	Calculate the system dipole ACF
 
-	program acf
+	program dacf
 	use dlprw; use utility
 	implicit none
 	include "mpif.h"
 
-	integer, parameter :: VELOCITY=1, DIPOLE=2, FROMFILE=3
+	integer, parameter :: DIPOLE=2, FROMFILE=3
 	logical :: MASTER, SLAVE
 	character*80 :: hisfile1, dlpoutfile,basename,resfile,headerfile
 	character*20 :: temp
@@ -16,10 +15,10 @@
 	integer :: length, acftype = 0, framestodo = -1, framestoskip = -1
 	integer :: iargc, idx
 	integer :: t_first, t_last, err_mpi, id_mpi, nproc_mpi, qmax
-	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:), qtot(:,:)
-	real*8, allocatable :: qxcurrent(:), qycurrent(:), qzcurrent(:), qtotcurrent(:,:)
+	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:), qtot(:)
+	real*8, allocatable :: qxcurrent(:), qycurrent(:), qzcurrent(:)
 	real*8, allocatable :: temp_total(:), temp_intra(:), temppart_total(:,:), temppart_intra(:,:), tempaccum(:)
-	real*8 :: deltat, totmass, dist, vec(3)
+	real*8 :: deltat, totmass, dist, vec(3), qtotcurrent
 	real*8 :: xx, yy, zz, xy, xz, yz
 	logical :: altheader = .false.
 
@@ -36,7 +35,6 @@
 	  write(0,*) "Alternative header file supplied."
 	end if
 	call getarg(4,temp)
-	if (temp.eq."velocity") acftype = VELOCITY
 	if (temp.eq."dipole") acftype = DIPOLE
 	if (temp.eq."file") acftype = FROMFILE
 	if (acftype.eq.0) stop "Invalid correlation function requested - options are 'velocity' or 'dipole'."
@@ -59,7 +57,6 @@
 	end if
 
 	if (MASTER) then
-	  if (acftype.eq.VELOCITY) write(0,*) "Calculating velocity autocorrelation function."
 	  if (acftype.eq.DIPOLE) write(0,*) "Calculating molecular dipole autocorrelation function."
 	  if (acftype.eq.FROMFILE) write(0,*) "Calculating autocorrelation function from quantities in file."
 	  if (outinfo(dlpoutfile,1).EQ.-1) then
@@ -90,7 +87,6 @@
 	  endif
 
 	  ! Get part of output filename
-	  if (acftype.eq.VELOCITY) namepart = "vacf"
 	  if (acftype.eq.DIPOLE) namepart = "dacf"
 	  if (acftype.eq.FROMFILE) namepart = "facf"
 
@@ -125,6 +121,7 @@
 	allocate (qx(t_first:t_last,qmax))
 	allocate (qy(t_first:t_last,qmax))
 	allocate (qz(t_first:t_last,qmax))
+	allocate (qtot(t_first:t_last))
 	allocate (qxcurrent(qmax))
 	allocate (qycurrent(qmax))
 	allocate (qzcurrent(qmax))
@@ -137,9 +134,11 @@
 	qx = 0.0
 	qy = 0.0
 	qz = 0.0
+	qtot = 0.0
 	qxcurrent = 0.0
 	qycurrent = 0.0
 	qzcurrent = 0.0
+	qtotcurrent = 0.0
 
 	if (MASTER) then
 	  ! Check history file (if not FROMFILE) or open binary quantity file
@@ -198,6 +197,10 @@
 	    read(11,end=102,err=102) qxcurrent
 	    read(11,end=102,err=102) qycurrent
 	    read(11,end=102,err=102) qzcurrent
+	    xx = sum(qxcurrent)
+	    yy = sum(qycurrent)
+	    zz = sum(qzcurrent)
+	    qtotcurrent = sqrt(xx*xx + yy*yy + zz*zz)
 	!write(0,"(a,5f12.6)") "Just read ",qxcurrent(1:5)
 	    goto 105
 102	    call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
@@ -209,9 +212,7 @@
 	    call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	    if (i.eq.0) goto 798
 	  end if
-	  call MPI_BCast(qxcurrent,qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
-	  call MPI_BCast(qycurrent,qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
-	  call MPI_BCast(qzcurrent,qmax,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(qtotcurrent,1,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
 	else
 	  if (MASTER) then
 	    success=readframe()
@@ -253,51 +254,30 @@
 	  qzcurrent = 0.0
 	  idx = 1
 	  do sp=1,nspecies
-	    if (acftype.eq.VELOCITY) then
-	     call calc_com
-	     i = s_start(sp)
-	     do m=1,s_nmols(sp)
-	       totmass = 0.0
-	       do j=i,i+s_natoms(sp)-1
-	         totmass = totmass + mass(j)
-	         qxcurrent(idx) = qxcurrent(idx) + mass(j)*xvel(j)
-	         qycurrent(idx) = qycurrent(idx) + mass(j)*yvel(j)
-	         qzcurrent(idx) = qzcurrent(idx) + mass(j)*zvel(j)
-	       end do
-	       !if (m.eq.1) write(0,*) "Frame ",pos, "comvx(mol1) = ",comvx(pos,1)
-	       qxcurrent(idx) = qxcurrent(idx) / totmass
-  	       qycurrent(idx) = qycurrent(idx) / totmass
-	       qzcurrent(idx) = qzcurrent(idx) / totmass
-	       idx = idx + 1
-	       i = i + s_natoms(sp)
+	   ! Take all atom positions relative to first atom in molecule
+	   i = s_start(sp)
+	   do m=1,s_nmols(sp)
+	     do j=i,i+s_natoms(sp)-1
+	       ! Get mim position of this atom with first
+	       call pbc(xpos(j),ypos(j),zpos(j),xpos(i),ypos(i),zpos(i),vec(1),vec(2),vec(3))
+	       qxcurrent(idx) = qxcurrent(idx) + charge(j)*vec(1)
+	       qycurrent(idx) = qycurrent(idx) + charge(j)*vec(2)
+	       qzcurrent(idx) = qzcurrent(idx) + charge(j)*vec(3)
 	     end do
-	   else if (acftype.eq.DIPOLE) then
-	     ! Take all atom positions relative to first atom in molecule
-	     i = s_start(sp)
-	     do m=1,s_nmols(sp)
-	       do j=i,i+s_natoms(sp)-1
-	         ! Get mim position of this atom with first
-	         call pbc(xpos(j),ypos(j),zpos(j),xpos(i),ypos(i),zpos(i),vec(1),vec(2),vec(3))
-	         qxcurrent(idx) = qxcurrent(idx) + charge(j)*vec(1)
-	         qycurrent(idx) = qycurrent(idx) + charge(j)*vec(2)
-	         qzcurrent(idx) = qzcurrent(idx) + charge(j)*vec(3)
-	       end do
-	       ! Convert dipole from q.angstrom to Debye (C.m)
-	       qxcurrent(idx) = qxcurrent(idx) * 4.80321
-	       qycurrent(idx) = qycurrent(idx) * 4.80321
-	       qzcurrent(idx) = qzcurrent(idx) * 4.80321
-	       idx = idx + 1
-	       i = i + s_natoms(sp)
-	     end do
-	    endif
+	     idx = idx + 1
+	     i = i + s_natoms(sp)
+	   end do
 	  end do
+	  xx = sum(qxcurrent)
+	  yy = sum(qycurrent)
+	  zz = sum(qzcurrent)
+	  ! Convert dipole from q.angstrom to Debye (C.m)
+	  qtotcurrent = sqrt(xx*xx + yy*yy + zz*zz) * 4.80321
 	end if
 
 	! Store new quantity data, but only if falls within the frame range stored by this slave
 	if ((pos.ge.t_first).and.(pos.le.t_last)) then
-	  qx(pos,:) = qxcurrent(:)
-	  qy(pos,:) = qycurrent(:)
-	  qz(pos,:) = qzcurrent(:)
+	  qtot(pos) = qtotcurrent
 	end if
 
 	! Now, determine new origin and who owns, and then send it out to all processes
@@ -305,16 +285,12 @@
 	if (t0.gt.length) t0=t0-length
 	if ((t0.ge.t_first).and.(t0.le.t_last)) then
 	  ! Send data
-	  qxcurrent(:) = qx(t0,:)
-	  qycurrent(:) = qy(t0,:)
-	  qzcurrent(:) = qz(t0,:)
+	  qtotcurrent = qtot(t0)
 	end if
 	! Work out who has the data... (take care, since the last process may have slightly more data than the others)
 	i = t0 / (length/nproc_mpi)
 	if (i.ge.nproc_mpi) i = nproc_mpi-1
-	call MPI_BCast(qxcurrent,qmax,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
-	call MPI_BCast(qycurrent,qmax,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
-	call MPI_BCast(qzcurrent,qmax,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(qtotcurrent,qmax,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
 
 	! Accumulate ACF.
 	if (nframes.ge.length) then
@@ -332,80 +308,13 @@
 	    if (n.lt.0) n=n+length
 	  !write(0,"(a,4i4)") "Current tn / frame / position / n = ", tn, nframes, pos, n
 
-	    ! Calculate total scalar products
+	    ! Calculate total system dipole autocorrelation function
 
 	  !if (n.eq.0) write(0,"(5f12.6)") qxcurrent(1:5), qx(tn,1:5)
-	    ! BEGIN TEST
-	    !xx = sum(qxcurrent(:))*sum(qx(tn,:))
-	    !yy = sum(qycurrent(:))*sum(qy(tn,:))
-	    !zz = sum(qzcurrent(:))*sum(qz(tn,:))
-	    yy = 0.0
-	    zz = 0.0
-	    xy = sum(qxcurrent(:))*sum(qy(tn,:)) + sum(qycurrent(:))*sum(qx(tn,:))
-	    xz = sum(qxcurrent(:))*sum(qz(tn,:)) + sum(qzcurrent(:))*sum(qx(tn,:))
-	    yz = sum(qycurrent(:))*sum(qz(tn,:)) + sum(qzcurrent(:))*sum(qy(tn,:))
-
+	    acf_total(n) = acf_total(n) + qtotcurrent*qtot(tn)
 	    accum(n) = accum(n) + 1.0
 
-	    acf_total(n) = acf_total(n) + xx + yy + zz
-	    ! Accumulate partial ACFs
-	    acfpart_total(1,n) = acfpart_total(1,n) + xx
-	    acfpart_total(2,n) = acfpart_total(2,n) + yy
-	    acfpart_total(3,n) = acfpart_total(3,n) + zz
-	    acfpart_total(4,n) = acfpart_total(4,n) + xy
-	    acfpart_total(5,n) = acfpart_total(5,n) + xz
-	    acfpart_total(6,n) = acfpart_total(6,n) + yz
-
-	    ! Calculate molecular products
-
-	    xx = sum(qxcurrent(:)*qx(tn,:))
-	    yy = sum(qycurrent(:)*qy(tn,:))
-	    zz = sum(qzcurrent(:)*qz(tn,:))
-	    xy = sum(qxcurrent(:)*qy(tn,:)) + sum(qycurrent(:)*qx(tn,:))
-	    xz = sum(qxcurrent(:)*qz(tn,:)) + sum(qzcurrent(:)*qx(tn,:))
-	    yz = sum(qycurrent(:)*qz(tn,:)) + sum(qzcurrent(:)*qy(tn,:))
-
-	    acf_intra(n) = acf_intra(n) + xx + yy + zz
-	    ! Accumulate partial VACFs
-	    acfpart_intra(1,n) = acfpart_intra(1,n) + xx
-	    acfpart_intra(2,n) = acfpart_intra(2,n) + yy
-	    acfpart_intra(3,n) = acfpart_intra(3,n) + zz
-	    acfpart_intra(4,n) = acfpart_intra(4,n) + xy
-	    acfpart_intra(5,n) = acfpart_intra(5,n) + xz
-	    acfpart_intra(6,n) = acfpart_intra(6,n) + yz
-
 	  end do
-
-	  ! Write intermediate results file?
-	  if (mod(nframes-length,100).EQ.0) then
-
-	    ! Reduce acf data into temporary arrays on master
-	    call MPI_Reduce(acf_total,temp_total, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	    call MPI_Reduce(accum,tempaccum, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-
-	    if (MASTER) then
-	
-	      open(unit=20,file=basename(1:baselen)//namepart//".total_temp",form="formatted",status="replace")
-	      write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	      open(unit=21,file=basename(1:baselen)//namepart//".intra_temp",form="formatted",status="replace")
-	      write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	      open(unit=22,file=basename(1:baselen)//namepart//".inter_temp",form="formatted",status="replace")
-	      write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	      do n=0,length-1
-	        write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/tempaccum(n), (temppart_total(m,n)/tempaccum(n),m=1,6), tempaccum(n)
-	        write(21,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/tempaccum(n), (temppart_intra(m,n)/tempaccum(n),m=1,6), tempaccum(n)
-	        write(22,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/tempaccum(n), ((temppart_total(m,n)-temppart_intra(m,n))/tempaccum(n),m=1,6), tempaccum(n)
-	      end do
-	      close(20)
-	      close(21)
-	      close(22)
-	    else
-	    end if
-
-	  end if
 
 	  framestodo = framestodo -1
 
@@ -427,27 +336,27 @@
 
 	! Gather acf data into temporary arrays on master
 	call MPI_Reduce(acf_total,temp_total, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
-	call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	!call MPI_Reduce(acf_intra,temp_intra, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	!call MPI_Reduce(acfpart_total,temppart_total, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
+	!call MPI_Reduce(acfpart_intra,temppart_intra, 6*length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
 	call MPI_Reduce(accum,tempaccum, length, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD,err_mpi)
  
 	if (MASTER) then
 	  ! Write final functions
 	  open(unit=20,file=basename(1:baselen)//namepart//".total",form="formatted",status="replace")
 	  write(20,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	  open(unit=21,file=basename(1:baselen)//namepart//".intra",form="formatted",status="replace")
-	  write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
-	  open(unit=22,file=basename(1:baselen)//namepart//".inter",form="formatted",status="replace")
-	  write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	  !open(unit=21,file=basename(1:baselen)//namepart//".intra",form="formatted",status="replace")
+	  !write(21,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
+	  !open(unit=22,file=basename(1:baselen)//namepart//".inter",form="formatted",status="replace")
+	  !write(22,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"
 	  do n=0,length-1
 	    write(20,"(9f14.6,e14.6)") n*deltat, temp_total(n)/tempaccum(n), (temppart_total(m,n)/tempaccum(n),m=1,6), tempaccum(n)
-	    write(21,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/tempaccum(n), (temppart_intra(m,n)/tempaccum(n),m=1,6), tempaccum(n)
-	    write(22,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/tempaccum(n), ((temppart_total(m,n)-temppart_intra(m,n))/tempaccum(n),m=1,6), tempaccum(n)
+	   ! write(21,"(9f14.6,e14.6)") n*deltat, temp_intra(n)/tempaccum(n), (temppart_intra(m,n)/tempaccum(n),m=1,6), tempaccum(n)
+	   ! write(22,"(9f14.6,e14.6)") n*deltat, (temp_total(n)-temp_intra(n))/tempaccum(n), ((temppart_total(m,n)-temppart_intra(m,n))/tempaccum(n),m=1,6), tempaccum(n)
 	  end do
 	  close(20)
-	  close(21)
-	  close(22)
+	  !close(21)
+	  !close(22)
 	end if
 
 	call MPI_Finalize(err_mpi)
@@ -455,4 +364,4 @@
 	write(0,*) "Finished."
 999	close(10)
 	close(13)
-	end program acf
+	end program dacf
