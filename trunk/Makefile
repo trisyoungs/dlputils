@@ -35,6 +35,9 @@ sq : sq.f90
 acf : acf.f90
 	$(MPIFC) $(FFLAGS) -o $@ $< dlprw.o utility.o parse.o $(MPIFLAGS)
 
+dacf : dacf.f90
+	$(MPIFC) $(FFLAGS) -o $@ $< dlprw.o utility.o parse.o $(MPIFLAGS)
+
 sqtest : sqtest.f90
 	$(MPIFC) $(FFLAGS) -o $@ $< dlprw.o utility.o parse.o $(MPIFLAGS)
 
