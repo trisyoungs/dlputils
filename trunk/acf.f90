@@ -303,13 +303,13 @@
 	t0 = pos + 1
 	if (t0.gt.length) t0=t0-length
 	if ((t0.ge.t_first).and.(t0.le.t_last)) then
-	  ! Send data
+	  ! Store current value data
 	  qxcurrent(:) = qx(t0,:)
 	  qycurrent(:) = qy(t0,:)
 	  qzcurrent(:) = qz(t0,:)
 	end if
 	! Work out who has the data... (take care, since the last process may have slightly more data than the others)
-	i = t0 / (length/nproc_mpi)
+	i = (t0-1) / (length/nproc_mpi)
 	if (i.ge.nproc_mpi) i = nproc_mpi-1
 	call MPI_BCast(qxcurrent,qmax,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
 	call MPI_BCast(qycurrent,qmax,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
