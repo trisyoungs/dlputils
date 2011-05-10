@@ -15,10 +15,10 @@
 	integer :: length, acftype = 0, framestodo = -1, framestoskip = -1
 	integer :: iargc, idx
 	integer :: t_first, t_last, err_mpi, id_mpi, nproc_mpi, qmax
-	real*8, allocatable :: acf_total(:), accum(:), qx(:,:), qy(:,:), qz(:,:), qtot(:)
+	real*8, allocatable :: acf_total(:), accum(:), qx(:,:), qy(:,:), qz(:,:), qtot(:,:)
 	real*8, allocatable :: qxcurrent(:), qycurrent(:), qzcurrent(:)
 	real*8, allocatable :: temp_total(:), tempaccum(:)
-	real*8 :: deltat, dist, vec(3), qtotcurrent
+	real*8 :: deltat, dist, vec(3), qtotcurrent(3)
 	real*8 :: xx, yy, zz
 	logical :: altheader = .false.
 
@@ -118,7 +118,7 @@
 	allocate (qx(t_first:t_last,qmax))
 	allocate (qy(t_first:t_last,qmax))
 	allocate (qz(t_first:t_last,qmax))
-	allocate (qtot(t_first:t_last))
+	allocate (qtot(t_first:t_last,3))
 	allocate (qxcurrent(qmax))
 	allocate (qycurrent(qmax))
 	allocate (qzcurrent(qmax))
@@ -188,10 +188,9 @@
 	    read(11,end=102,err=102) qxcurrent
 	    read(11,end=102,err=102) qycurrent
 	    read(11,end=102,err=102) qzcurrent
-	    xx = sum(qxcurrent)
-	    yy = sum(qycurrent)
-	    zz = sum(qzcurrent)
-	    qtotcurrent = sqrt(xx*xx + yy*yy + zz*zz)
+	    qtotcurrent(1) = sum(qxcurrent)
+	    qtotcurrent(2) = sum(qycurrent)
+	    qtotcurrent(3) = sum(qzcurrent)
 	!write(0,"(a,5f12.6)") "Just read ",qxcurrent(1:5)
 	    goto 105
 102	    call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
@@ -203,7 +202,7 @@
 	    call MPI_BCast(i,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	    if (i.eq.0) goto 798
 	  end if
-	  call MPI_BCast(qtotcurrent,1,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
+	  call MPI_BCast(qtotcurrent,3,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
 	else
 	  if (MASTER) then
 	    success=readframe()
@@ -259,16 +258,16 @@
 	     i = i + s_natoms(sp)
 	   end do
 	  end do
-	  xx = sum(qxcurrent)
-	  yy = sum(qycurrent)
-	  zz = sum(qzcurrent)
+	  qtotcurrent(1) = sum(qxcurrent)
+	  qtotcurrent(2) = sum(qycurrent)
+	  qtotcurrent(3) = sum(qzcurrent)
 	  ! Convert dipole from q.angstrom to Debye (C.m)
-	  qtotcurrent = sqrt(xx*xx + yy*yy + zz*zz) * 4.80321
+	  qtotcurrent = qtotcurrent * 4.80321
 	end if
 
 	! Store new quantity data, but only if falls within the frame range stored by this slave
 	if ((pos.ge.t_first).and.(pos.le.t_last)) then
-	  qtot(pos) = qtotcurrent
+	  qtot(pos,:) = qtotcurrent(:)
 	end if
 
 	! Now, determine new origin and who owns, and then send it out to all processes
@@ -276,12 +275,12 @@
 	if (t0.gt.length) t0=t0-length
 	if ((t0.ge.t_first).and.(t0.le.t_last)) then
 	  ! Send data
-	  qtotcurrent = qtot(t0)
+	  qtotcurrent(:) = qtot(t0,:)
 	end if
 	! Work out who has the data... (take care, since the last process may have slightly more data than the others)
 	i = t0 / (length/nproc_mpi)
 	if (i.ge.nproc_mpi) i = nproc_mpi-1
-	call MPI_BCast(qtotcurrent,1,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
+	call MPI_BCast(qtotcurrent,3,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
 
 	! Accumulate ACF.
 	if (nframes.ge.length) then
@@ -302,7 +301,7 @@
 	    ! Calculate total system dipole autocorrelation function
 
 	  !if (n.eq.0) write(0,"(5f12.6)") qxcurrent(1:5), qx(tn,1:5)
-	    acf_total(n) = acf_total(n) + qtotcurrent*qtot(tn)
+	    acf_total(n) = acf_total(n) + dot_product(qtotcurrent(:),qtot(tn,:))
 	    accum(n) = accum(n) + 1.0
 
 	  end do
