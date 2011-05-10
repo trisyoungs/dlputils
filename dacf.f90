@@ -191,7 +191,7 @@
 	    qtotcurrent(1) = sum(qxcurrent)
 	    qtotcurrent(2) = sum(qycurrent)
 	    qtotcurrent(3) = sum(qzcurrent)
-	!write(0,"(a,5f12.6)") "Just read ",qxcurrent(1:5)
+	!write(22,"(a,i3,a,3f10.4)") "n = ",pos, " q=",qtotcurrent(:)
 	    goto 105
 102	    call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	    goto 798  ! End of file encountered, or file error....
@@ -265,7 +265,7 @@
 	  qtotcurrent = qtotcurrent * 4.80321
 	end if
 
-	! Store new quantity data, but only if falls within the frame range stored by this slave
+	! Store new quantity data, but only if falls within the frame range stored by this process
 	if ((pos.ge.t_first).and.(pos.le.t_last)) then
 	  qtot(pos,:) = qtotcurrent(:)
 	end if
@@ -274,17 +274,16 @@
 	t0 = pos + 1
 	if (t0.gt.length) t0=t0-length
 	if ((t0.ge.t_first).and.(t0.le.t_last)) then
-	  ! Send data
 	  qtotcurrent(:) = qtot(t0,:)
 	end if
 	! Work out who has the data... (take care, since the last process may have slightly more data than the others)
-	i = t0 / (length/nproc_mpi)
+	i = (t0-1) / (length/nproc_mpi)
 	if (i.ge.nproc_mpi) i = nproc_mpi-1
+	!write(0,*) "At t0=",t0, "Process ",i,"has the next qtotcurrent", length,nproc_mpi
 	call MPI_BCast(qtotcurrent,3,MPI_REAL8,i,MPI_COMM_WORLD,err_mpi)
 
 	! Accumulate ACF.
 	if (nframes.ge.length) then
-	  ! write(0,*) "Accumulating"
 
 	  ! Variables:
 	  ! 'n' will represent the correlation 'distance'
@@ -293,15 +292,14 @@
 
 	  do tn=t_first,t_last
 
-	    ! Determine distance between this data 'tn' and the 'current' quantity data
+	    ! Determine distance between this data 'tn' and the 'current' quantity data, wrapping value if necessary
 	    n = tn-t0
 	    if (n.lt.0) n=n+length
-	  !write(0,"(a,4i4)") "Current tn / frame / position / n = ", tn, nframes, pos, n
 
 	    ! Calculate total system dipole autocorrelation function
 
-	  !if (n.eq.0) write(0,"(5f12.6)") qxcurrent(1:5), qx(tn,1:5)
 	    acf_total(n) = acf_total(n) + dot_product(qtotcurrent(:),qtot(tn,:))
+	!write(0,"(a,i3,a,3i3,a,2i3,a,3f10.4,a,3f10.4,a,f10.4)") "Process ",id_mpi," tn/tfirst/tlast=",tn,t_first,t_last," t0,n=",t0,n," qcrnt=",qtotcurrent(:)," qtot=",qtot(tn,:)," dp=",dot_product(qtotcurrent(:),qtot(tn,:))
 	    accum(n) = accum(n) + 1.0
 
 	  end do
