@@ -3,8 +3,8 @@
 # Custom options - modify these for 'unknown' machine builds
 DEFAULTFC=ifort
 #DEFAULTFFLAGS=" -O2 -ffree-line-length-none "
-#DEFAULTFFLAGS=" -O2 "
-DEFAULTFFLAGS=" -CB "
+DEFAULTFFLAGS=" -O2 "
+#DEFAULTFFLAGS=" -CB "
 DEFAULTMPIFC=mpif90
 DEFAULTMPIFLAGS=""
 

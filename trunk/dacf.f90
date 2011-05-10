@@ -39,10 +39,10 @@
 	if (temp.eq."file") acftype = FROMFILE
 	if (acftype.eq.0) stop "Invalid correlation function requested - options are 'velocity' or 'dipole'."
 	call getarg(5,temp); read(temp,"(F10.6)") deltat
-	call getarg(6,temp); read(temp,"(I6)") length
-	call getarg(7,temp); read(temp,"(I6)") framestodo
+	call getarg(6,temp); read(temp,"(I10)") length
+	call getarg(7,temp); read(temp,"(I10)") framestodo
 	if (nargs.eq.8) then
-	  call getarg(8,temp); read(temp,"(I6)") framestoskip
+	  call getarg(8,temp); read(temp,"(I10)") framestoskip
 	end if
 
 	! Initialise MPI and determine slave data
