@@ -19,7 +19,7 @@ GLUCOSE = glucgeom glucanal gluchb gluchbeach glucsphere
 PDENS = pdens pdenstrim pdensmirror pdensint rpairs surfacify
 MISC = prepfm dlpsize point avgconfig pairs probedlp velconfig
 MISCP = genlb gengg stats trapezium
-ALL = $(CONVERTERS) $(RDF) $(ANALYSE2) $(ANALYSE) $(GLUCOSE) $(PDENS) $(MISC) $(MISCP) $(SQ)
+ALL = $(CONVERTERS) $(RDF) $(ANALYSE2) $(GLUCOSE) $(PDENS) $(MISC) $(MISCP) $(ANALYSE) $(SQ)
 
 all: $(MODULES) $(ALL)
 
