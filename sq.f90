@@ -537,7 +537,7 @@
 	  ! Store local sanity S(Q) data
 	  sanitysq = sanitysq + framesanitysq
 	  ! Gather all partial S(Q) and frameadded data from slave processes into arrays on the master
-	  write(0,*) "Master receiving slave data"
+	  !write(0,*) "Master receiving slave data"
 	  do i=1,nproc_mpi-1
 	    ! Receive partial S(Q) data
 	    call MPI_Recv(slavesq,ntypes*ntypes*nbins,MPI_REAL8,i,i+100,MPI_COMM_WORLD,mpistat,err_mpi)
@@ -576,7 +576,7 @@
 	  end if
 	else
 	  ! Slaves just send their data
-	  write(0,*) "Slave sending data....", nbins
+	  !write(0,*) "Slave sending data....", nbins
 	  call MPI_Send(framesq,ntypes*ntypes*nbins,MPI_REAL8,0,id_mpi+100,MPI_COMM_WORLD,mpistat,err_mpi)
 	  call MPI_Send(framesanitysq,nbins,MPI_REAL8,0,id_mpi+100,MPI_COMM_WORLD,mpistat,err_mpi)
 	  call MPI_Send(frameadded,nbins,MPI_INTEGER,0,id_mpi+200,MPI_COMM_WORLD,mpistat,err_mpi)
@@ -608,44 +608,19 @@
 	  do alpha=1,ntypes
 	    do beta=1,ntypes
 
-	      ! Write raw, unweighted partial S(Q) data if requested
-	      if (writepartials) then
-	        resfile=basename(1:baselen)//"rawsq"//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))
-	        OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	        do n=1,nbins
-		  sd = 0.0
-		  if (calcstdev) then
-	            ! Calculate range values
-	            avg = 0.0d0
-	            do m=1,framesdone
-	              avg = avg + stdevdata(alpha,beta,n,m)
-	            end do
-	            avg = avg / real(framesdone)
-	            ! Calculate standard deviation
-	            sumxsq = 0.0d0
-	            do m=1,framesdone
-	              sumxsq = sumxsq + (stdevdata(alpha,beta,n,m) - avg)**2
-	            end do
-	            sd = SQRT( sumxsq / real(framesdone) )
-		  end if
-		  c = " "
-		  if (totaladded(n).eq.0) c = "#"
-		  write(9,"(a,1x,F8.5,3x,E14.5,2x,e14.5,1x,I8)") c, (n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n) / totaladded(n) / natms, sd, totaladded(n)
-	        end do
-	        close(9)
-	      end if
+	      ! Calculate weighting factor for partial (does not include fractional populations since this is already done)
+	      factor = isoscatter(uniqueiso(alpha)) * isoscatter(uniqueiso(beta))
 
-	      ! Normalisation of S_ab(Q) w.r.t. scattering lengths
+	      ! Normalisation of S_ab(Q) w.r.t. number of frames and (total) number of atoms
 	      do n=1,nbins
-	        factor = isoscatter(uniqueiso(alpha)) * isoscatter(uniqueiso(beta))
 		if (totaladded(n).eq.0) then
 		  partialsq(alpha,beta,n) = 0.0
 		  if (calcstdev) stdevdata(alpha,beta,n,:) = 0
 		else
-		  partialsq(alpha,beta,n) = partialsq(alpha,beta,n) * factor / totaladded(n) / natms
-		  if (calcstdev) stdevdata(alpha,beta,n,:) = stdevdata(alpha,beta,n,:) * factor / totaladded(n) / natms
+		  partialsq(alpha,beta,n) = partialsq(alpha,beta,n) / totaladded(n) / natms
+		  if (calcstdev) stdevdata(alpha,beta,n,:) = stdevdata(alpha,beta,n,:) / totaladded(n) / natms
 		end if
-		sq(n) = sq(n) + partialsq(alpha,beta,n)
+		sq(n) = sq(n) + partialsq(alpha,beta,n) * factor
 	      end do
 	      write(0,*) "Finished normalise..."
 
@@ -653,10 +628,9 @@
 	      if (writepartials) then
 	        resfile=basename(1:baselen)//"partsq"//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))
 	        OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
+		write(9,"(a67)") "#  Q           S_ab(Q)          STDEV       NAdded   S_ab(Q)*b_a*b_b"
 	        do n=1,nbins
-		  c = " "
-		  if (totaladded(n).eq.0) c = "#"
-		  write(9,"(a,1x,F8.5,3x,E14.5,2x,e14.5,I8)") c,(n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n), sd, totaladded(n)
+		  write(9,"(F8.5,3x,E14.5,2x,e14.5,1x,I8,1x,e14.5)") (n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n), sd, totaladded(n), partialsq(alpha,beta,n)*factor
 	        end do
 	        close(9)
 	      end if
