@@ -160,4 +160,5 @@
 	  close(9)
 	end do
 999	write(0,*) "Finished."
+	stop
 	end program zdens

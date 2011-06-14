@@ -38,7 +38,6 @@
 	binwidth=0.1   ! In Angstroms
 	frameskip = 1	! Take consecutive frames by default
 	discard = 0
-	rcut = 15.0
 
 	nargs = iargc()
 	if (nargs.LT.2) then
@@ -112,6 +111,7 @@
 	if (outinfo(dlpoutfile,1).EQ.-1) then
 	  stop "Problem with OUTPUT file."
 	end if
+	write(0,*) cell
 
 	! Read in forcefield names, the related internal types, and the corresponding isotope/element symbols
 	open(unit=15,file="lengths.dat",form="formatted",status="old")
@@ -235,6 +235,8 @@
 	deallocate(newtype)
 	deallocate(origtype)
 
+	write(0,*) cell
+	rcut = cell(1) / 2.0
 	nbins = rcut / binwidth + 1
 	write(12,"(A,I5,A)") "There will be ",nbins," bins."
 
@@ -268,13 +270,12 @@
 	if (mod(nframes,frameskip).ne.0) goto 100	! Frame skip interval
 
 	! Increment partial G(r)s
-	do i=1,natms
+	do i=1,natms-1
 	  ipos(1) = xpos(i)
 	  ipos(2) = ypos(i)
 	  ipos(3) = zpos(i)
 	  alpha = typemap(i)
-	  do j=1,natms
-	if (i.eq.j) cycle
+	  do j=i+1,natms
 	    ! Calculate MIM position of j w.r.t. i
 	    call pbc(xpos(j),ypos(j),zpos(j),ipos(1),ipos(2),ipos(3),jpos(1),jpos(2),jpos(3))
 	    ! Get distance
@@ -284,7 +285,7 @@
 	    bin = dist / binwidth
 	    beta = typemap(j)
 	    partialgr(alpha,beta,bin) = partialgr(alpha,beta,bin) + 1.0
-	    !if (alpha.ne.beta) partialgr(beta,alpha,bin) = partialgr(beta,alpha,bin) + 1.0
+	    partialgr(beta,alpha,bin) = partialgr(beta,alpha,bin) + 1.0
 	  end do
 	end do
 
@@ -306,8 +307,9 @@
 	do alpha=1,ntypes
 	  do beta=1,ntypes
 	    ! Number density of central atom and frame count
+	write(0,"(a,2i,2f10.4,i)") "a/b/popa/popb/framesdone", alpha,beta,typepops(alpha), typepops(beta), framesdone
 	    do n=1,nbins
-	      partialgr(alpha,beta,n) = partialgr(alpha,beta,n) / (typepops(alpha) * framesdone)
+	      partialgr(alpha,beta,n) =  partialgr(alpha,beta,n) / (typepops(alpha) * framesdone)
 	    end do
 	    ! Normalisation w.r.t. number density of second species
 	    factor = typepops(beta) / (cell(1)*cell(5)*cell(9))
@@ -323,22 +325,20 @@
 	totalgr = 0.0d0
 	do alpha=1,ntypes
 	  do beta=1,ntypes
-	    ! Weight factor attributable to scattering length and fractional population
-	    !weight = typefrac(alpha)*isoscatter(uniqueiso(alpha))*typefrac(beta)*isoscatter(uniqueiso(beta))
-	    ! Additional weighting from partitioning of elements into 'sub-types'
-	    !weight = weight / sqrt((typefrac(alpha)/isofrac(uniqueiso(alpha)))*(typefrac(beta)/isofrac(uniqueiso(beta))))
 
-	    ! New weighting 
-	    weight = isoscatter(uniqueiso(alpha))*isoscatter(uniqueiso(beta))
-	    !weight = 1.0
+	    ! Weight factor attributable to scattering lengths and fractional populations of species
+	    weight =  typefrac(alpha)*isoscatter(uniqueiso(alpha))*typefrac(beta)*isoscatter(uniqueiso(beta))
+
 	    ! Apply weighting to individual partials
 	    do n=1,nbins
-	      weightedgr(alpha,beta,n) = weight * (partialgr(alpha,beta,n) - 1.0)
+	      weightedgr(alpha,beta,n) = weight * partialgr(alpha,beta,n)
 	    end do
+
 	    ! Perform summation into totalgr
 	    do n=1,nbins
 	      totalgr(n) = totalgr(n) + weightedgr(alpha,beta,n)
 	    end do
+
 	    ! Write partials if required
 	    if (writepartials) then
 	      resfile=basename(1:baselen)//"gr"//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))
@@ -352,14 +352,20 @@
 	end do
 	write(0,*) "Finished summation."
 
+	! Calculate weighting factor for G(r)
+	factor = 0.0
+	do alpha=1,ntypes
+	  factor = factor + typefrac(alpha)*isoscatter(uniqueiso(alpha))
+	end do
+	factor = factor * factor
+
 	! Write total S(Q)
 	resfile=basename(1:baselen)//"totalgr"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	write(9,*) "# Un-normalised data follows"
-	write(9,*) "# (for information only, form constant (FZ) <b>**2 = ",factor,")"
+	write(9,*) "# <b>**2 is ",factor
 
 	do n=1,nbins
-	  write(9,"(F15.7,E15.7)") (n-0.5)*binwidth,totalgr(n)
+	  write(9,"(F15.7,E15.7)") (n-0.5)*binwidth,totalgr(n)/factor
 	end do
 	close(9)
 

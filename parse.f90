@@ -72,7 +72,7 @@
 	  write(0,*) "argd() was passed an argument number greated than MAXARGS - ",n
 	  argr = 0.0
 	else
-	  read(arg(n),"(f20.10)") argr
+	  read(arg(n),"(f30.10)") argr
 	end if
 	end function argr
 
