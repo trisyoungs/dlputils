@@ -630,7 +630,7 @@
 	        OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 		write(9,"(a67)") "#  Q           S_ab(Q)          STDEV       NAdded   S_ab(Q)*b_a*b_b"
 	        do n=1,nbins
-		  write(9,"(F8.5,3x,E14.5,2x,e14.5,1x,I8,1x,e14.5)") (n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n), sd, totaladded(n), partialsq(alpha,beta,n)*factor
+		  write(9,"(F8.5,3x,E14.5,2x,e14.5,1x,I10,1x,e14.5)") (n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n), sd, totaladded(n), partialsq(alpha,beta,n)*factor
 	        end do
 	        close(9)
 	      end if
@@ -682,8 +682,8 @@
 	  do n=1,nbins
 	    c = " "
 	    if (totaladded(n).eq.0) c = "#"
-	    write(9,"(a,1x,F8.5,2x,E15.7,2x,I8)") c,(n-0.5)*binwidth,sq(n),totaladded(n)
-	    write(8,"(a,1x,F8.5,2x,E15.7,2x,I8)") c,(n-0.5)*binwidth,sanitysq(n),totaladded(n)
+	    write(9,"(a,1x,F8.5,2x,E15.7,2x,I10)") c,(n-0.5)*binwidth,sq(n),totaladded(n)
+	    write(8,"(a,1x,F8.5,2x,E15.7,2x,I10)") c,(n-0.5)*binwidth,sanitysq(n),totaladded(n)
 	  end do
 	  close(9)
 	  close(8)
@@ -710,7 +710,7 @@
 		resfile=basename(1:baselen)//"elemsq"//isonames(i)(1:isonamelens(i))//"-"//isonames(j)(1:isonamelens(j))
 		OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 		do n=1,nbins
-		  write(9,"(f8.5,3x,E14.5,2x,I8)") (n*binwidth)-binwidth*0.5, sq(n)
+		  write(9,"(f8.5,3x,E14.5)") (n*binwidth)-binwidth*0.5, sq(n)
 		end do
 		close(9)
 	      end do
