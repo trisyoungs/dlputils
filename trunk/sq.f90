@@ -628,6 +628,7 @@
 	      if (writepartials) then
 	        resfile=basename(1:baselen)//"partsq"//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))
 	        OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
+		if (alpha.eq.beta) write(9,"('# Self-scattering level is ',f10.5)") typefrac(alpha)*isoscatter(uniqueiso(alpha))*isoscatter(uniqueiso(alpha))
 		write(9,"(a67)") "#  Q           S_ab(Q)          STDEV       NAdded   S_ab(Q)*b_a*b_b"
 	        do n=1,nbins
 		  write(9,"(F8.5,3x,E14.5,2x,e14.5,1x,I10,1x,e14.5)") (n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n), sd, totaladded(n), partialsq(alpha,beta,n)*factor
