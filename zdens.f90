@@ -5,18 +5,18 @@
 	use dlprw; use utility
 	implicit none
 	integer :: nbins
-	real*8 :: binwidth, boxvolume, z, zbase
-	real*8, allocatable :: dens(:,:)
+	real*8 :: binwidth, boxvolume, z, zbase, centrez
+	real*8, allocatable :: dens(:,:), avgdens(:,:)
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
 	character*20 :: temp
-	logical :: altheader = .FALSE.
+	logical :: altheader = .FALSE., average = .FALSE.
 	integer :: n,m,a1,s1,m1,baselen,bin,nframes,success,nargs,framestodo = -1, framestoskip=-1
-	integer :: iargc, nskipped
+	integer :: iargc, nskipped, centrebin, lowbin, hibin
 	integer, allocatable :: comatom(:)
 
 	binwidth=0.1   ! In Angstroms
 	nargs = iargc()
-	if (nargs.lt.3) stop "Usage : zdens <DLP HISTORYfile> <DLP OUTPUTfile> <base z> [-bin width] [-header hisfile] [-comatom sp atom] [-skip n] [-frames n]"
+	if (nargs.lt.3) stop "Usage : zdens <DLP HISTORYfile> <DLP OUTPUTfile> <base z> [-bin width] [-header hisfile] [-comatom sp atom] [-skip n] [-frames n] [-symm cz]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temp); read(temp,"(f15.4)") zbase
@@ -48,6 +48,10 @@
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") s1
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") comatom(s1)
               write(0,"(A,I2,A,I2,A)") "Will use atom ",comatom(s1)," for species ",s1," COM"
+            case ("-symm")
+              n = n + 1; call getarg(n,temp); read(temp,"(f20.14)") centrez
+	      average = .TRUE.
+              write(0,"(A,f10.5)") "Distributions will be symmetrized about z = ", centrez
 	  end select
 	end do
 
@@ -75,8 +79,16 @@
 	  write(0,"(A,F6.3,A)") "Using specified binwidth of ",binwidth," Angstroms"
 	end if
 	write(0,"(A,I5,A)") "There will be ",nbins," histogram bins."
+
+	if (average) then
+	  avgdens = 0.0
+	  ! Determine central bin and check its in range
+	  centrebin = centrez/binwidth
+	  if ((centrebin.lt.(-nbins-1)).or.(centrebin.gt.(nbins+1))) stop "Supplied centreZ is out of bin range."
+	end if
 	
 	allocate(dens(nspecies,-nbins-1:nbins+1))
+	allocate(avgdens(nspecies,-nbins-1:nbins+1))
 	dens = 0.0
 
 	! XXXX
@@ -148,14 +160,33 @@
 	  basename=hisfile(1:baselen)
 	endif
 
+	! Average data about centrepoint of distribution
+	if (average) then
+	  avgdens = 0.0
+	  do s1=1,nspecies
+	    avgdens(s1,centrebin) = dens(s1,centrebin)
+	    do n=1,nbins
+	      lowbin = centrebin-n
+	      if (lowbin.lt.(-nbins-1)) lowbin = lowbin + (2*nbins+3)
+	      hibin = centrebin+n
+	      if (hibin.gt.(nbins+1)) hibin = hibin - (2*nbins+3)
+	      avgdens(s1,lowbin) = 0.5*(dens(s1,lowbin)+dens(s1,hibin))
+	      avgdens(s1,hibin) = avgdens(s1,lowbin)
+	    end do
+	  end do
+	end if
+
+	! Normalise against number of frames
+	dens = dens / nframes
+	avgdens = avgdens / nframes
+
+	! Write data
 	do s1=1,nspecies
 	  resfile=basename(1:baselen)//"zdn"//CHAR(48+s1)
 	  open(unit=9,file=resfile,form="formatted",status="replace")
 	  write(9,"(a,f15.4)") "# Z relative to ",zbase
-	  ! Normalise the RDFs with respect to the number of frames
 	  do n=-nbins-1,nbins+1
-	    dens(s1,n) = dens(s1,n) / nframes
-	    write(9,*) n * binwidth, dens(s1,n)
+	    write(9,"(3e15.5)") (n+0.5) * binwidth, dens(s1,n), avgdens(s1,n)
 	  end do
 	  close(9)
 	end do
