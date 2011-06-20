@@ -8,7 +8,7 @@
 	character*20 :: temp
 	logical :: npt = .FALSE.
 	integer :: baselen,nframes,success,nargs,framestodo
-	integer :: i,j,k,n, nbins, bin, found, kx, ky, kz, nvec, skip
+	integer :: i,j,k,n, nbins, bin, found, kx, ky, kz, nvec, framestodiscard = 0
 	integer, allocatable :: numadded(:)
 	integer :: iargc
 	real*8 :: binwidth,factor,kcut,magx,magy,magz,mag
@@ -19,10 +19,9 @@
 
 	binwidth=0.1
 	kcut = 5.0    ! Reciprocal space cutoff (box integers)
-	skip = 0
 
 	nargs = iargc()
-	if (nargs.LT.2) stop "Usage : staticsk <DLP HISTORYfile> <DLP OUTPUTfile> [-bin binwidth] [-frames nframes] [-npt] [-kcut cutoff] [-skip n]"
+	if (nargs.LT.2) stop "Usage : staticsk <DLP HISTORYfile> <DLP OUTPUTfile> [-bin binwidth] [-frames nframes] [-npt] [-kcut cutoff] [-discard n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	if (nargs.GE.3) then
@@ -33,7 +32,7 @@
 	      case ("-bin"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") binwidth
 	      case ("-kcut"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") kcut
 	      case ("-frames"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
-	      case ("-skip"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") skip
+	      case ("-discard"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodiscard
 	      case ("-npt"); npt = .TRUE.
 	    end select
 	    n = n + 1
@@ -72,10 +71,10 @@
 	if (success.EQ.-1) goto 799  ! File error....
 	nframes=nframes+1
 	if (mod(nframes,100).EQ.0) write(0,*) nframes
-	if (nframes.LE.skip) goto 101
+	if (nframes.LE.framestodiscard) goto 101
 	
 	! Calculate reciprocal cell for this configuration (if necessary)
-	if (npt.OR.(nframes.EQ.(skip+1))) call calc_rcell
+	if (npt.OR.(nframes.EQ.(framestodiscard+1))) call calc_rcell
 
 	! Convert atomic coordinates to reciprocal space coordinates
 	rxxx = rcell(1)*xpos + rcell(2)*ypos + rcell(3)*zpos
@@ -130,7 +129,7 @@
 	write(0,*) "FRAME ",nframes, "SK(30) ",sk(30)
 
 	! Next frame
-	if ((nframes-skip).EQ.framestodo) goto 120
+	if ((nframes-framestodiscard).EQ.framestodo) goto 120
 	goto 101
 
 120	write(0,*) "Finished."

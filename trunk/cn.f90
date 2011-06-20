@@ -15,7 +15,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.5) then
-	  write(0,"(A)") "Usage : cn <DLP HISTORYfile> <DLP OUTPUTfile> <sp1> <sp2> <cutoff> [-header file] [-frames n] [-skip n] [-divide n] [-compair sp i j]"
+	  write(0,"(A)") "Usage : cn <DLP HISTORYfile> <DLP OUTPUTfile> <sp1> <sp2> <cutoff> [-header file] [-frames n] [-discard n] [-divide n] [-compair sp i j]"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -36,9 +36,9 @@
             case ("-frames")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
               write(0,"(A,I4)") "Frames to do: ",framestodo
-            case ("-skip")
+            case ("-discard")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
-              write(0,"(A,I4)") "Frames to skip at start: ",frameskip
+              write(0,"(A,I4)") "Frames to discard at start: ",frameskip
             case ("-divide")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") divide
               write(0,"(A,I4)") "Output will be partitioned into chunk of (frames) ",divide

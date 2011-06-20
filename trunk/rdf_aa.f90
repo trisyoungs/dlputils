@@ -10,7 +10,7 @@
 	character*20 :: temp
 	integer :: status,  nargs, success, baselen, npairs
 	integer :: nbins,aoff1,aoff2,n,s1,s2,bin,nframes,sp,atom1(maxpairs),atom2(maxpairs)
-	integer :: iargc,p,framestodo, framestoskip = 0
+	integer :: iargc,p,framestodo, framestodiscard = 0
 	logical :: intra = .false., samemol = .false.
 	real*8 :: r1(3), r2(3), r2min(3), r12(3), dist, binwidth, integral, numadded
 	real*8, allocatable :: hist(:,:), rdf(:,:), sumhist(:,:), norm(:)
@@ -21,7 +21,7 @@
 	npairs = 0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : rdf_aa <HSI file> <OUT file> [-sp n] [-intra] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-skip n]"
+	if (nargs.lt.5) stop "Usage : rdf_aa <HSI file> <OUT file> [-sp n] [-intra] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-discard n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	n = 2
@@ -33,8 +33,8 @@
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp
 	    case ("-frames") 
 	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
-	    case ("-skip") 
-	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestoskip
+	    case ("-discard") 
+	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodiscard
 	    case ("-intra")
 	      intra = .true.
 	    case ("-pair")
@@ -83,8 +83,8 @@
 101	success=readframe()
 	if (success.EQ.1) goto 120  ! End of file encountered....
 	if (success.EQ.-1) goto 799  ! File error....
-	if (framestoskip.gt.0) then
-	  framestoskip = framestoskip -1
+	if (framestodiscard.gt.0) then
+	  framestodiscard = framestodiscard -1
 	  goto 101
 	end if
 	nframes=nframes+1

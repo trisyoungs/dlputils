@@ -10,7 +10,7 @@
 	character*20 :: temp
 	integer :: status,  nargs, success, baselen, npairs
 	integer :: nbins,aoff1,aoff2,n,s1,s2,bin,nframes,sp1,sp2,atom1(maxpairs),atom2(maxpairs)
-	integer :: iargc,p,framestodo,framestoskip=0
+	integer :: iargc,p,framestodo,framestodiscard=0
 	logical :: nonorm = .FALSE.
 	real*8 :: r1(3), r2(3), r2min(3), r12(3), dist, binwidth, norm, integral, dumpdist = -1.0, numadded
 	real*8, allocatable :: hist(:,:), rdf(:,:), sumhist(:,:)
@@ -36,8 +36,8 @@
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp2
 	    case ("-frames") 
 	      n = n + 1; call getarg(n,temp); read(temp,"(I5)") framestodo
-	    case ("-skip") 
-	      n = n + 1; call getarg(n,temp); read(temp,"(I5)") framestoskip
+	    case ("-discard") 
+	      n = n + 1; call getarg(n,temp); read(temp,"(I5)") framestodiscard
 	    case ("-pair")
 	      npairs = npairs + 1
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") atom1(npairs)
@@ -83,8 +83,8 @@
 101	success=readframe()
 	if (success.EQ.1) goto 120  ! End of file encountered....
 	if (success.EQ.-1) goto 799  ! File error....
-	if (framestoskip.gt.0) then
-	  framestoskip = framestoskip -1
+	if (framestodiscard.gt.0) then
+	  framestodiscard = framestodiscard -1
 	  goto 101
 	end if
 	nframes=nframes+1

@@ -8,7 +8,7 @@
 	character*20 :: temp
 	character*4 :: molpart
 	integer :: n,m,o,s1,m1,m2,nframes,success,nargs,sp1,sp2, aoff, nbins
-	integer :: framestodo = -1, framestoskip = 0, framesskipped, bin, baselen, nanglebins
+	integer :: framestodo = -1, framestodiscard = 0, framesskipped, bin, baselen, nanglebins
 	real*8, allocatable :: hist(:,:,:), angleacc(:,:)
 	integer :: iargc
 	real*8 :: tx,ty,tz,rij2,binwidth = 0.1, maxdist, rx, ry, rz, anglebin = 15.0
@@ -16,7 +16,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.4) then
-	  write(0,"(A)") "Usage : planedist <DLP HISTORYfile> <DLP OUTPUTfile> <maxcomd> [-anglebin deg] [-skip n] [-frames n] [-axis sp x x y y] [-centresp sp] [-othersp sp] [-binwidth d]"
+	  write(0,"(A)") "Usage : planedist <DLP HISTORYfile> <DLP OUTPUTfile> <maxcomd> [-anglebin deg] [-discard n] [-frames n] [-axis sp x x y y] [-centresp sp] [-othersp sp] [-binwidth d]"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -49,9 +49,9 @@
 	    case ("-frames")
 	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
 	      write(0,"(A,I4)") "Frames to do is ", framestodo
-	    case ("-skip")
-	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestoskip
-	      write(0,"(A,I4)") "Frames to skip at start of trajectory is ", framestoskip
+	    case ("-discard")
+	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodiscard
+	      write(0,"(A,I4)") "Frames to discard at start of trajectory is ", framestodiscard
 	    case ("-binwidth")
 	      n = n + 1; call getarg(n,temp); read(temp,"(f10.4)") binwidth
 	      write(0,"(A,f10.5)") "Bin width to use is ", binwidth
@@ -91,7 +91,7 @@
 	if (success.EQ.1) goto 801  ! End of file encountered....
 	if (success.EQ.-1) goto 799  ! File error....
 	framesskipped = framesskipped + 1
-	if (framesskipped.le.framestoskip) then
+	if (framesskipped.le.framestodiscard) then
 	  if (mod(framesskipped,100).EQ.0) write(0,*) "skipped... ",framesskipped
 	  goto 101
 	end if

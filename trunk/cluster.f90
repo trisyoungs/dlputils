@@ -15,7 +15,7 @@
 
 	compairs = 0
 	nargs = iargc()
-	if (nargs.lt.4) stop "Usage : cluster <DLP HISTORYfile> <DLP OUTPUTfile> <sp> <maxcomdist> [-header hisfile] [-frames n] [-skip n] [-compair sp i j]"
+	if (nargs.lt.4) stop "Usage : cluster <DLP HISTORYfile> <DLP OUTPUTfile> <sp> <maxcomdist> [-header hisfile] [-frames n] [-discard n] [-compair sp i j]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temp)
@@ -35,9 +35,9 @@
             case ("-frames")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
               write(0,"(A,I4)") "Frames to process: ",framestodo
-            case ("-skip")
+            case ("-discard")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
-              write(0,"(A,I4)") "Frames to skip at start: ",frameskip
+              write(0,"(A,I4)") "Frames to discard at start: ",frameskip
             case ("-compair")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") sp1
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(sp1,1)

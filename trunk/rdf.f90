@@ -23,7 +23,7 @@
 	binwidth=0.1   ! In Angstroms
 	compairs = 0
 	nargs = iargc()
-	if (nargs.LT.2) stop "Usage : rdf <DLP HISTORYfile> <DLP OUTPUTfile> [-bin width] [-header hisfile] [-frames n] [-nonorm] [-zplus] [-zminus] [-skip n] [-compair sp i j]"
+	if (nargs.LT.2) stop "Usage : rdf <DLP HISTORYfile> <DLP OUTPUTfile> [-bin width] [-header hisfile] [-frames n] [-nonorm] [-zplus] [-zminus] [-discard n] [-compair sp i j]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	
@@ -53,9 +53,9 @@
               write(0,"(A)") "Minimum image molecules will only be accepted if z < zcentre."
 	      if (zplus) stop "Can't use both -zplus and -zminus"
 	      zminus = .TRUE.
-            case ("-skip")
+            case ("-discard")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
-              write(0,"(A,I4)") "Frames to skip at start: ",frameskip
+              write(0,"(A,I4)") "Frames to discard at start: ",frameskip
             case ("-compair")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") s1
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(s1,1)

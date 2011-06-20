@@ -9,7 +9,7 @@
 	integer, parameter :: MAXSITES = 20, MAXSPECIES = 5
 	integer :: MAXATOMCONTACTS = 10, MAXPATTERNS = 30000, MAXMOLCONTACTS = 6
 	integer :: nframes,success,nargs,n,m1,m2,i,j,k,baselen,aoff1,aoff2,m
-	integer :: framestodo = -1, framestoskip = 0, sp1, sp2, nsp2sites(MAXSPECIES), sp2sites(MAXSPECIES,MAXSITES,2), sp1sites(2)
+	integer :: framestodo = -1, framestodiscard = 0, sp1, sp2, nsp2sites(MAXSPECIES), sp2sites(MAXSPECIES,MAXSITES,2), sp1sites(2)
 	integer :: iargc, site, site2, closebit, bit, npatterns = 0, ncontacts, found, t1, t2, t3
 	integer :: tth,th,hun,ten,units,natoms, grid = 40, binx, biny, binz, mtemp(3)
 	integer, allocatable :: centralbits(:), nsp1molcontacts(:), sp1molcontacts(:,:,:), nsp1atomcontacts(:), sp2molcontacts(:,:), nsp2molcontacts(:)
@@ -61,7 +61,7 @@
             case ("-frames")
               n = n + 1; call getarg(n,temparg); read(temparg,"(i6)") framestodo
             case ("-discard")
-              n = n + 1; call getarg(n,temparg); read(temparg,"(i6)") framestoskip
+              n = n + 1; call getarg(n,temparg); read(temparg,"(i6)") framestodiscard
             case ("-maxatomcontacts")
               n = n + 1; call getarg(n,temparg); read(temparg,"(i6)") MAXATOMCONTACTS
 	      write(0,*) "MAXATOMCONTACTS set to ", MAXATOMCONTACTS
@@ -168,8 +168,8 @@
 101	success=readframe()
 	if (success.EQ.1) goto 801  ! End of file encountered....
 	if (success.EQ.-1) goto 799  ! File error....
-	if (framestoskip.ne.0) then
-	  framestoskip = framestoskip - 1
+	if (framestodiscard.ne.0) then
+	  framestodiscard = framestodiscard - 1
 	  goto 101
 	end if
 	nframes=nframes+1

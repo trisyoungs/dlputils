@@ -331,6 +331,15 @@
 	z1 = z2
 	end subroutine vmatmult
 
+	real*8 function volume(cell)
+	implicit none
+	real*8, intent(in) :: cell(9)
+	! Hard-coded calculation of determinant of 3x3 matrix
+	volume = cell(1) * (cell(5)*cell(9) - cell(8)*cell(6));
+	volume = volume - cell(2) * (cell(4)*cell(9) - cell(7)*cell(6));
+	volume = volume + cell(3) * (cell(4)*cell(8) - cell(7)*cell(5));
+	end function volume
+
 	! Numerical Recipes material starts here
 
 	! Gauss Jordan elimination to find matrix inverse

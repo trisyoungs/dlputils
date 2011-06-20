@@ -13,7 +13,7 @@
 	character*80 :: outfile,hisfile,temp
 	character*6 :: geom
 	integer :: nargs,n,m,i,j,k,l,status, nframes, framestodo, sp, a1, ngeom, num
-	integer :: nbonds, nangles, ntorsions, success, framestoskip = 0
+	integer :: nbonds, nangles, ntorsions, success, framestodiscard = 0
 	integer :: bonds(MAXDATA,2),angles(MAXDATA,3),torsions(MAXDATA,4)
 	integer :: iargc
 	logical :: configfile = .false.
@@ -25,7 +25,7 @@
 	radcon = 57.29577951d0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : dlpgeom <HISfile|CONFIG> <OUTfile> <sp> <nframes> [-bond i j] [-angle i j k] [-torsion i j k l] [-data file] [-skip n] [-warndist maxdist] [-warnangle maxangle]"
+	if (nargs.lt.5) stop "Usage : dlpgeom <HISfile|CONFIG> <OUTfile> <sp> <nframes> [-bond i j] [-angle i j k] [-torsion i j k l] [-data file] [-discard n] [-warndist maxdist] [-warnangle maxangle]"
 	call getarg(1,hisfile)
 	call getarg(2,outfile)
 	call getarg(3,temp); read(temp,"(I10)") sp
@@ -40,8 +40,8 @@
           n = n + 1; if (n.GT.nargs) exit
           call getarg(n,temp)
           select case (temp)
-	    case ("-skip")
-              n = n + 1; call getarg(n,temp); read(temp,"(i5)") framestoskip
+	    case ("-discard")
+              n = n + 1; call getarg(n,temp); read(temp,"(i5)") framestodiscard
 	    case ("-warndist")
               n = n + 1; call getarg(n,temp); read(temp,"(f10.4)") warndist
 	    case ("-warnangle")
@@ -112,7 +112,7 @@
 	! Open the history file or config file
 	if ((index(hisfile,"CONFIG").ne.0).or.(index(hisfile,"REVCON").ne.0)) then
 	  configfile = .true.
-	  framestoskip = 0
+	  framestodiscard = 0
 	  framestodo = 1
 	  call readconfig(hisfile)
 	else
@@ -152,8 +152,8 @@
 	  write(0,*) "Error reading history file. Error code:", success
 	  goto 19
 	end if
-	if (framestoskip.gt.0) then
-	  framestoskip = framestoskip -1
+	if (framestodiscard.gt.0) then
+	  framestodiscard = framestodiscard -1
 	  goto 10
 	end if
 

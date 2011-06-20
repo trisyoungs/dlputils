@@ -13,7 +13,7 @@
 	character*20 :: temp
 	character*4 :: namepart
 	integer :: i,j,n,m,nframes,success,nargs,baselen,sp,pos, t0, tn
-	integer :: length, acftype = 0, framestodo = -1, framestoskip = -1
+	integer :: length, acftype = 0, framestodo = -1, framestodiscard = -1
 	integer :: iargc, idx
 	integer :: t_first, t_last, err_mpi, id_mpi, nproc_mpi, qmax
 	real*8, allocatable :: acf_total(:), acf_intra(:), accum(:), acfpart_total(:,:), acfpart_intra(:,:), qx(:,:), qy(:,:), qz(:,:)
@@ -44,7 +44,7 @@
 	call getarg(6,temp); read(temp,"(I10)") length
 	call getarg(7,temp); read(temp,"(I10)") framestodo
 	if (nargs.eq.8) then
-	  call getarg(8,temp); read(temp,"(I10)") framestoskip
+	  call getarg(8,temp); read(temp,"(I10)") framestodiscard
 	end if
 
 	! Initialise MPI and determine slave data
@@ -236,9 +236,9 @@
 	  end if
 	end if
 
-	if (framestoskip.gt.0) then
-	  if (MASTER.and.mod(framestoskip,100).EQ.0) write(0,"('Skipping ',i)") framestoskip
-	  framestoskip = framestoskip - 1
+	if (framestodiscard.gt.0) then
+	  if (MASTER.and.mod(framestodiscard,100).EQ.0) write(0,"('Skipping ',i)") framestodiscard
+	  framestodiscard = framestodiscard - 1
 	  goto 101
 	end if
 

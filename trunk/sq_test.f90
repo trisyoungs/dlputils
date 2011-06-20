@@ -56,7 +56,7 @@
 	if (nargs.LT.2) then
 	  write(0,*) "Usage : sq <DLP HISTORYfile> <DLP OUTPUTfile> ...options"
 	  write(0,*) "            [-bin binwidth] [-frames nframes] [-kcut cutoff] [-discard nframes]"
-	  write(0,*) "            [-skip interval] [-partials] [-readmap <file>] [-altheader <file>]"
+	  write(0,*) "            [-discard interval] [-partials] [-readmap <file>] [-altheader <file>]"
 	  write(0,*) "            [-stdev maxframes] [-npt]"
 	  stop
 	end if
@@ -71,7 +71,7 @@
 	      case ("-kcut"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") kcut
 	      case ("-frames","-nframes"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
 	      case ("-discard"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") discard
-	      case ("-skip"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
+	      case ("-discard"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
 	      case ("-partials"); writepartials = .TRUE.
 	      case ("-npt"); npt = .TRUE.
 	      case ("-stdev"); calcstdev = .TRUE.; n = n + 1; call getarg(n,temp); read(temp,"(I6)") stdevmax

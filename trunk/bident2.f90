@@ -8,7 +8,7 @@
 	character*20 :: temparg
 	integer, parameter :: MAXSITES = 20, MAXCONTACTS = 10
 	integer :: nframes,success,nargs,n,m1,m2,i,j,baselen,aoff1,aoff2,m
-	integer :: framestodo = -1, framestoskip = 0, sp1, sp2, nsp1sites = 0, sp1sites(MAXSITES,2), sp2sites(2)
+	integer :: framestodo = -1, framestodiscard = 0, sp1, sp2, nsp1sites = 0, sp1sites(MAXSITES,2), sp2sites(2)
 	integer :: iargc, site, nsingle, nbridging, nbidentate, closebit, bit, isclose(MAXSITES)
 	integer :: ncontacts
 	integer, allocatable :: centralbits(:), sp2ncontacts(:), sp2contacts(:,:,:)
@@ -51,7 +51,7 @@
             case ("-frames")
               n = n + 1; call getarg(n,temparg); read(temparg,"(i6)") framestodo
             case ("-discard")
-              n = n + 1; call getarg(n,temparg); read(temparg,"(i6)") framestoskip
+              n = n + 1; call getarg(n,temparg); read(temparg,"(i6)") framestodiscard
             case ("-dump")
               dump = .true.
 	    case default
@@ -109,8 +109,8 @@
 101	success=readframe()
 	if (success.EQ.1) goto 801  ! End of file encountered....
 	if (success.EQ.-1) goto 799  ! File error....
-	if (framestoskip.ne.0) then
-	  framestoskip = framestoskip - 1
+	if (framestodiscard.ne.0) then
+	  framestodiscard = framestodiscard - 1
 	  goto 101
 	end if
 	nframes=nframes+1

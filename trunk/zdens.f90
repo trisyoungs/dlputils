@@ -10,13 +10,13 @@
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
 	character*20 :: temp
 	logical :: altheader = .FALSE., average = .FALSE.
-	integer :: n,m,a1,s1,m1,baselen,bin,nframes,success,nargs,framestodo = -1, framestoskip=-1
+	integer :: n,m,a1,s1,m1,baselen,bin,nframes,success,nargs,framestodo = -1, framestodiscard=-1
 	integer :: iargc, nskipped, centrebin, lowbin, hibin
 	integer, allocatable :: comatom(:)
 
 	binwidth=0.1   ! In Angstroms
 	nargs = iargc()
-	if (nargs.lt.3) stop "Usage : zdens <DLP HISTORYfile> <DLP OUTPUTfile> <base z> [-bin width] [-header hisfile] [-comatom sp atom] [-skip n] [-frames n] [-symm cz]"
+	if (nargs.lt.3) stop "Usage : zdens <DLP HISTORYfile> <DLP OUTPUTfile> <base z> [-bin width] [-header hisfile] [-comatom sp atom] [-discard n] [-frames n] [-symm cz]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temp); read(temp,"(f15.4)") zbase
@@ -41,9 +41,9 @@
             case ("-frames")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
               write(0,"(A,I6)") "Frames to do: ",framestodo
-            case ("-skip")
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestoskip
-              write(0,"(A,I6)") "Frames to skip: ",framestoskip
+            case ("-discard")
+              n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodiscard
+              write(0,"(A,I6)") "Frames to discard: ",framestodiscard
             case ("-comatom")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") s1
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") comatom(s1)
@@ -101,7 +101,7 @@
 	if (success.EQ.1) goto 801  ! End of file encountered....
 	if (success.EQ.-1) goto 799  ! File error....
 	nskipped = nskipped + 1
-	if (nskipped.le.framestoskip) goto 101
+	if (nskipped.le.framestodiscard) goto 101
 	nframes=nframes+1
 	if (mod(nframes,100).EQ.0) write(0,*) nframes
 	call calc_com
