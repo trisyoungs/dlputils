@@ -6,7 +6,7 @@
 	implicit none
 	integer :: maxframes,vec(3),baselen,nargs,success,n,i,j,k,targetsp,l
 	integer :: nframes, nframesused, bin(3), zbin, nzbins, ngridbins(3)
-	integer :: framestoskip=-1, nskipped
+	integer :: framestodiscard=-1, nskipped
 	character*80 :: hisfile,outfile,basename,temp,altheaderfile
 	character*8 :: discard
 	logical :: altheader = .FALSE., usecom = .FALSE.
@@ -29,7 +29,7 @@
 	  write(*,"(a)") "        [-spacing dx dy dx]     Use spacings between gridpoints for grid map (default = {0.5,0.5,0.5})"
 	  write(*,"(a)") "        [-binwidth dz]          Use binwidth for z-dependent average (default = 0.1)"
 	  write(*,"(a)") "        [-header file]          Use specified file to get header"
-	  write(*,"(a)") "        [-skip n]               Skip n frames at start of trajectory"
+	  write(*,"(a)") "        [-discard n]               Skip n frames at start of trajectory"
 	  write(*,"(a)") "        [-com]                  Use centre of mass for z-coordinate check rather than vector centre"
 	  stop
 	else
@@ -113,10 +113,10 @@
 	      write(0,"(A)") "Molecule COM will be used for z-coordinate."
 	      write(20,"(A)") "Molecule COM will be used for z-coordinate."
 	      usecom = .TRUE.
-	    case ("-skip")
-	      n = n + 1; call getarg(n,temp); read(temp,"(i5)") framestoskip
-	      write(0,"(A,i6)") "Frames to skip at start of file:",framestoskip
-	      write(20,"(A,i6)") "Frames to skip at start of file:",framestoskip
+	    case ("-discard")
+	      n = n + 1; call getarg(n,temp); read(temp,"(i5)") framestodiscard
+	      write(0,"(A,i6)") "Frames to discard at start of file:",framestodiscard
+	      write(20,"(A,i6)") "Frames to discard at start of file:",framestodiscard
 	    case default
 	      write(0,*) "Unrecognised command line option : ",temp
 	      stop
@@ -165,7 +165,7 @@
 	IF (success.eq.1) goto 801  ! End of file encountered....
 	IF (success.eq.-1) goto 119  ! File error....
 	nskipped = nskipped + 1
-	if (nskipped.le.framestoskip) goto 102
+	if (nskipped.le.framestodiscard) goto 102
 	nframes=nframes+1
 	if (MOD(nframes,100).eq.0) write(0,*) nframes
 

@@ -25,7 +25,7 @@
 	character*80 :: hisfile,dlpoutfile,basename,resfile,namemap,headerfile
 	character*20 :: temp
 	integer :: i,j,k,baselen,bin,nframes,success,nargs,framestodo,nfftypes,alpha,beta
-	integer :: n, m, o, nbins, found, kx, ky, kz, newkx, newky, newkz, nvec, newnvec, frameskip, sumfac, discard, framesdone
+	integer :: n, m, o, nbins, found, kx, ky, kz, newkx, newky, newkz, nvec, newnvec, frameskip, sumfac, framestodiscard, framesdone
 	integer :: nproc_mpi, id_mpi, err_mpi, mpistat(MPI_STATUS_SIZE)
 	integer :: kpernode, kremain, kstart, kend, stdevmax
 	integer :: iargc
@@ -51,7 +51,7 @@
 	kmin = 0.0	! Minimum cutoff
 	frameskip = 1	! Take consecutive frames by default
 	framestodo = -1	! Do all available frames by default
-	discard = 0
+	framestodiscard = 0
 
 	nargs = iargc()
 	if (nargs.LT.2) then
@@ -72,7 +72,7 @@
 	      case ("-kcut"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") kcut
 	      case ("-kmin"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") kmin
 	      case ("-frames","-nframes"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
-	      case ("-discard"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") discard
+	      case ("-discard"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodiscard
 	      case ("-skip"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
 	      case ("-partials"); writepartials = .TRUE.
 	      case ("-npt"); npt = .TRUE.
@@ -383,7 +383,7 @@
 	    write(6,*) nframes
 	    !close(12)
 	  !end if
-	  if (nframes.LE.discard) goto 101	! Discard frames at beginning of trajectory if requested
+	  if (nframes.LE.framestodiscard) goto 101	! Discard frames at beginning of trajectory if requested
 	  if (mod(nframes,frameskip).ne.0) goto 101	! Frame skip interval
 	  ! Send out proceed 'flag' to slaves
 	  call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)

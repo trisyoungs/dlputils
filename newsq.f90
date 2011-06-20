@@ -53,7 +53,7 @@
 	if (nargs.LT.2) then
 	  write(0,*) "Usage : sq <DLP HISTORYfile> <DLP OUTPUTfile> ...options"
 	  write(0,*) "                                [-bin binwidth] [-frames nframes] [-kcut cutoff] [-discard nframes]"
-	  write(0,*) "                                [-skip interval] [-partials] [-readmap <file>] [-altbins]"
+	  write(0,*) "                                [-discard interval] [-partials] [-readmap <file>] [-altbins]"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -67,7 +67,7 @@
 	      case ("-kcut"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") kcut
 	      case ("-frames"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
 	      case ("-discard"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") discard
-	      case ("-skip"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
+	      case ("-discard"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
 	      case ("-partials"); writepartials = .TRUE.
 	      case ("-altbins"); altbins = 1
 	      case ("-readmap"); readmap = .TRUE.; n = n + 1; call getarg(n,namemap)

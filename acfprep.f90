@@ -1,7 +1,7 @@
-!	** prepacf **
+!	** acfprep **
 !	Calculate the specified quantity ready for use with ACF
 
-	program prepacf
+	program acfprep
 	use dlprw; use utility
 	implicit none
 
@@ -19,7 +19,7 @@
 
 	nargs = iargc()
 	if (nargs.ne.5) then
-	  write(0,"(a)") "Usage : prepacf <HISfile <DLP OUTPUTfile> <headerfile [0 for none]> <functype=velocity,dipole> <outputfile>"
+	  write(0,"(a)") "Usage : acfprep <HISfile <DLP OUTPUTfile> <headerfile [0 for none]> <functype=velocity,dipole> <outputfile>"
 	  stop
 	end if
 	call getarg(1,hisfile1)
@@ -138,4 +138,4 @@
 	close(15)
 
 999	write(0,*) "Finished."
-	end program prepacf
+	end program acfprep

@@ -13,17 +13,17 @@
 	nargs = iargc()
 	if (nargs.lt.2) then
 	  write(0,*) " Usage: catdlp <file1> <file2> .. <fileN> <target>"
-	  write(0,*) "          -skipfirst  -skipotherfirst -header <file>"
+	  write(0,*) "          -discardfirst  -discardotherfirst -header <file>"
 	  stop
 	end if
 	n = 1
 	do 
 	  call getarg(n,arg)
 	  select case (arg)
-	    case ("-skipfirst")
+	    case ("-discardfirst")
 	      skipfirst = .TRUE.
 	      skipfirstfirst = .TRUE.
-	    case ("-skipotherfirst")
+	    case ("-discardotherfirst")
 	      skipfirst = .TRUE.
 	      skipfirstfirst = .FALSE.
 	    case ("-header")

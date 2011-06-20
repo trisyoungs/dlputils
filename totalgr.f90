@@ -23,7 +23,7 @@
 	character*80 :: hisfile,dlpoutfile,basename,resfile,namemap,headerfile
 	character*20 :: temp
 	integer :: i,j,k,baselen,bin,nframes,nargs,framestodo,nfftypes,alpha,beta
-	integer :: n, m, o, nbins, found, frameskip, sumfac, discard, framesdone
+	integer :: n, m, o, nbins, found, frameskip, sumfac, framestodiscard, framesdone
 	integer :: iargc, isuccess
 	real*8 :: binwidth,boxvolume,factor,weight,delta(3),dist,svol
 	logical :: success, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE.
@@ -37,7 +37,7 @@
 
 	binwidth=0.1   ! In Angstroms
 	frameskip = 1	! Take consecutive frames by default
-	discard = 0
+	framestodiscard = 0
 
 	nargs = iargc()
 	if (nargs.LT.2) then
@@ -56,7 +56,7 @@
 	      case ("-bin"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") binwidth
 	      case ("-cut"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") rcut
 	      case ("-frames"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
-	      case ("-discard"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") discard
+	      case ("-discard"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodiscard
 	      case ("-skip"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
 	      case ("-partials"); writepartials = .TRUE.
 	      case ("-readmap"); readmap = .TRUE.; n = n + 1; call getarg(n,namemap)
@@ -266,7 +266,7 @@
 	nframes=nframes+1
 	numdensity = numdensity + natms / (cell(1)*cell(5)*cell(9))
 	write(0,*) nframes
-	if (nframes.LE.discard) goto 100	! Discard frames at beginning of trajectory if requested
+	if (nframes.LE.framestodiscard) goto 100	! Discard frames at beginning of trajectory if requested
 	if (mod(nframes,frameskip).ne.0) goto 100	! Frame skip interval
 
 	! Increment partial G(r)s

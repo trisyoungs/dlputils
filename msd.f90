@@ -8,7 +8,7 @@
 	character*20 :: temp
 	character*4 :: molpart
 	integer :: n,m,s1,m1,nframes,success,nargs,baselen
-	integer :: framestodo, count1, totmols, framestoskip = 0
+	integer :: framestodo, count1, totmols, framestodiscard = 0
 	integer :: iargc
 	real*8, allocatable :: lastx(:), lasty(:), lastz(:), msd(:,:)
 	real*8, allocatable :: msd_x(:,:), msd_y(:,:), msd_z(:,:), msd_sp(:,:)
@@ -17,13 +17,13 @@
 	real*8 :: tx,ty,tz,rij2,deltat
 
 	nargs = iargc()
-	if (nargs.lt.4) stop "Usage : msd <DLP HISTORYfile> <DLP OUTPUTfile> <delta t> <framestodo> [framestoskip]"
+	if (nargs.lt.4) stop "Usage : msd <DLP HISTORYfile> <DLP OUTPUTfile> <delta t> <framestodo> [framestodiscard]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temp); read(temp,"(F10.6)") deltat
 	call getarg(4,temp); read(temp,"(I6)") framestodo
 	if (nargs.gt.4) then
-	  call getarg(5,temp); read(temp,"(I6)") framestoskip
+	  call getarg(5,temp); read(temp,"(I6)") framestodiscard
 	end if
 
 	! Open and check the files...
@@ -80,8 +80,8 @@
 101	success=readframe()
 	if (success.EQ.1) goto 801  ! End of file encountered....
 	if (success.EQ.-1) goto 799  ! File error....
-	if (framestoskip.ne.0) then
-	  framestoskip = framestoskip - 1
+	if (framestodiscard.ne.0) then
+	  framestodiscard = framestodiscard - 1
 	  goto 101
 	end if
 	nframes=nframes+1

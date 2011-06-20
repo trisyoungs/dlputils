@@ -8,7 +8,7 @@
 	integer :: ngrid=100
 	integer :: maxframes,vec(3),baselen,nargs,success,n,i,targetsp,startf,endf
 	integer :: nframes, nframesused, xbin, ybin, zbin, zspecies
-	integer :: anglebin1, anglebin2, framestoskip=-1, nskipped
+	integer :: anglebin1, anglebin2, framestodiscard=-1, nskipped
 	character*80 :: hisfile,outfile,basename,resfile,temp,flagfile,altheaderfile
 	character*8 :: discard
 	logical :: altheader = .FALSE., usecom = .FALSE., doangles =.FALSE.
@@ -33,7 +33,7 @@
 	  write(*,"(a)") "        [-header file]          Use specified file to get header"
 	  write(*,"(a)") "        [-grid n]               Use specified number of gridpoints in X/Y"
 	  write(*,"(a)") "        [-reversevec]           Reverse sign of vector"
-	  write(*,"(a)") "        [-skip n]               Skip n frames at start of trajectory"
+	  write(*,"(a)") "        [-discard n]               Skip n frames at start of trajectory"
 	  write(*,"(a)") "        [-com]                  Use centre of mass for z-coordinate check rather than vector centre"
 	  write(*,"(a)") "        [-angles]               Calculate surface-molecule distribution map"
 	  stop
@@ -134,10 +134,10 @@
 	      write(0,"(A)") "Surface-molecule angle distributions will be calculated."
 	      write(20,"(A)") "Surface-molecule angle distributions will be calculated."
 	      doangles = .TRUE.
-	    case ("-skip")
-	      n = n + 1; call getarg(n,temp); read(temp,"(i5)") framestoskip
-	      write(0,"(A,i6)") "Frames to skip at start of file:",framestoskip
-	      write(20,"(A,i6)") "Frames to skip at start of file:",framestoskip
+	    case ("-discard")
+	      n = n + 1; call getarg(n,temp); read(temp,"(i5)") framestodiscard
+	      write(0,"(A,i6)") "Frames to discard at start of file:",framestodiscard
+	      write(20,"(A,i6)") "Frames to discard at start of file:",framestodiscard
 	    case default
 	      write(0,*) "Unrecognised command line option : ",temp
 	      stop
@@ -181,7 +181,7 @@
 	IF (success.eq.1) goto 801  ! End of file encountered....
 	IF (success.eq.-1) goto 119  ! File error....
 	nskipped = nskipped + 1
-	if (nskipped.le.framestoskip) goto 102
+	if (nskipped.le.framestodiscard) goto 102
 	nframes=nframes+1
 	if (MOD(nframes,100).eq.0) write(0,*) nframes
 	if (nframes.LT.startf) goto 102
