@@ -29,7 +29,7 @@
 	integer :: nproc_mpi, id_mpi, err_mpi, mpistat(MPI_STATUS_SIZE)
 	integer :: kpernode, kremain, kstart, kend, stdevmax
 	integer :: iargc
-	real*8 :: binwidth,factor,weight,x1,x2,x3, totalweight, selfscatter
+	real*8 :: binwidth,factor,weight,x1,x2,x3, selfscatter
 	logical :: MASTER, SLAVE, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE.
 	logical :: npt = .FALSE., calcstdev = .FALSE.
 	integer, allocatable :: frameadded(:), kvectors(:,:), slaveadded(:), totaladded(:)
@@ -603,7 +603,6 @@
 	  write(0,*) "Average atomic number density = ",numdensity
 
 	  ! Sum into total S(Q)
-	  totalweight = 0.0d0
 	  sq = 0.0d0
 	  do alpha=1,ntypes
 	    do beta=1,ntypes
@@ -638,7 +637,6 @@
 	    end do
 	  end do
 	  write(6,*) "Finished sum"
-	  write(6,*) "Total weight of summed partials:", totalweight
 
 	  ! Calculate self scattering subtraction
 	  selfscatter = 0.0
