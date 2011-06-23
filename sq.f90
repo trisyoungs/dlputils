@@ -9,7 +9,7 @@
 	include "mpif.h"
 
 	! Isotope definitions
-	integer, parameter :: NISOTOPES = 10
+	integer, parameter :: NISOTOPES = 11
 	character*6 :: isonames(NISOTOPES)
 	real*8 :: isoscatter(NISOTOPES), isofrac(NISOTOPES), isopops(NISOTOPES)
 	integer :: isontypes(NISOTOPES), isonamelens(NISOTOPES)
@@ -41,10 +41,10 @@
 	character :: c
 
 	! Scattering lengths for H,D,C,N,O,F,P,S,Cl
-	isoscatter = (/ -3.706, 6.671, 6.646, 9.36, 5.803, 5.654, 5.13, 2.847, 9.577, 4.1491 /)
+	isoscatter = (/ 0.0, -3.706, 6.671, 6.646, 9.36, 5.803, 5.654, 5.13, 2.847, 9.577, 4.1491 /)
 	!isoscatter = (/ 0.09476, 0.06693, -0.19056,-0.309,-0.7519, 1.2257, 0.16894, 0.31416, 1.0 /)
-	isonames = (/ "H ", "D ", "C ", "N ", "O ", "F ", "P ", "S ", "Cl", "Si" /)
-	isonamelens = (/ 1,1,1,1,1,1,1,1,2,2 /)
+	isonames = (/ "X", "H ", "D ", "C ", "N ", "O ", "F ", "P ", "S ", "Cl", "Si" /)
+	isonamelens = (/ 1,1,1,1,1,1,1,1,1,2,2 /)
 
 	binwidth=0.1   ! In Angstroms
 	kcut = 5.0    ! Reciprocal space cutoff (box integers)

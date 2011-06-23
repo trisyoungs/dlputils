@@ -516,7 +516,7 @@
 	    ! Calculate p(r), sorting by atom type
 	    alpha = typemap(n)
 	    tempcomp = rxxx(kvectors(i,1),n) * ryyy(kvectors(i,2),n) * rzzz(kvectors(i,3),n) 
-	    if (broaden.and.(m.ne.1)) tempcomp = tempcomp * exp( -((ran2(seed)*2.0-1.0)-1.0)**2 / (2.0*0.02**2) )
+	    if (broaden.and.(m.ne.1)) tempcomp = tempcomp + exp(-(ran2(seed)-0.5)**2/(2.0*0.02**2))
 	    pdensity(alpha) = pdensity(alpha) + tempcomp
 	    sanitydensity = sanitydensity + tempcomp * isoscatter(uniqueiso(alpha))
 	  end do
@@ -532,10 +532,10 @@
 	  framesanitysq(bin) = framesanitysq(bin) + real(sumfac) * (sanitydensity*dconjg(sanitydensity))
 	end do
 	end do
-	if (broaden) then
-	  framesq = framesq / real(nbroaden)
-	  framesanitysq = framesanitysq / real(nbroaden)
-	end if
+	!if (broaden) then
+	!  framesq = framesq / real(nbroaden)
+	!  framesanitysq = framesanitysq / real(nbroaden)
+	!end if
 
 	! Gather slave S(Q) data for this frame
 	if (MASTER) then
