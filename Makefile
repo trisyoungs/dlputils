@@ -10,7 +10,7 @@
 SHELL=/bin/bash
 
 MODULES = parse.o dlprw.o utility.o fieldread.o
-CONVERTERS = dlp2fm catdlp config2bgf dlp2dlp addheader editconfig everydlp filterdlp his2config his2xyzs thindlp dlp2dlpflipz dlp2dlpshift dlpreorder chunkdlp
+CONVERTERS = dlp2fm dlp2xyzf catdlp config2bgf dlp2dlp addheader editconfig everydlp filterdlp his2config his2xyzs thindlp dlp2dlpflipz dlp2dlpshift dlpreorder chunkdlp
 RDF = rdf_ss rdf sk rdfsum rdf_aa rdf_aa_inter zdens dist2 raw2sq cdf
 SQ = totalgr sk sq sqtest
 ANALYSE = moldist dlpgeom counthb counthb_il cn cagecor cagecor2 msd msd2 lifehb getcell angle intertorsion intratorsion vac vac2 acf acfsum acfprep acfcat dacf
