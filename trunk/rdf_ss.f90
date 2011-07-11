@@ -18,8 +18,9 @@
 	character*80 :: hisfile,dlpoutfile,basename,resfile
 	character*20 :: temp
 	integer :: n,a1,s1,m1,m2,baselen,bin,nframes,success,o,nargs,numadded,species1,species2,compair(2)
+	integer :: framestodiscard = 0, framesdone = 0
 	integer :: iargc
-	real*8 :: dist,c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz
+	real*8 :: dist,c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz,numdens,const,norm
 
 	binwidth=0.1   ! In Angstroms
 	species1 = 1
@@ -27,7 +28,7 @@
 	compair = 0
 
 	nargs = iargc()
-	if (nargs.LT.2) stop "Usage : rdf_ss <DLP HISTORYfile> <DLP OUTPUTfile> [-bin binwidth] [-sp1 species] [-sp2 species] [-compair i j]"
+	if (nargs.LT.2) stop "Usage : rdf_ss <DLP HISTORYfile> <DLP OUTPUTfile> [-bin binwidth] [-sp1 species] [-sp2 species] [-compair i j] [-discard n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	if (nargs.GE.3) then
@@ -41,7 +42,13 @@
               case ("-compair")
                 n = n + 1; call getarg(n,temp); read(temp,"(I6)") compair(1)
                 n = n + 1; call getarg(n,temp); read(temp,"(I6)") compair(2)
-              write(0,"(A,3I4)") "Using COMpair for species 2 ",compair(:)
+                write(0,"(A,3I4)") "Using COMpair for species 2 ",compair(:)
+              case ("-discard")
+                n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodiscard
+                write(0,"(A,I)") "Frames to discard at start of trajectory:", framestodiscard
+	      case default
+		write(0,*) "Unrecognised argument: ", temp
+		stop
 	    end select
 	    n = n + 1
 	    if (n.GT.nargs) exit
@@ -67,10 +74,11 @@
 	! Set up the vars...
 100	nframes=0
 101	success=readframe()
-	if (success.EQ.1) goto 120  ! End of file encountered....
+	if (success.EQ.1) goto 800  ! End of file encountered....
 	if (success.EQ.-1) goto 799  ! File error....
 	nframes=nframes+1
 	if (mod(nframes,100).EQ.0) write(0,*) nframes
+	if (nframes.le.framestodiscard) goto 101
 	
 	call calc_com
 	if (compair(1).ne.0) then
@@ -88,8 +96,6 @@
 	  end do
 	end if
 
-
-	! Zero rdf()
 	do a1=1,s_natoms(species1)     ! Loop over all atoms of species 1....
 	  rdf(a1,1:nbins) = (/ (0,n=1,nbins) /)
 	  o=s_start(species1)	 ! Set the start atom of the species
@@ -126,26 +132,18 @@
 	  end do
 	end do   ! End main loop over all atoms of species1.
 
-	if (nframes.EQ.1) write(0,*) "numadded:=",numadded
-	! Calc and store the normalised rdf....
-	call calcpurerdf(species2,0)
-	if (nframes.EQ.1) then
-	  if (species1.EQ.species2) write(0,"(A,I2,A,I4,A)") "PRDF of atoms about ",species1," : averaged over ",s_nmols(species1)-1," molecules."
-	  if (species1.NE.species2) write(0,"(A,I2,A,I4,A)") "PRDF of atoms about ",species1," : averaged over ",s_nmols(species1)," molecules."
+	if (framesdone.EQ.1) write(0,*) "numadded:=",numadded
+	if (framesdone.EQ.1) then
+	  if (species1.EQ.species2) write(0,"(A,I2,A,I4,A)") "PRDF of atoms about ",species2," : averaged over ",s_nmols(species2)-1," molecules."
+	  if (species1.NE.species2) write(0,"(A,I2,A,I4,A)") "PRDF of atoms about ",species2," : averaged over ",s_nmols(species2)," molecules."
 	end if
-	do a1=1,s_natoms(species1)
-	  do n=1,nbins
-	    if (species1.EQ.species2) rdf(a1,n) = rdf(a1,n) / (s_nmols(species1)-1)
-	    if (species1.NE.species2) rdf(a1,n) = rdf(a1,n) / s_nmols(species1)
-	    nrdf(a1,n)=nrdf(a1,n)+rdf(a1,n)/purerdf(n)
-	  end do
-	end do   ! End accumulation loop over all atoms of species 1.
+	if (species1.EQ.species2) rdf = rdf / (s_nmols(species2)-1)
+	if (species1.NE.species2) rdf = rdf / s_nmols(species2)
+	nrdf = nrdf + rdf
 
 	! Next frame
+	framesdone = framesdone + 1
 	goto 101
-	! Work on the results now to get the proper RDF
-120	write(0,*) "Finished."
-	goto 801
 
 700	write(*,*) "INFILE and OUTFILE have the same name!!!"
 	goto 999
@@ -172,14 +170,16 @@
 	  basename=hisfile(1:baselen)
 	endif
 
-	
+	numdens = s_nmols(species1) / volume(cell)
+	const = (4.0*3.141592654) / 3.0
 	do a1=1,s_natoms(species1)
 	  resfile=basename(1:baselen)//"ssrdf"//CHAR(48+(a1/10))//CHAR(48+MOD(a1,10))//atmname(s_start(species1)+a1-1)(1:2)
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	  !write(9,*) "Bin     Raw     G(r)"
-	  ! Normalise the RDFs with respect to the number of frames.
+	  ! Normalise the RDFs with respect to the number of frames and number density of species
 	  do n=1,nbins
-	    nrdf(a1,n)=nrdf(a1,n)/nframes
+	    norm = (const*((n*binwidth)**3-((n-1)*binwidth)**3)) * numdens
+	    nrdf(a1,n)=nrdf(a1,n)/framesdone / norm
 	  end do
 	  do n=1,nbins
 	    ! write(9,"(F6.3,3x,2F12.8)") (n*binwidth)-binwidth/2.0,purerdf(n),nrdf(a1,n)
@@ -192,34 +192,6 @@
 	CLOSE(13)
 	end
 
-	subroutine calcpurerdf(sp,INFO)
-	use dlprw; use rdfssdat
-	implicit none
-	! Calculate the 'pure' RDFs for species 'sp'
-	integer :: sp,n,INFO
-	real*8 :: species2m,species2d,species2v,const,pi,widthcm
-	pi=3.141592654
-	widthcm=binwidth*1E-8
-	! Work out the mass and density of species2.
-	species2m=0
-	do n=1,s_natoms(sp)
-	  species2m=species2m+mass(s_start(sp)+n-1)
-	end do
-	if(INFO.EQ.1) write(0,*) "Calculated mass of species(",sp,") = ",species2m," g/mol."
-	species2m=species2m*s_nmols(sp)
-	species2m=species2m/6.02213E23     ! Actual g of species(2) in cell
-	boxvolume=(cell(1)*cell(5)*cell(9))*(1E-8**3)   ! Volume in cm3
-	species2d=species2m/boxvolume
-	if(INFO.EQ.1) write(0,*) "Effective density of species(",sp,") = ",species2d," g/cm3."
-	species2v=(species2m/s_nmols(sp))  
-	if(INFO.EQ.1) write(0,*) "Molecular volume of species(",sp,") = ",species2v," A3."
-	const=(4.0*pi*species2d)/3.0
-	do n=1,nbins
-	  purerdf(n)=(const*((n*widthcm)**3-((n-1)*widthcm)**3))/species2v
-	end do
-	return
-	end subroutine calcpurerdf
-
 	subroutine alloc_data(i,j)
 	use rdfssdat; implicit none; integer :: n,i,j,status
 	! i = max(s_natoms), j = nbins
@@ -227,5 +199,7 @@
         allocate(purerdf(j),stat=status); if (status.GT.0) stop "Allocation error for purerdf()"
 	allocate(nrdf(i,j),stat=status); if (status.GT.0) stop "Allocation error for nrdf()"
 	! Initialise the arrays...
-	rdf(1:i,1:j) = reshape( (/ (0,n=1,i*j) /) , (/ i,j /) )
+	rdf = 0.0
+	purerdf = 0.0
+	nrdf = 0.0
 	end subroutine alloc_data

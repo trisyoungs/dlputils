@@ -15,39 +15,38 @@
 	integer :: isontypes(NISOTOPES), isonamelens(NISOTOPES)
 
 	! DL_POLY (FF) to 'new type' to isotope mappings
-	integer :: ntypes
+	integer :: ntypes, nexchangeable
 	character*6, allocatable :: origtype(:), newtype(:), uniquetypes(:)
-	integer, allocatable :: isotypes(:), typemap(:), namelens(:), uniqueiso(:)
+	integer, allocatable :: isotypes(:), typemap(:), namelens(:), uniqueiso(:), exchangelist(:)
 	real*8, allocatable :: typepops(:), typefrac(:)
+	logical, allocatable :: exchangeable(:)
 
 	! General variables
-	real*8, parameter :: pi = 3.14159265358979
+	real*8, parameter :: pi = 3.14159265358979d0
 	character*80 :: hisfile,dlpoutfile,basename,resfile,namemap,headerfile
 	character*20 :: temp
 	integer :: i,j,k,baselen,bin,nframes,success,nargs,framestodo,nfftypes,alpha,beta
 	integer :: n, m, o, nbins, found, kx, ky, kz, newkx, newky, newkz, nvec, newnvec, frameskip, sumfac, framestodiscard, framesdone
 	integer :: nproc_mpi, id_mpi, err_mpi, mpistat(MPI_STATUS_SIZE)
-	integer :: kpernode, kremain, kstart, kend, stdevmax
+	integer :: kpernode, kremain, kstart, kend
 	integer :: iargc
-	real*8 :: binwidth,factor,weight,x1,x2,x3, selfscatter
-	logical :: MASTER, SLAVE, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE.
-	logical :: npt = .FALSE., calcstdev = .FALSE.
+	real*8 :: binwidth,factor,weight,x1,x2,x3, selfscatter, fac1, fac2
+	logical :: MASTER, SLAVE, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE., npt = .FALSE.
 	integer, allocatable :: frameadded(:), kvectors(:,:), slaveadded(:), totaladded(:)
-	real*8 :: kcut,kmin,magx,magy,magz,mag, numdensity, sd, sumxsq, avg
-	real*8, allocatable :: framesq(:,:,:),sq(:),slavesq(:,:,:),partialsq(:,:,:), sanitysq(:), framesanitysq(:)
-	real*8, allocatable :: stdevdata(:,:,:,:), kmag(:)
+	real*8 :: kcut,kmin,magx,magy,magz,mag, numdensity
+	real*8, allocatable :: framesq(:,:,:), sq(:), slavesq(:,:,:), partialsq(:,:,:), sanitysq(:), framesanitysq(:)
+	real*8, allocatable :: stdev(:,:,:), m2n(:,:,:), kmag(:)
 	complex*16, allocatable :: rxxx(:,:),ryyy(:,:),rzzz(:,:),pdensity(:)
 	complex*16 :: sanitydensity, tempcomp
 	character :: c
 
 	! Scattering lengths for H,D,C,N,O,F,P,S,Cl
 	isoscatter = (/ 0.0, -3.706, 6.671, 6.646, 9.36, 5.803, 5.654, 5.13, 2.847, 9.577, 4.1491 /)
-	!isoscatter = (/ 0.09476, 0.06693, -0.19056,-0.309,-0.7519, 1.2257, 0.16894, 0.31416, 1.0 /)
-	isonames = (/ "X", "H ", "D ", "C ", "N ", "O ", "F ", "P ", "S ", "Cl", "Si" /)
+	isonames = (/ "X ", "H ", "D ", "C ", "N ", "O ", "F ", "P ", "S ", "Cl", "Si" /)
 	isonamelens = (/ 1,1,1,1,1,1,1,1,1,2,2 /)
 
-	binwidth=0.1   ! In Angstroms
-	kcut = 5.0    ! Reciprocal space cutoff (box integers)
+	binwidth=0.1	! In Angstroms
+	kcut = 5.0	! Reciprocal space cutoff (box multiples)
 	kmin = 0.0	! Minimum cutoff
 	frameskip = 1	! Take consecutive frames by default
 	framestodo = -1	! Do all available frames by default
@@ -58,7 +57,7 @@
 	  write(0,*) "Usage : sq <DLP HISTORYfile> <DLP OUTPUTfile> ...options"
 	  write(0,*) "            [-bin binwidth] [-frames nframes] [-kcut cutoff] [-discard nframes]"
 	  write(0,*) "            [-skip interval] [-partials] [-readmap <file>] [-altheader <file>]"
-	  write(0,*) "            [-stdev maxframes] [-npt] [-kmin cutoff]"
+	  write(0,*) "            [-npt] [-kmin cutoff]"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -76,7 +75,6 @@
 	      case ("-skip"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
 	      case ("-partials"); writepartials = .TRUE.
 	      case ("-npt"); npt = .TRUE.
-	      case ("-stdev"); calcstdev = .TRUE.; n = n + 1; call getarg(n,temp); read(temp,"(I6)") stdevmax
 	      case ("-readmap"); readmap = .TRUE.; n = n + 1; call getarg(n,namemap)
 	      case ("-altheader"); altheader = .TRUE.; n = n + 1; call getarg(n,headerfile)
 	      case ("-p4amslave")
@@ -158,7 +156,6 @@
 	  write(12,*) "There are ",nproc_mpi," MPI processes."
 	  write(12,"(A,F6.3,A)") "Using binwidth of ",binwidth," Angstroms"
 	  write(12,"(A,I5,A)") "There will be ",nbins," histogram bins."
-	  if (calcstdev) write(12,"(a,i6)") "Standard Deviations will be calculated per point, maxframes = ", stdevmax
 	  if (outinfo(dlpoutfile,1).EQ.-1) then
 	    write(12,*) "Problem with OUTPUT file."
 	    call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
@@ -171,9 +168,10 @@
 	  allocate(origtype(nfftypes))
 	  allocate(newtype(nfftypes))
 	  allocate(isotypes(nfftypes))
-	  allocate(typemap(natms))
+	  allocate(exchangeable(nfftypes))
+	  allocate(typemap(natms), exchangelist(natms))
 	  isotypes = 0
-	  ! First column is original atom name, second is new type name, third is related element/isotope
+	  ! First column is original atom name, second is new type name, third is related element/isotope, fourth is exchangeable flag
 	  do n=1,nfftypes
 	    success = readline(15)
 	    origtype(n) = arg(1)
@@ -195,6 +193,19 @@
 		goto 999
 	      end if
 	    end do
+	    ! Is this an exchangeable hydrogen?
+	    if ((arg(3)(1:1).eq."x").or.(arg(3)(1:1).eq."X")) then
+	      ! Check that this is H or D
+	      if ((arg(3)(1:1).ne."H").and.(arg(3)(1:1).ne."D")) then
+		write(0,"(a,a)") "Error - exchangeable flag set for non-H/D : ",arg(3)
+		call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
+		goto 999
+	      end if
+	      ! Set the flag
+	      exchangeable(n) = .TRUE.
+	    else
+	      exchangeable(n) = .FALSE.
+	    end if
 	  end do
 	  close(15)
 
@@ -244,8 +255,10 @@
 	      uniquetypes(ntypes) = atmname(n)
 	      found = ntypes
 	    end if
-	    typemap(n) = found		! Store the type number for atom n
+	    ! Store the unique type ID for the atom
+	    typemap(n) = found
 	  end do
+
 	  ! Assign isotypes to the unique types list
 	  isontypes = 0
 	  do n=1,ntypes
@@ -261,6 +274,7 @@
 	    isontypes(uniqueiso(n)) = isontypes(uniqueiso(n)) + 1
 	  end do
 	  write(12,"(A,I2,A)") "Atoms are to be partitioned into ",ntypes," unique groups:"
+
 	  ! Send out proceed flag to slaves
 	  call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	else
@@ -342,11 +356,9 @@
 	  totaladded = 0
 	  allocate(slavesq(ntypes,ntypes,nbins))
 	  allocate(slaveadded(nbins))
-	  if (calcstdev) then
-	    if (MASTER) write(12,"(a,f10.4,a)") "Size of stdev array is :", ntypes*ntypes*nbins*stdevmax*4.0 / (1024.0*1024.0), "mb"
-	    allocate(stdevdata(ntypes,ntypes,nbins,stdevmax))
-	    stdevdata = 0.0
-	  end if
+	  allocate(stdev(ntypes,ntypes,nbins),m2n(ntypes,ntypes,nbins))
+	  stdev = 0.0
+	  m2n = 0.0
 	end if
 	  
 	! MAIN LOOP BEGINS
@@ -377,7 +389,7 @@
 	    goto 120
 	  end if
 	  nframes=nframes+1
-	  numdensity = numdensity + natms / (cell(1)*cell(5)*cell(9))
+	  numdensity = numdensity + natms / volume(cell)
 	  !if (mod(nframes,100).EQ.0) then
 	    !open(unit=12,file=basename(1:baselen)//"out",form="formatted",status="old")
 	    write(6,*) nframes
@@ -560,20 +572,17 @@
 	    end do
 	  end do
 
+	  ! Accumulate STDEV data
+	  if (framesdone.gt.0) then
+	    fac1 = 1.0d0 / real(framesdone+1)
+	    fac2 = 1.0d0 / real(framesdone)
+	    m2n = m2n + (framesq - fac1*(framesq+partialsq))*(framesq - fac2*partialsq)
+	  end if
+
 	  ! Add to local partial sq
 	  partialsq = partialsq + framesq
 	  totaladded = totaladded + frameadded
 
-	  ! Accumulate STDEV data
-	  if (calcstdev) then
-	    do alpha=1,ntypes
-	      do beta=1,ntypes
-		do n=1,nbins
-		  stdevdata(alpha,beta,n,framesdone+1) = framesq(alpha,beta,n)
-		end do
-	      end do
-	    end do
-	  end if
 	else
 	  ! Slaves just send their data
 	  !write(0,*) "Slave sending data....", nbins
@@ -604,20 +613,25 @@
 
 	  ! Sum into total S(Q)
 	  sq = 0.0d0
+	  selfscatter = 0.0
 	  do alpha=1,ntypes
 	    do beta=1,ntypes
 
-	      ! Calculate weighting factor for partial (does not include fractional populations since this is already done)
+	      ! Calculate weighting factor for partial (does not include fractional population since this is accounted for)
 	      factor = isoscatter(uniqueiso(alpha)) * isoscatter(uniqueiso(beta))
+
+	      ! Increment self-scattering correction
+	      weight = 0.0
+	      if (alpha.eq.beta) weight = typefrac(alpha) * factor
+	      selfscatter = selfscatter + weight
 
 	      ! Normalisation of S_ab(Q) w.r.t. number of frames and (total) number of atoms
 	      do n=1,nbins
 		if (totaladded(n).eq.0) then
 		  partialsq(alpha,beta,n) = 0.0
-		  if (calcstdev) stdevdata(alpha,beta,n,:) = 0
 		else
 		  partialsq(alpha,beta,n) = partialsq(alpha,beta,n) / totaladded(n) / natms
-		  if (calcstdev) stdevdata(alpha,beta,n,:) = stdevdata(alpha,beta,n,:) / totaladded(n) / natms
+		  m2n(alpha,beta,n) = dsqrt(m2n(alpha,beta,n) / totaladded(n) / natms)
 		end if
 		sq(n) = sq(n) + partialsq(alpha,beta,n) * factor
 	      end do
@@ -627,10 +641,11 @@
 	      if (writepartials) then
 	        resfile=basename(1:baselen)//"partsq"//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))
 	        OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-		if (alpha.eq.beta) write(9,"('# Self-scattering level is ',f10.5)") typefrac(alpha)*isoscatter(uniqueiso(alpha))*isoscatter(uniqueiso(alpha))
-		write(9,"(a67)") "#  Q           S_ab(Q)          STDEV       NAdded   S_ab(Q)*b_a*b_b"
+		write(9,"('# b_a * b_b = ',f10.5)") factor
+	        write(9,"('# Self-scattering level is ',f10.5)") weight
+		write(9,"(a68)") "#  Q           S_ab(Q)*ba*bb      STDEV       NAdded   S-Self"
 	        do n=1,nbins
-		  write(9,"(F8.5,3x,E14.5,2x,e14.5,1x,I10,1x,e14.5)") (n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n), sd, totaladded(n), partialsq(alpha,beta,n)*factor
+		  write(9,"(F8.5,3x,E14.5,2x,e14.5,1x,I10,1x,e14.5)") (n-0.5)*binwidth, partialsq(alpha,beta,n), m2n(alpha,beta,n), totaladded(n), partialsq(alpha,beta,n)-weight
 	        end do
 	        close(9)
 	      end if
@@ -638,15 +653,8 @@
 	  end do
 	  write(6,*) "Finished sum"
 
-	  ! Calculate self scattering subtraction
-	  selfscatter = 0.0
-	  do n=1,NISOTOPES
-	    if (isopops(n).eq.0) cycle
-	    selfscatter = selfscatter + isofrac(n) * isoscatter(n) * isoscatter(n)
-	  end do
-
 	  ! Weight total S(Q) against system density *AND* convert between fm (www.ncnr.nist.gov) and 
-	  ! 10**-12 cm units (Alan@RAL) used for the scattering lengths
+	  ! 10**-12 cm units (ISIS) used for the scattering lengths
 	  sq = (sq - selfscatter) / 100.0
 
 	  ! Normalise sanity S(Q)
