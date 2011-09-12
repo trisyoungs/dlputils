@@ -561,4 +561,13 @@
 	xyz_alloc = .true.
 	end subroutine alloc_xyz
 
+!	\/\/\/\/\/\/\/\/\/\/\/
+!	** Misc Subroutines **
+!	/\/\/\/\/\/\/\/\/\/\/\
+	character*8 function s_atom(sp,i)
+	implicit none
+	integer :: sp, i
+	s_atom = atmname(s_start(sp)+i-1)
+	end function s_atom
+
 	end module dlprw
