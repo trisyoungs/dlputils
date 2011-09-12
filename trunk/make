@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Custom options - modify these for 'unknown' machine builds
-DEFAULTFC=gfortran
+DEFAULTFC=ifort
 DEFAULTFFLAGS=" -O2 -ffree-line-length-none "
 DEFAULTFFLAGS=" -O2 "
 #DEFAULTFFLAGS=" -CB "
@@ -25,7 +25,7 @@ do
   fi
 done
 
-if [ "$HOST" = "utopia" ]
+if [ "$HOST" = "utopia" ] 
 then
   echo "Building on utopia..."
   FC=ifort
