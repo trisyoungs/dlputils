@@ -1,3 +1,6 @@
+DISCLAIMER
+----------
+
 These programs are provided in good faith, but are not guaranteed to work. 
 
 Some are written for specific (molecular dynamics) systems and may not be applicable
@@ -6,3 +9,22 @@ to others.
 If these are used in a research application, it is the responsibility of the user
 to ensure there are no bugs and to validate that the codes provide correct, publishable
 answers.
+
+COMPILATION
+-----------
+
+The provided 'make' script will compile all programs provided - you may need to edit
+the script to change the DEFAULTFC and DEFAULTFFLAGS to suit your compiler.
+Note that some files contain very long lines, which gfortran will choke on - if you
+use this compiler, add the option -ffree-line-length-none to DEFAULTFFLAGS.
+
+Once setup, run the following command:
+
+./make
+
+Alternatively, to compile a single program (e.g. counthb) run the following command:
+
+gfortran -ffree-line-length-none -O3 -o counthb parse.f90 dlprw.f90 utility.f90 counthb.f90
+
+Note that most of the supplied programs depend on at least one of the 'parse', 'dlprw', or
+'utility' modules, so they must usually be specified as well (and in that order).
