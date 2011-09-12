@@ -4,168 +4,181 @@
 	program counthb
 	use dlprw; use utility
 	implicit none
-	character*80 :: hisfile,dlpoutfile,resfile
-	character*20 :: temparg
-	integer :: n,nframes,success,nargs,m,i
-	integer :: framestodo, nspec, t(9)
-	integer :: glucoh(6,2), water(3), watersp = 2
-	integer :: dgrid, agrid, nacceptor, ndonor, abin, dbin
-	integer :: iargc
-	real*8 :: a(3),b(3),c(3),temp(3),v1(3),v2(3),v1mag,v2mag,roo,angle,dp,maxoo,minang,totaverage,minoo
-	integer, allocatable :: results(:,:,:), totals(:)
-	real*8, allocatable :: frameaverages(:), averages(:,:)
-	real*8, allocatable :: donordens(:,:), acceptordens(:,:)
-	integer, parameter :: DONOR = 1, ACCEPTOR = 2
-	logical :: printgeom = .FALSE.
-	real*8 :: calcangle, ddelta = 0.01, adelta = 1.0
-
-	minoo = 2.0
+	integer, parameter :: MAXXH = 20, MAXY = 20
+	character*80 :: hisfile,dlpoutfile,altheaderfile
+	character*80 :: temp
+	integer :: n,nframes,success,nargs,m,i,iargc,m1,m2,j
+	integer :: framestodo = -1, framestodiscard = 0, t(9), sp1, sp2, nxh = 0, ny = 0, framesdone = 0
+	integer :: xh(MAXXH,2), y(MAXY), ncontacts(MAXXH)
+	real*8 :: averages(MAXXH,3), sds(MAXXH,3), total
+	real*8 :: rx(3), rh(3), vhx(3), dhx, ry(3), vhy(3), dhy, angle, dp, maxdist, minang, newavg
+	logical :: altheader = .FALSE.
 
 	nargs = iargc()
-	if (nargs.LT.9) stop "Usage : counthb <DLP HISTORYfile> <DLP OUTPUTfile> <nframes> <maxoo> <minang> <wsp> <wO> <wH1> <wH2> [print]"
+	if (nargs.LT.6) then
+	  write(0,"(a)") "Usage : counthb <DLP HISTORYfile> <DLP OUTPUTfile> <sp1 (XH)> <sp2 (Y)> <maxdist> <minang>"
+	  write(0,"(10x,a)") "[-xh i j ...]     Specify donor site on species 1"
+	  write(0,"(10x,a)") "[-y k ...]        Specify acceptor site on species 2"
+	  write(0,"(10x,a)") "[-frames n]       Set number of frames to calculate (default = all)"
+	  write(0,"(10x,a)") "[-discard n]      Set number of frames to discard at start (default = 0)"
+	  stop
+	end if
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
-	call getarg(3,temparg); read(temparg,"(I5)") framestodo
-	call getarg(4,temparg); read(temparg,"(F12.4)") maxoo
-	call getarg(5,temparg); read(temparg,"(F12.4)") minang
-	call getarg(6,temparg); read(temparg,"(I4)") watersp
-	call getarg(7,temparg); read(temparg,"(I4)") water(1)
-	call getarg(8,temparg); read(temparg,"(I4)") water(2)
-	call getarg(9,temparg); read(temparg,"(I4)") water(3)
+	call getarg(3,temp); read(temp,"(i4)") sp1
+	call getarg(4,temp); read(temp,"(i4)") sp2
+	call getarg(5,temp); read(temp,"(f12.4)") maxdist
+	call getarg(6,temp); read(temp,"(f12.4)") minang
+
+	n = 6
+        do
+          n = n + 1; if (n.GT.nargs) exit
+          call getarg(n,temp)
+          select case (temp)
+            case ("-header")
+              n = n + 1; call getarg(n,altheaderfile)
+              write(0,"(A,I4)") "Alternative header file supplied."
+	      altheader = .TRUE.
+            case ("-frames")
+              n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
+              write(0,"(A,I4)") "Frames to process: ",framestodo
+            case ("-discard")
+              n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodiscard
+              write(0,"(A,I4)") "Frames to discard at start: ",framestodiscard
+            case ("-xh")
+	      nxh = nxh + 1
+              n = n + 1; call getarg(n,temp); read(temp,"(I6)") xh(nxh,1)
+              n = n + 1; call getarg(n,temp); read(temp,"(I6)") xh(nxh,2)
+            case ("-y")
+	      ny = ny + 1
+              n = n + 1; call getarg(n,temp); read(temp,"(I6)") y(ny)
+	    case default
+	      write(0,"(a,a)") "Unrecognised command line option:",temp
+	      stop
+	  end select
+	end do
 	
-	if (nargs.EQ.10) then
-	  call getarg(10,temparg)
-	  if (temparg.EQ."print") printgeom = .TRUE.
-	end if
-
-	write(0,*) "O-O distance min/max :",minoo,maxoo
-	write(0,*) "Minimum O-H-O angle  :",minang
-
 	! Open and check the files...
-	call openhis(hisfile,10)
 	if (outinfo(dlpoutfile,1).EQ.-1) goto 798
         ! Now, read in the history header so that we have cell()
-        if (readheader().EQ.-1) goto 799
-
-	allocate(results(framestodo,6,2))
-	allocate(totals(framestodo))
-	allocate(frameaverages(framestodo))
-	allocate(averages(framestodo,2))
-	glucoh(:,:) = reshape( (/ 6,8,9,10,11,12,0,20,21,22,23,24 /) , (/ 6,2 /) )
-	results(:,:,:) = reshape( (/ (0,n=1,2*6*framestodo) /) , (/ framestodo,6,2 /) )
-	totals(:) = (/ (0.0,n=1,framestodo) /)
-	totaverage = 0.0
-	frameaverages = 0.0
-	averages = 0.0
-
-	write(0,"(A,4I3)") "Water species, O, H, H :",watersp,water
-	write(0,*) "Glucose OH specification:"
-	do m=1,6
-	  write(0,*) (glucoh(m,n),n=1,2)
-	end do
-
-	! Prepare if printing is required
-	if (printgeom) then
-	  open(unit=14,file="counthb.geom",form="formatted",status="replace")
-	  dgrid = int((maxoo-minoo) / ddelta)+1
-	  agrid = int((180.0-minang) / adelta)+1
-	  write(0,*) "Grid sizes (roo, angle) are ",dgrid,agrid
-	  allocate(donordens(1:dgrid,1:agrid))
-	  allocate(acceptordens(1:dgrid,1:agrid))
-	  donordens = 0
-	  acceptordens = 0
-	  ndonor = 0
-	  nacceptor = 0
+	! If this fails then we may have a restarted trajectory. Continue, but only if
+	! a header can be read in from the specified alternative history file..
+	call openhis(hisfile,10)
+        if (readheader().EQ.-1) then
+	  if (altheader) then
+	    write(6,*) "Restarted trajectory:"
+	    close(dlpun_his)
+	    call openhis(altheaderfile,10)
+	    if (readheader().EQ.-1) goto 799
+	    close(dlpun_his)
+	    call openhis(hisfile,10)
+	  else
+	    goto 799
+	  end if
 	end if
 
+	write(6,*) "Species 1 (XH) ", sp1, s_name(sp1)
+	write(6,*) "Species 2 (Y)  ", sp2, s_name(sp2)
+	write(6,*) "Maximum X...Y distance :",maxdist
+	write(6,*) "Minimum X-H...Y angle  :",minang
+	if (nxh.eq.0) stop "Error: No XH sites defined on species 1"
+	write(6,*) "Number of XH sites defined on species 1: ", nxh
+	write(6,"(12x,i3,' (',a8,') - ',i3,' (',a8,')')") (xh(n,1), s_atom(sp1,xh(n,1)), xh(n,2), s_atom(sp2,xh(n,2)), n=1,nxh)
+	if (nxh.eq.0) stop "Error: No Y sites defined on species 2"
+	write(6,*) "Number of Y sites defined on species 2: ", ny
+	write(6,"(12x,i3,' (',a8,')')") (y(n), s_atom(sp2,y(n)), n=1,ny)
+	
 	! XXXX
 	! XXXX Main routine....
 	! XXXX
 	! Set up the vars...
+	ncontacts = 0
+	averages = 0.0
+	sds = 0.0
 100	nframes=0
+	framesdone = 0
 101	success=readframe()
 	if (success.EQ.1) goto 801  ! End of file encountered....
 	if (success.EQ.-1) goto 799  ! File error....
 	nframes=nframes+1
 	if (mod(nframes,100).EQ.0) write(0,*) nframes
+	if (nframes.le.framestodiscard) goto 101
 
-	i = s_start(watersp)-1
-	do n=1,s_nmols(watersp)
-	  c(1)=xpos(i+water(1))		! Water oxygen
-	  c(2)=ypos(i+water(1))
-	  c(3)=zpos(i+water(1))
-	  do m=1,6
-	    a(1)=xpos(glucoh(m,1))	! Glucose Oxygen
-	    a(2)=ypos(glucoh(m,1))
-	    a(3)=zpos(glucoh(m,1))
-	    ! First, search for H-Bonds where glucose OH is the donor (glucO-glucH...waterO)
-	    if (glucoh(m,2).NE.0) then
-	      b(1)=xpos(glucoh(m,2))	! Glucose Hydrogen
-	      b(2)=ypos(glucoh(m,2))
-	      b(3)=zpos(glucoh(m,2))
-	      ! gO-wO distance
-	      call pbc(a(1),a(2),a(3),c(1),c(2),c(3),temp(1),temp(2),temp(3))
-	      roo=sqrt( (temp(1)-c(1))**2 + (temp(2)-c(2))**2 + (temp(3)-c(3))**2 )
-	      ! gO-gH-wO angle
-              angle = calcangle(a,b,c)
-	      if ((roo.LT.maxoo).AND.(angle.GT.minang)) then
-		results(nframes,m,DONOR) = results(nframes,m,DONOR) + 1.0
-		if (printgeom) then
-		  write(14,"(F7.5,2x,F8.3)") roo,angle
-		  ndonor = ndonor + 1
-		  dbin = nint((roo-minoo)/ddelta); abin = nint((angle-minang)/adelta)
-		  donordens(dbin,abin) = donordens(dbin,abin) + 1
-		end if
-	      end if
-	    end if
-	    ! Now for H-bonds where the glucose O is the acceptor (glucO...waterH-waterO)
-	    if (water(2).NE.0) then
-	      b(1)=xpos(i+water(2))	! Water Hydrogen 1
-	      b(2)=ypos(i+water(2))
-	      b(3)=zpos(i+water(2))
-	      ! gO-wO distance (calc again to be safe)
-	      call pbc(a(1),a(2),a(3),c(1),c(2),c(3),temp(1),temp(2),temp(3))
-	      roo=sqrt( (temp(1)-c(1))**2 + (temp(2)-c(2))**2 + (temp(3)-c(3))**2 )
-	      ! gO-wH-wO angle
-              angle = calcangle(a,b,c)
-	      if ((roo.LT.maxoo).AND.(angle.GT.minang)) then
-		results(nframes,m,ACCEPTOR) = results(nframes,m,ACCEPTOR) + 1.0
-		if (printgeom) then
-		  write(14,"(F7.5,12x,F8.3)") roo,angle
-		  nacceptor = nacceptor + 1
-		  dbin = nint((roo-minoo)/ddelta); abin = nint((angle-minang)/adelta)
-		  acceptordens(dbin,abin) = acceptordens(dbin,abin) + 1
-		end if
-	      end if
-	      b(1)=xpos(i+water(3))	! Water Hydrogen 2
-	      b(2)=ypos(i+water(3))
-	      b(3)=zpos(i+water(3))
-	      ! O-O Dist is still the same, so just need angle.
-              angle = calcangle(a,b,c)
-	      if ((roo.LT.maxoo).AND.(angle.GT.minang)) then
-		results(nframes,m,ACCEPTOR) = results(nframes,m,ACCEPTOR) + 1.0
-		if (printgeom) then
-		  write(14,"(F7.5,12x,F8.3)") roo,angle
-		  nacceptor = nacceptor + 1
-		  dbin = nint((roo-minoo)/ddelta); abin = nint((angle-minang)/adelta)
-		  acceptordens(dbin,abin) = acceptordens(dbin,abin) + 1
-		end if
-	      end if
-	    end if
-	  end do
-	  i = i+s_natoms(watersp)
-	end do
-	      
-	! Create the totals for this frame
-	do n=1,6
-	  totals(nframes) = totals(nframes) + results(nframes,n,DONOR) + results(nframes,n,ACCEPTOR)
-	  averages(n,DONOR) = averages(n,DONOR) + results(nframes,n,DONOR)
-	  averages(n,ACCEPTOR) = averages(n,ACCEPTOR) + results(nframes,n,ACCEPTOR)
-	end do
-	totaverage = totaverage + real(totals(nframes))
-	frameaverages(nframes) = totaverage / real(nframes)
+	framesdone = framesdone + 1
 
-	if (nframes.EQ.framestodo) goto 800
+
+	! Loop over molecules of sp1
+	i = s_start(sp1)-1
+	do m1=1,s_nmols(sp1)
+
+	  ! Loop over defined XH
+	  do n=1,nxh
+
+	    ! Get position of H atom
+	    rh(1) = xpos(i+xh(n,2))
+	    rh(2) = ypos(i+xh(n,2))
+	    rh(3) = zpos(i+xh(n,2))
+
+	    ! Get minimum image position of X atom, and H->X vector
+	    call pbc(xpos(i+xh(n,1)),ypos(i+xh(n,1)),zpos(i+xh(n,1)),rh(1),rh(2),rh(3),rx(1),rx(2),rx(3))
+	    vhx = rx - rh
+	    dhx = sqrt(sum(vhx*vhx))
+	!write(0,*) vhx,dhx
+	    vhx = vhx / dhx
+
+	    ! Loop over molecules of sp2
+	    j = s_start(sp2)-1
+	    do m2=1,s_nmols(sp2)
+
+	      ! Loop over defined Y
+	      do m=1,ny
+
+		! Get minimum image position of Y w.r.t. H
+		call pbc(xpos(j+y(m)),ypos(j+y(m)),zpos(j+y(m)),rh(1),rh(2),rh(3),ry(1),ry(2),ry(3))
+		vhy = ry - rh
+		dhy = sqrt(sum(vhy*vhy))
+	!write(0,*) "Y",vhy,dhy
+		vhy = vhy / dhy
+		
+		! Distance check
+		if (dhy.gt.maxdist) cycle
+
+		! Angle check
+		dp = sum(vhx*vhy)
+		if (dp.gt.1.0d0) dp = 1.0d0
+		angle = dacos(dp) * 57.29577951d0
+		if (angle.lt.minang) cycle
+	!write(0,*) "Adding angle", angle, dp
+		
+		! Accumulate data
+		! ... H-X distance
+		newavg = (averages(n,1)*ncontacts(n) + dhx) / (ncontacts(n)+1)
+		sds(n,1) = (ncontacts(n)*sds(n,1) + (dhx-averages(n,1))*(dhx-newavg)) / (ncontacts(n)+1)
+		averages(n,1) = newavg
+		! ... H...Y distance
+		newavg = (averages(n,2)*ncontacts(n) + dhy) / (ncontacts(n)+1)
+		sds(n,2) = (ncontacts(n)*sds(n,2) + (dhy-averages(n,2))*(dhy-newavg)) / (ncontacts(n)+1)
+		averages(n,2) = newavg
+		! ... X-H...Y angle
+		newavg = (averages(n,3)*ncontacts(n) + angle) / (ncontacts(n)+1)
+		sds(n,3) = (ncontacts(n)*sds(n,3) + (angle-averages(n,3))*(angle-newavg)) / (ncontacts(n)+1)
+		averages(n,3) = newavg
+
+		ncontacts(n) = ncontacts(n) + 1
+
+	      end do   ! Loop over Y
+
+	      j = j + s_natoms(sp2)
+
+	    end do   ! Loop over sp2 molecules
+
+	  end do   ! Loop over XH
+
+	  i = i + s_natoms(sp1)
+	
+	end do   ! Loop over sp1 molecules
+
+	if (framesdone.EQ.framestodo) goto 800
 	! Next frame
 	goto 101
 
@@ -179,61 +192,22 @@
 800	write(0,*) "Framestodo was fulfilled."
 801	write(0,*) ""
 
-
-	totaverage = totaverage / nframes
-	do n=1,6
-	  averages(n,DONOR) = averages(n,DONOR) / nframes
-	  averages(n,ACCEPTOR) = averages(n,ACCEPTOR) / nframes
+	! Write out information
+	write(6,"(a,i7,a)") "Averages calculated over ", framesdone, " frames"
+	write(6,*) ""
+	write(6,"(a)") "      --Atom X------ - --Atom H------    NContacts  (Per Frame) (Per Mol)   Avg(rH-X)   Avg(rH-Y)  Avg(aX-H-Y)"
+850	format (6x,i3,' (',a8,') - ',i3,' (',a8,')   ', i10, 2x, 5(es10.4,2x))
+851	format (76x,3(es10.4,2x),'  [STDEV]')
+	total = 0.0
+	do n=1,nxh
+	  write(6,850) xh(n,1), s_atom(sp1,xh(n,1)), xh(n,2), s_atom(sp2,xh(n,2)), ncontacts(n), real(ncontacts(n))/framesdone, real(ncontacts(n))/framesdone/s_nmols(sp1),averages(n,1:3)
+	  write(6,851) dsqrt(sds(n,1:3))
+	  total = total + real(ncontacts(n))/framesdone/s_nmols(sp1)
 	end do
-	
-	open(unit=9,file="counthb.dat",form="formatted",status="replace")
-	write(9,"(A)") "Frame   dO8   dO9  dO10  dO11  dO12  dO13  aO8   aO9  aO10  aO11  aO12  aO13  Total"
-	do n=1,framestodo
-	  write(9,"(I5,2x,13(I4,2X),F7.4)") n,(results(n,m,DONOR),m=1,6),(results(n,m,ACCEPTOR),m=1,6),totals(n),frameaverages(n)
-	end do
-	write(9,"(' Avg ',2x,13(F5.3,1X),F7.4)") (averages(n,DONOR),n=1,6),(averages(n,ACCEPTOR),n=1,6),totaverage
-	close(9)
 
-	if (printgeom) then
-	  open(unit=9,file="counthb.ddens",form="formatted",status="replace")
-	  donordens = donordens / ndonor
-	  do n=1,dgrid
-	    do m=1,agrid
-	      write(9,"(F10.6)") donordens(n,m)
-	    end do
-	  end do
-	  close(9)
-	  open(unit=9,file="counthb.adens",form="formatted",status="replace")
-	  acceptordens = acceptordens / nacceptor
-	  do n=1,dgrid
-	    do m=1,agrid
-	      write(9,"(F10.6)") acceptordens(n,m)
-	    end do
-	  end do
-	  close(9)
-	end if
+	write(6,*) ""
+	write(6,"(a,es10.4)") "Total contacts per molecule of species 1 : ", total
 
-	write(0,*) "Finished."
-999	close(14)
+999	write(0,*) "Finished."
 	end program counthb
 
-	real*8 function calcangle(a,b,c)
-	use utility; implicit none
-	real*8,dimension(3) :: a,b,c,v1,v2,temp
-	real*8 :: v1mag,v2mag,dp
-        ! Angle between atoms a--b--c
-	call pbc(a(1),a(2),a(3),b(1),b(2),b(3),temp(1),temp(2),temp(3))
-	a = temp
-	call pbc(c(1),c(2),c(3),b(1),b(2),b(3),temp(1),temp(2),temp(3))
-	c = temp
-	! Get the bond vectors
-	v1 = b - a
-	v2 = b - c
-	v1mag = sqrt( v1(1)**2 + v1(2)**2 + v1(3)**2 )
-	v2mag = sqrt( v2(1)**2 + v2(2)**2 + v2(3)**2 )
-	v1 = v1 / v1mag
-	v2 = v2 / v2mag
-        ! Calculate dot product and angle...
-        dp = (v1(1)*v2(1) + v1(2)*v2(2) + v1(3)*v2(3))
-        calcangle = acos(dp)* 57.29577951d0
-	end function calcangle
