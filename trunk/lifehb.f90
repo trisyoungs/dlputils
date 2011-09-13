@@ -11,12 +11,12 @@
 	integer :: framestodo = -1, framestodiscard = 0, t(9), sp1, sp2, nxh = 0, ny = 0, framesdone = 0
 	integer :: xh(MAXXH,2), y(MAXY), ncontacts, maxlife = 0
 	integer, allocatable :: hbflag(:,:,:,:)
-	real*8 :: rx(3), rh(3), vhx(3), dhx, ry(3), vhy(3), dhy, angle, dp, maxdist, minang, histo(MAXBINS)
+	real*8 :: dxy, rx(3), rh(3), vhx(3), dhx, ry(3), vhy(3), dhy, angle, dp, maxdist, minang, histo(MAXBINS)
 	logical :: altheader = .FALSE.
 
 	nargs = iargc()
 	if (nargs.LT.7) then
-	  write(0,"(a)") "Usage : lifehb <DLP HISTORYfile> <DLP OUTPUTfile> <sp1 (XH)> <sp2 (Y)> <maxdist> <minang>"
+	  write(0,"(a)") "Usage : lifehb <DLP HISTORYfile> <DLP OUTPUTfile> <sp1 (XH)> <sp2 (Y)> <rXY max> <aXHY min>"
 	  write(0,"(10x,a)") "[-xh i j ...]     Specify donor site on species 1"
 	  write(0,"(10x,a)") "[-y k ...]        Specify acceptor site on species 2"
 	  write(0,"(10x,a)") "[-frames n]       Set number of frames to calculate (default = all)"
@@ -141,6 +141,9 @@
 		dhy = sqrt(sum(vhy*vhy))
 	!write(0,*) "Y",vhy,dhy
 		vhy = vhy / dhy
+
+		! Calculate XY distance
+		dxy = dsqrt(sum((rx-ry)*(rx-ry)))
 		
 		! Calculate angle
 		dp = sum(vhx*vhy)
@@ -148,7 +151,7 @@
 		angle = dacos(dp) * 57.29577951d0
 
 		! Geometry check - is it a hydrogen bond by our definition?
-		if ((dhy.gt.maxdist).or.(angle.lt.minang)) then
+		if ((dxy.gt.maxdist).or.(angle.lt.minang)) then
 		  ! No longer an H-bond so, if flag was already set, add to histo
 		  if (hbflag(m1,n,m2,m).ne.0) then
 		    ncontacts = ncontacts + 1
@@ -198,6 +201,7 @@
 		  i = i + 1
 		  ncontacts = ncontacts + 1
 		  histo(hbflag(m1,n,m2,m)) = histo(hbflag(m1,n,m2,m)) + 1.0
+		  if (hbflag(m1,n,m2,m).gt.maxlife) maxlife = hbflag(m1,n,m2,m)
 		  hbflag(m1,n,m2,m) = 0
 		end if
 	      end do   ! Loop over Y

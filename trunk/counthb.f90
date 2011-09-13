@@ -10,13 +10,13 @@
 	integer :: n,nframes,success,nargs,m,i,iargc,m1,m2,j
 	integer :: framestodo = -1, framestodiscard = 0, t(9), sp1, sp2, nxh = 0, ny = 0, framesdone = 0
 	integer :: xh(MAXXH,2), y(MAXY), ncontacts(MAXXH)
-	real*8 :: averages(MAXXH,3), sds(MAXXH,3), total
-	real*8 :: rx(3), rh(3), vhx(3), dhx, ry(3), vhy(3), dhy, angle, dp, maxdist, minang, newavg
+	real*8 :: averages(MAXXH,4), sds(MAXXH,4), total
+	real*8 :: dxy, rx(3), rh(3), vhx(3), dhx, ry(3), vhy(3), dhy, angle, dp, maxdist, minang, newavg
 	logical :: altheader = .FALSE.
 
 	nargs = iargc()
 	if (nargs.LT.6) then
-	  write(0,"(a)") "Usage : counthb <DLP HISTORYfile> <DLP OUTPUTfile> <sp1 (XH)> <sp2 (Y)> <maxdist> <minang>"
+	  write(0,"(a)") "Usage : counthb <DLP HISTORYfile> <DLP OUTPUTfile> <sp1 (XH)> <sp2 (Y)> <rXY max> <aXHY min>"
 	  write(0,"(10x,a)") "[-xh i j ...]     Specify donor site on species 1"
 	  write(0,"(10x,a)") "[-y k ...]        Specify acceptor site on species 2"
 	  write(0,"(10x,a)") "[-frames n]       Set number of frames to calculate (default = all)"
@@ -141,14 +141,15 @@
 		vhy = vhy / dhy
 		
 		! Distance check
-		if (dhy.gt.maxdist) cycle
+		dxy = dsqrt(sum((rx-ry)*(rx-ry)))
+		if (dxy.gt.maxdist) cycle
 
 		! Angle check
 		dp = sum(vhx*vhy)
 		if (dp.gt.1.0d0) dp = 1.0d0
 		angle = dacos(dp) * 57.29577951d0
 		if (angle.lt.minang) cycle
-	!write(0,*) "Adding angle", angle, dp
+	!write(0,*) "Adding angle", angle, dp, i, j
 		
 		! Accumulate data
 		! ... H-X distance
@@ -159,10 +160,14 @@
 		newavg = (averages(n,2)*ncontacts(n) + dhy) / (ncontacts(n)+1)
 		sds(n,2) = (ncontacts(n)*sds(n,2) + (dhy-averages(n,2))*(dhy-newavg)) / (ncontacts(n)+1)
 		averages(n,2) = newavg
-		! ... X-H...Y angle
-		newavg = (averages(n,3)*ncontacts(n) + angle) / (ncontacts(n)+1)
-		sds(n,3) = (ncontacts(n)*sds(n,3) + (angle-averages(n,3))*(angle-newavg)) / (ncontacts(n)+1)
+		! ... X...Y distance
+		newavg = (averages(n,3)*ncontacts(n) + dxy) / (ncontacts(n)+1)
+		sds(n,3) = (ncontacts(n)*sds(n,3) + (dxy-averages(n,3))*(dxy-newavg)) / (ncontacts(n)+1)
 		averages(n,3) = newavg
+		! ... X-H...Y angle
+		newavg = (averages(n,4)*ncontacts(n) + angle) / (ncontacts(n)+1)
+		sds(n,4) = (ncontacts(n)*sds(n,4) + (angle-averages(n,4))*(angle-newavg)) / (ncontacts(n)+1)
+		averages(n,4) = newavg
 
 		ncontacts(n) = ncontacts(n) + 1
 
@@ -195,13 +200,13 @@
 	! Write out information
 	write(6,"(a,i7,a)") "Averages calculated over ", framesdone, " frames"
 	write(6,*) ""
-	write(6,"(a)") "      --Atom X------ - --Atom H------    NContacts  (Per Frame) (Per Mol)   Avg(rH-X)   Avg(rH-Y)  Avg(aX-H-Y)"
-850	format (6x,i3,' (',a8,') - ',i3,' (',a8,')   ', i10, 2x, 5(es10.4,2x))
-851	format (76x,3(es10.4,2x),'  [STDEV]')
+	write(6,"(a)") "      --Atom X------ - --Atom H------    NContacts  (Per Frame) (Per Mol)   Avg(rH-X)   Avg(rH-Y)   Avg(rX-Y)   Avg(aX-H-Y)"
+850	format (6x,i3,' (',a8,') - ',i3,' (',a8,')   ', i10, 2x, 6(es10.4,2x))
+851	format (76x,4(es10.4,2x),'  [STDEV]')
 	total = 0.0
 	do n=1,nxh
-	  write(6,850) xh(n,1), s_atom(sp1,xh(n,1)), xh(n,2), s_atom(sp2,xh(n,2)), ncontacts(n), real(ncontacts(n))/framesdone, real(ncontacts(n))/framesdone/s_nmols(sp1),averages(n,1:3)
-	  write(6,851) dsqrt(sds(n,1:3))
+	  write(6,850) xh(n,1), s_atom(sp1,xh(n,1)), xh(n,2), s_atom(sp2,xh(n,2)), ncontacts(n), real(ncontacts(n))/framesdone, real(ncontacts(n))/framesdone/s_nmols(sp1),averages(n,1:4)
+	  write(6,851) dsqrt(sds(n,1:4))
 	  total = total + real(ncontacts(n))/framesdone/s_nmols(sp1)
 	end do
 
