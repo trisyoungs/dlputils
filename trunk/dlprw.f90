@@ -414,17 +414,17 @@
 	allocate(s_natoms(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_natoms>"
 	allocate(s_start(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_start>"
 	do n=1,nspecies
-52	read(dlpun_out,"(A30,A20)",end=91) discard, discard2
+52	  read(dlpun_out,"(A30,A20)",end=91) discard, discard2
 	  if (discard(1:17).NE." name of species:") goto 52
 	  ! Get the information about this molecular species....
 	  s_name(n)=discard2(1:20)
 	  write(0,*) "Found: ",s_name(n)
-53	read(dlpun_out,"(A31,I20)",end=91) discard, discardn
+53	  read(dlpun_out,"(A31,I20)",end=91) discard, discardn
 	  if (discard(1:20).NE." number of molecules") goto 53
 	  if (verbosity.EQ.1) write(0,*) "-- Number of molecules: ",discardn
 	  s_nmols(n)=discardn
 	  if (s_nmols(n).GT.maxmols) maxmols = s_nmols(n)
-54	read(dlpun_out,"(A31,I20)",end=91) discard, discardn
+54	  read(dlpun_out,"(A31,I20)",end=91) discard, discardn
 	  if (discard(1:22).NE." number of atoms/sites") goto 54
 	  if (verbosity.EQ.1) write(0,*) "-- Number of atoms/sites: ",discardn
 	  s_natoms(n)=discardn
