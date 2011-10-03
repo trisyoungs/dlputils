@@ -24,9 +24,9 @@
 	arglen = 0
 	done = .false.
 	do n=1,200
-	  select case (line(n:n))
-	    case (' ',',')
-	      ! Blank character.
+	  select case (ichar(line(n:n)))
+	    case (32,44,9)
+	      ! Blank character (space=32, comma=44, tab=9)
 	      ! If arglen != 0 then 'store' current argument.
 	      ! Otherwise, move on
 	      if (arglen.ne.0) then
@@ -35,8 +35,8 @@
 		nargsparsed = nargsparsed + 1
 		arglen = 0
 	      end if
-	    case ('!','#')
-	      ! Comment character - we're done
+	    case (33,35)
+	      ! Comment character - (bang=33, hash=35) we're done
 	      done = .true.
 	    case default
 	      ! Add character to argument
