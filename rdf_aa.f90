@@ -1,7 +1,7 @@
 !	** rdf_aa **
 !	Calculate RDFs between specific atoms of a single species
 
-	program rdf_ss
+	program rdf_aa
 	use dlprw; use utility
 	implicit none
 	integer, parameter :: maxpairs = 50
@@ -21,7 +21,7 @@
 	npairs = 0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : rdf_aa <HSI file> <OUT file> [-sp n] [-intra] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-discard n]"
+	if (nargs.lt.5) stop "Usage : rdf_aa <HIS file> <OUT file> [-sp n] [-intra] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-discard n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	n = 2
@@ -206,5 +206,5 @@
 	write(0,*) "Finished!"
 999	CLOSE(10)
 	CLOSE(13)
-	end
+	end program rdf_aa
 

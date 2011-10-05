@@ -1,5 +1,4 @@
 	! Routine to read DL_POLY FIELD file
-	! Also, routine to probe a DL_POLY OUTPUT file for molecule/species information.
 
 	module dlpfield
 
