@@ -35,7 +35,7 @@
 	logical :: MASTER, SLAVE, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE., npt = .FALSE.
 	logical :: mix = .FALSE.
 	integer, allocatable :: frameadded(:), kvectors(:,:), slaveadded(:), totaladded(:)
-	real*8 :: kcut,kmin,magx,magy,magz,mag, numdensity
+	real*8 :: kcut,kmin,magx,magy,magz,mag, numdensity, rposx, rposy, rposz
 	real*8, allocatable :: framesq(:,:,:), sq(:), slavesq(:,:,:), partialsq(:,:,:), sanitysq(:), framesanitysq(:)
 	real*8, allocatable :: stdev(:,:,:), m2n(:,:,:), kmag(:)
 	complex*16, allocatable :: rxxx(:,:),ryyy(:,:),rzzz(:,:),pdensity(:)
@@ -151,7 +151,7 @@
 	  end if
 
 	  ! Check imcon
-	  if (imcon.gt.2) stop "This image convention not properly supported - fix me!"
+	  if (imcon.gt.3) stop "This image convention is not supported."
 
 	  ! Ascertain length of basename....
 	  baselen=-1
@@ -463,11 +463,11 @@
 	! Recalculate number of kvectors (if first frame or variable cell)
 	if (npt.or.(framesdone.eq.0)) then
 
-	  if (MASTER) call calc_rcell
+	  if (MASTER) call calc_rcell()
 	  call MPI_BCast(rcell,9,MPI_REAL8,0,MPI_COMM_WORLD,err_mpi)
-	  newkx = (kcut / rcell(1)) + 1
-	  newky = (kcut / rcell(5)) + 1
-	  newkz = (kcut / rcell(9)) + 1
+	  newkx = (kcut / dsqrt(rcell(1)*rcell(1) + rcell(2)*rcell(2) + rcell(3)*rcell(3))) + 1
+	  newky = (kcut / dsqrt(rcell(4)*rcell(4) + rcell(5)*rcell(5) + rcell(6)*rcell(6))) + 1
+	  newkz = (kcut / dsqrt(rcell(7)*rcell(7) + rcell(8)*rcell(8) + rcell(9)*rcell(9))) + 1
 	  if (MASTER) write(6,"(a,f10.6,a,3i4)") "This frame: rcell(1) = ",rcell(1)," with kxyz = ", newkx, newky, newkz
 	  ! Reallocate if newkx is greater than kx
 	  if ((newkx.gt.kx).or.(newky.gt.ky).or.(newkz.gt.kz)) then
@@ -490,9 +490,9 @@
 	  do i=0,kx
 	    do j=-ky,ky
 	      do k=-kz,kz
-	        magx = i*rcell(1)
-	        magy = j*rcell(5) 
-	        magz = k*rcell(9)
+		magx = i*rcell(1) + j*rcell(4) + k*rcell(7)
+		magy = i*rcell(2) + j*rcell(5) + k*rcell(8)
+		magz = i*rcell(3) + j*rcell(6) + k*rcell(9)
 	        mag = sqrt(magx**2 + magy**2 + magz**2)
 	        if ((mag.le.kcut).and.(mag.ge.kmin)) newnvec = newnvec + 1
 	      end do
@@ -507,9 +507,9 @@
 	    do i=0,kx
 	      do j=-ky,ky
 	        do k=-kz,kz
-	          magx = i*rcell(1)
-	          magy = j*rcell(5) 
-	          magz = k*rcell(9)
+		  magx = i*rcell(1) + j*rcell(4) + k*rcell(7)
+		  magy = i*rcell(2) + j*rcell(5) + k*rcell(8)
+		  magz = i*rcell(3) + j*rcell(6) + k*rcell(9)
 	          mag = sqrt(magx**2 + magy**2 + magz**2)
 	          if ((mag.le.kcut).and.(mag.ge.kmin)) then
  		    nvec = nvec + 1
@@ -540,9 +540,12 @@
 	  rxxx(0,n) = cmplx(1.0,0.0)
 	  ryyy(0,n) = cmplx(1.0,0.0)
 	  rzzz(0,n) = cmplx(1.0,0.0)
-	  rxxx(1,n) = cmplx( cos(rcell(1)*xpos(n)) , sin(rcell(1)*xpos(n)) )
-	  ryyy(1,n) = cmplx( cos(rcell(5)*ypos(n)) , sin(rcell(5)*ypos(n)) )
-	  rzzz(1,n) = cmplx( cos(rcell(9)*zpos(n)) , sin(rcell(9)*zpos(n)) )
+	  rposx = xpos(n)*rcell(1) + ypos(n)*rcell(4) + zpos(n)*rcell(7)
+	  rposy = xpos(n)*rcell(2) + ypos(n)*rcell(5) + zpos(n)*rcell(8)
+	  rposz = xpos(n)*rcell(3) + ypos(n)*rcell(6) + zpos(n)*rcell(9)
+	  rxxx(1,n) = cmplx( cos(rposx) , sin(rposx) )
+	  ryyy(1,n) = cmplx( cos(rposy) , sin(rposy) )
+	  rzzz(1,n) = cmplx( cos(rposz) , sin(rposz) )
 	  rxxx(-1,n) = dconjg(rxxx(1,n))
 	  ryyy(-1,n) = dconjg(ryyy(1,n))
 	  rzzz(-1,n) = dconjg(rzzz(1,n))

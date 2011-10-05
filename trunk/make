@@ -7,13 +7,13 @@ DEFAULTFFLAGS=" -O2 "
 #DEFAULTFFLAGS=" -CB "
 DEFAULTMPIFC=mpif90
 DEFAULTMPIFLAGS=""
+OPTFLAGS="-O3 -g "
+#OPTFLAGS="-CB -O0 -g "
 
 # Build all dlputils, setting up for the host machines listed below
 
 HOST=`hostname`
 INSTALL=false
-OPTFLAGS="-O3 -g "
-#OPTFLAGS="-CB -O0 -g "
 for arg in "$*"  # Doesn't work properly if "$*" isn't quoted.
 do
   if [ "$arg" = "install" ]; then
@@ -63,4 +63,3 @@ then
   make install
 fi
 
-#FFLAGS=-ffree-line-length-180
