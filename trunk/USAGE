@@ -1,0 +1,185 @@
+General Usage Notes
+-------------------
+
+Most of the codes in the DLPUTILS package have a similar usage syntax on the command line - at the
+simplest level, the names of DL_POLY HIStory and OUTput files are the only required arguments. 
+For example:
+
+user@pc:~> rdf mysystem.HISu mysystem.OUT
+
+Note that the extension of the HIStory file *is* important - passing a default-named HISTORY file
+makes it difficult to detect whether the file is formatted or unformatted. For this reason, all
+the DLPUTILS assume that a trajectory with the extension '.HISu' is unformatted, while one with
+'.HISf' is formatted. The extension of the OUTput file is not important. It is not necessary to
+specify the number of molecule types (species) defined in the system, number of atoms in 
+molecules, etc., since this is read from the supplied OUTput file. The codes are designed to read
+DL_POLY v2 HIStory and OUTput files, but making them compatible for DL_POLY v3 (and beyond)
+should not be a difficult task (modify dlprw as necessary).
+
+Since the first two arguments are mandatory, running any of the codes with no arguments will
+print out usage information, including a list of available command-line switches which
+control various relevant parameters in the codes.
+
+In most cases one of several output files is generated, rather than results being written to screen.
+The names of these files is always based on the name of the HIStory file, but only if the filename
+has an extension (it doesn't matter what the extension is). This is removed and replaced by a
+new, descriptive extension. For example, the 'rdf' program produces files called '.rdfNM', where
+'N' and 'M' are the identifying species numbers. So, the above example will produce output files 
+called 'mysystem.rdf11', 'mysystem.rdf12', etc., depending on the number of species in the system.
+
+Included Codes (and their intended function)
+--------------------------------------------
+
+Codes marked [OLD] were useful once, but haven't been updated/used in a long time. Investigate them
+thoroughly before use! Similarly, codes marked [UNFINISHED] are just that. Either they are in the
+process of being written, or have never fully been used/tested and so are potentially unfit for
+purpose. They might offer a good basis for something, though.
+
+[Core Modules]
+dlprw		Read/write routines for DL_POLY history, output, and config files
+fieldread	Library to read DL_POLY FIELD files
+parse		Library to read and parse text files
+utility		Various utility functions used by all codes, e.g. minimum image
+
+[HIStory File Manipulation]
+addheader	Copy header from history file onto another which doesn't have one
+cagecor2	Calculate cage correlation functions
+catdlp		Concatenate one or more history files together
+chunkdlp	
+dlp2dlp		Convert between formatted and unformatted history files
+dlp2dlpflipz	[OLD] As 'dlp2dlp', but flipping z-coordinates in the process
+dlp2dlpshift	[OLD] As 'dlp2dlp', but shifting coordinates in the process
+dlp2xyzf	Convert history file to 7-column XYZ+forces file
+dlpreorder	[OLD] Reorder the species in a history file
+dlpsize		Determine usable size (i.e. number of readable frames) in history file
+filterdlp	
+his2config	Retrieve frame(s) from a history file, writing CONFIG files in the process
+probedlp	Investigate history file - useful for pinning down bad appends, restarts etc.
+
+[Distribution Functions]
+pdens		Calculate probability densities (spatial distribution functions or SDFs)
+pdensint	Integrate output from 'pdens'
+pdensmirror	Mirror (i.e. average) output from 'pdens' along x, y, or z
+pdenstrim	Write partial grid from existing output from 'pdens'
+rdf_aa		Calculate partial RDFs between atom pairs in the same species
+rdf_aa_inter	Calcualte partial RDFs between atom pairs in different species
+rdf		Calculate RDFs between molecular species centres-of-mass
+rdf_ss		Calculate site-site RDFs
+rdfsum		[OLD] Take averages of one or more RDF outputs
+sq		Calculate neutron-weighted static structure factors
+totalgr		[UNTESTED] Calculate total, neutron-weighted g(r) 
+
+[Other Properties]
+cn		Calculate coordination numbers
+counthb		Count the number and average geometry of specified close contacts (e.g. HB)
+getcell		Retrieve cell information from history file
+lifehb		Calculate the frame 'lifetime' of specified close contacts
+
+[Geometry]
+angle		Calculate angle between same vector on different molecules of a species
+
+[Correlation Functions]
+acfcat		Concatenate two input files for the 'acf' program
+acf		Calculate dipole autocorrelation functions
+acfprep		Prepare an 'acf' input file from a DL_POLY history file
+acfsum		Sum the results of one or more 'acf' calculations
+
+[Misc Utils]
+editconfig	Edit a CONFIG file, changing atom type names within it
+gengg		Combine Lennard-Jones parameters for single atoms, outputting list for FIELD file
+genlb		As 'gengg', but using Lorentz-Berthelot combination rules
+
+[Not Yet Classified / Too Old to Care]
+avgconfig	
+avsq		
+axishist2	
+axishist	
+bident2anal	
+bident2		
+bident3		
+bident4		
+bident		
+cdf
+centreconfig
+cluster
+config2bgf
+cryscomp
+dacf
+dahist
+dist2
+dlpgeom		
+everydlp
+gammadist
+glucanal
+glucgeom
+glucgeom_old
+gluchbeach
+gluchb
+glucsphere
+his2xyzs
+intertorsion
+intratorsion
+legendre
+moldist
+msd2
+msd3
+msd_bak
+msd
+msdtest
+msdx
+msdxyz
+ort
+pairs2
+pairs
+planedist
+point
+pointrdf
+raw2sq
+rpairs
+stats
+surfacify
+thindlp
+trapezium
+vac2
+vac3
+vac
+vacf
+velconfig
+vplot
+zangle
+zdens
+
+Program-Specific Usage Notes
+----------------------------
+
+sq
+----------------------------
+sq requires that a file called 'lengths.dat' *must* be present, and is used to provide
+atom type name to element map information. This file is needed to enable the code to 
+unambiguously distinguish which atoms correspond to which elements (something which is
+not always obvious from the atom type names used in forcefields). The file also allows
+atom type names to be mapped to a new, alternative name, or to combine several atom type
+names into one single type name in the program's output.
+
+The first line of the file should consist of a single integer specifying the number of 
+lines of data to expect in the remainder of the file. After this, each line should
+contain three items, separated by tabs or spaces; the original atom type name (as used
+in the FIELD and CONFIG files), the new name to map to, and finally the element to be
+used for this atom type (or D for deuterium). For example:
+
+5
+CA	C	C
+CB	C	C
+HA	HA	H
+HB	HB	D
+N	N	N
+
+This example states that both carbon types should be considered as equivalent (and just
+be named 'C') while all other aom types retain their original names. Note, however, that
+'HA' is treated as hydrogen and 'HB' is treated as deuterium. The element symbol may also
+be 'X' which indicates a scattering length of zero should be used for this atom type.
+The mappings are important since the number and names of the (optional) partial S(Q)
+output files (requested with the -partials switch) depends on the number and names of
+'remapped' names (second column) in 'lengths.dat'. All names are case-sensitive.
+
+

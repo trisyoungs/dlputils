@@ -28,3 +28,8 @@ gfortran -ffree-line-length-none -O3 -o counthb parse.f90 dlprw.f90 utility.f90 
 
 Note that most of the supplied programs depend on at least one of the 'parse', 'dlprw', or
 'utility' modules, so they must usually be specified as well (and in that order).
+
+USAGE
+-----
+
+See the separate file 'USAGE' for general and code-specific usage instructions.

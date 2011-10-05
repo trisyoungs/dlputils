@@ -1,7 +1,7 @@
 !	** rdf_ss **
 !	( was rdf_v5 in rdf_siteall.f90 )
-!	RDF program to calculate pair-pair distribution functions between pairs of atom types
-!	or a single atom type and the gemetric / mass centre of a second species.
+!	RDF program to calculate pair-pair distribution functions between pairs of atoms
+!	or a single atom and the gemetric / mass centre of a second species.
 !	Calculates the density at each frame of the simulation (for NPT simulations)
 !	Default is that all site-site g(r)'s between the species1 atoms and the COM of the
 !	second species is required.

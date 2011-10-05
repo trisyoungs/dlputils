@@ -10,14 +10,14 @@
 SHELL=/bin/bash
 
 MODULES = parse.o dlprw.o utility.o fieldread.o
-CONVERTERS = dlp2fm dlp2xyzf catdlp config2bgf dlp2dlp addheader editconfig everydlp filterdlp his2config his2xyzs thindlp dlp2dlpflipz dlp2dlpshift dlpreorder chunkdlp
+CONVERTERS = dlp2xyzf catdlp config2bgf dlp2dlp addheader editconfig everydlp filterdlp his2config his2xyzs thindlp dlp2dlpflipz dlp2dlpshift dlpreorder chunkdlp
 RDF = rdf_ss rdf rdfsum rdf_aa rdf_aa_inter zdens dist2 raw2sq cdf
 SQ = totalgr sq 
-ANALYSE = moldist dlpgeom counthb counthb_il cn cagecor cagecor2 msd msd2 lifehb getcell angle intertorsion intratorsion vac vac2 acf acfsum acfprep acfcat dacf
+ANALYSE = moldist dlpgeom counthb cn cagecor2 msd msd2 lifehb getcell angle intertorsion intratorsion vac vac2 acfsum acfprep acfcat dacf acf
 ANALYSE2 = axishist axishist2 legendre cryscomp cluster zangle bident bident2 bident2anal bident3 bident4 dahist #planedist
 GLUCOSE = glucgeom glucanal gluchb gluchbeach glucsphere
 PDENS = pdens pdenstrim pdensmirror pdensint rpairs surfacify
-MISC = prepfm dlpsize point avgconfig pairs probedlp velconfig
+MISC = dlpsize point avgconfig pairs probedlp velconfig
 MISCP = genlb gengg stats trapezium
 ALL = $(CONVERTERS) $(RDF) $(ANALYSE2) $(GLUCOSE) $(PDENS) $(MISC) $(MISCP) $(ANALYSE) $(SQ)
 
