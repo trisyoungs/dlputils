@@ -87,7 +87,7 @@ acfsum		Sum the results of one or more 'acf' calculations
 [Misc Utils]
 editconfig	Edit a CONFIG file, changing atom type names within it
 gengg		Combine Lennard-Jones parameters for single atoms, outputting list for FIELD file
-genlb		As 'gengg', but using Lorentz-Berthelot combination rules
+genlb		As 'gengg', but using Lorentz-Berthelot combination rules instead of sqr/sqr
 
 [Not Yet Classified / Too Old to Care]
 avgconfig	
