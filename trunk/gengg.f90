@@ -48,6 +48,6 @@
 	  end do
 	end do
 
-	write(6,"('end ',i5)") 
+	write(6,"('close',i5)") 
 
 	end program gengg
