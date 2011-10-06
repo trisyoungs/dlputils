@@ -31,18 +31,22 @@
 	end do
 
 	! Generate all cross terms using Lorentz-Berthelot combination rules
-	! 'i' will count the number of terms we generate
+	! Determine total number of terms first
 	i = 0
+	do n=1,ntypes
+	  i = i + n
+	end do
+	write(6,"('vdw ',i5)") i
+
 	do n=1,ntypes
 	  do m=n,ntypes
 	    ! Write out data in DL_POLY format
 	    newsigma = 0.5 * (sigma(n) + sigma(m))
 	    neweps = sqrt(eps(n) * eps(m))
 	    write(6,"(a8,a8,'lj',6x,f8.5,5x,f8.5)") atomnames(n), atomnames(m), neweps, newsigma
-	    i = i + 1
 	  end do
 	end do
 
-	write(0,*) "Terms generated:",i
+	write(6,"('end ',i5)") 
 
 	end program genlj
