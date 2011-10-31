@@ -490,9 +490,12 @@
 	  do i=0,kx
 	    do j=-ky,ky
 	      do k=-kz,kz
-		magx = i*rcell(1) + j*rcell(4) + k*rcell(7)
-		magy = i*rcell(2) + j*rcell(5) + k*rcell(8)
-		magz = i*rcell(3) + j*rcell(6) + k*rcell(9)
+		!magx = i*rcell(1) + j*rcell(4) + k*rcell(7)
+		!magy = i*rcell(2) + j*rcell(5) + k*rcell(8)
+		!magz = i*rcell(3) + j*rcell(6) + k*rcell(9)
+		magx = i*rcell(1) + j*rcell(2) + k*rcell(3)
+		magy = i*rcell(4) + j*rcell(5) + k*rcell(6)
+		magz = i*rcell(7) + j*rcell(8) + k*rcell(9)
 	        mag = sqrt(magx**2 + magy**2 + magz**2)
 	        if ((mag.le.kcut).and.(mag.ge.kmin)) newnvec = newnvec + 1
 	      end do
@@ -507,9 +510,12 @@
 	    do i=0,kx
 	      do j=-ky,ky
 	        do k=-kz,kz
-		  magx = i*rcell(1) + j*rcell(4) + k*rcell(7)
-		  magy = i*rcell(2) + j*rcell(5) + k*rcell(8)
-		  magz = i*rcell(3) + j*rcell(6) + k*rcell(9)
+		 ! magx = i*rcell(1) + j*rcell(4) + k*rcell(7)
+		 ! magy = i*rcell(2) + j*rcell(5) + k*rcell(8)
+		 ! magz = i*rcell(3) + j*rcell(6) + k*rcell(9)
+		magx = i*rcell(1) + j*rcell(2) + k*rcell(3)
+		magy = i*rcell(4) + j*rcell(5) + k*rcell(6)
+		magz = i*rcell(7) + j*rcell(8) + k*rcell(9)
 	          mag = sqrt(magx**2 + magy**2 + magz**2)
 	          if ((mag.le.kcut).and.(mag.ge.kmin)) then
  		    nvec = nvec + 1
