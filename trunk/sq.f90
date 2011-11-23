@@ -43,7 +43,7 @@
 	character :: c
 	real*8 :: ran2
 
-	! Scattering lengths for H,D,C,N,O,F,P,S,Cl
+	! Scattering lengths for XX,H,D,C,N,O,F,P,S,Cl,Si
 	isoscatter = (/ 0.0, -3.706, 6.671, 6.646, 9.36, 5.803, 5.654, 5.13, 2.847, 9.577, 4.1491 /)
 	isonames = (/ "X ", "H ", "D ", "C ", "N ", "O ", "F ", "P ", "S ", "Cl", "Si" /)
 	isonamelens = (/ 1,1,1,1,1,1,1,1,1,2,2 /)
@@ -490,9 +490,6 @@
 	  do i=0,kx
 	    do j=-ky,ky
 	      do k=-kz,kz
-		!magx = i*rcell(1) + j*rcell(4) + k*rcell(7)
-		!magy = i*rcell(2) + j*rcell(5) + k*rcell(8)
-		!magz = i*rcell(3) + j*rcell(6) + k*rcell(9)
 		magx = i*rcell(1) + j*rcell(2) + k*rcell(3)
 		magy = i*rcell(4) + j*rcell(5) + k*rcell(6)
 		magz = i*rcell(7) + j*rcell(8) + k*rcell(9)
@@ -510,12 +507,9 @@
 	    do i=0,kx
 	      do j=-ky,ky
 	        do k=-kz,kz
-		 ! magx = i*rcell(1) + j*rcell(4) + k*rcell(7)
-		 ! magy = i*rcell(2) + j*rcell(5) + k*rcell(8)
-		 ! magz = i*rcell(3) + j*rcell(6) + k*rcell(9)
-		magx = i*rcell(1) + j*rcell(2) + k*rcell(3)
-		magy = i*rcell(4) + j*rcell(5) + k*rcell(6)
-		magz = i*rcell(7) + j*rcell(8) + k*rcell(9)
+		  magx = i*rcell(1) + j*rcell(2) + k*rcell(3)
+		  magy = i*rcell(4) + j*rcell(5) + k*rcell(6)
+		  magz = i*rcell(7) + j*rcell(8) + k*rcell(9)
 	          mag = sqrt(magx**2 + magy**2 + magz**2)
 	          if ((mag.le.kcut).and.(mag.ge.kmin)) then
  		    nvec = nvec + 1
@@ -728,7 +722,7 @@
 	        OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 		write(9,"('# b_a * b_b = ',f10.5)") factor
 	        write(9,"('# Self-scattering level is ',f10.5)") weight
-		write(9,"(a68)") "#  Q           S_ab(Q)*ba*bb      STDEV       NAdded   S-Self"
+		write(9,"(a68)") "#  Q           S_ab(Q)        STDEV       NAdded   S_ab(Q)-Self"
 	        do n=1,nbins
 		  write(9,"(F8.5,3x,E14.5,2x,e14.5,1x,I10,1x,e14.5)") (n-0.5)*binwidth, partialsq(alpha,beta,n), m2n(alpha,beta,n), totaladded(n), partialsq(alpha,beta,n)-weight
 	        end do
