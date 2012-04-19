@@ -7,7 +7,7 @@
 	implicit none
 
 	! Isotope definitions
-	integer, parameter :: NISOTOPES = 9
+	integer, parameter :: NISOTOPES = 11
 	character*6 :: isonames(NISOTOPES)
 	real*8 :: isoscatter(NISOTOPES), isofrac(NISOTOPES), isopops(NISOTOPES)
 	integer :: isontypes(NISOTOPES), isonamelens(NISOTOPES)
@@ -30,10 +30,10 @@
 	real*8 :: rcut,magx,magy,magz,mag,numdensity, ipos(3), jpos(3)
 	real*8, allocatable :: partialgr(:,:,:),totalgr(:),weightedgr(:,:,:)
 
-	! Scattering lengths for H,D,C,N,O,F,P,S,Cl
-	isoscatter = (/ -3.706, 6.671, 6.646, 9.36, 5.803, 5.654, 5.13, 2.847, 9.577 /)
-	isonames = (/ "H ", "D ", "C ", "N ", "O ", "F ", "P ", "S ", "Cl" /)
-	isonamelens = (/ 1,1,1,1,1,1,1,1,2 /)
+	! Scattering lengths for XX,H,D,C,N,O,F,P,S,Cl,Si
+	isoscatter = (/ 0.0, -3.706, 6.671, 6.646, 9.36, 5.803, 5.654, 5.13, 2.847, 9.577, 4.1491 /)
+	isonames = (/ "X ", "H ", "D ", "C ", "N ", "O ", "F ", "P ", "S ", "Cl", "Si" /)
+	isonamelens = (/ 1,1,1,1,1,1,1,1,1,2,2 /)
 
 	binwidth=0.1   ! In Angstroms
 	frameskip = 1	! Take consecutive frames by default
@@ -89,7 +89,7 @@
 	end if
 
 	! CHeck imcon
-	if (imcon.gt.1) stop "This image convention not properly supported - fix me!"
+	if (imcon.gt.3) stop "This image convention is not supported."
 
 	! Ascertain length of basename....
 	baselen=-1
@@ -120,18 +120,18 @@
 	allocate(newtype(nfftypes))
 	allocate(isotypes(nfftypes))
 	allocate(typemap(natms))
+	isotypes = 0
 	! First column is original atom name, second is new type name, third is related element/isotope
 	do n=1,nfftypes
 	  success = readline(15)
 	  origtype(n) = arg(1)
 	  newtype(n) = arg(2)
 	  !read(15,"(A6,A6,)") origtype(n),newtype(n),temp
-	  isotypes(n) = 0
 	  do m=1,NISOTOPES
 	    if (arg(3).eq.isonames(m)) isotypes(n) = m
 	  end do
 	  if (isotypes(n).eq.0) then
-	    write(12,*) "Unrecognised element/isotope in lengths.dat: ",temp
+	    write(12,*) "Unrecognised element/isotope in lengths.dat: ", arg(3)
 	    stop
 	  end if
 	end do
