@@ -23,7 +23,7 @@
 
 	! General variables
 	real*8, parameter :: pi = 3.14159265358979d0
-	character*80 :: hisfile,dlpoutfile,basename,resfile,namemap,headerfile
+	character*80 :: hisfile,dlpoutfile,basename,resfile,namemap,headerfile,lengthsfile
 	character*20 :: temp
 	integer :: i,j,k,baselen,bin,nframes,success,nargs,framestodo,nfftypes,alpha,beta
 	integer :: n, m, o, nbins, found, kx, ky, kz, newkx, newky, newkz, nvec, newnvec, frameskip, sumfac, framestodiscard, framesdone
@@ -54,6 +54,7 @@
 	frameskip = 1	! Take consecutive frames by default
 	framestodo = -1	! Do all available frames by default
 	framestodiscard = 0
+        lengthsfile="lengths.dat"
 
 	nargs = iargc()
 	if (nargs.LT.2) then
@@ -68,6 +69,7 @@
 	  write(0,*) "            [-readmap <file>]   Read alternative atom names map from <file>"
 	  write(0,*) "            [-altheader <file>] Use specified DL_POLY history <file> for header"
 	  write(0,*) "            [-npt]              Recalculate kvectors for each frame"
+	  write(0,*) "            [-lengths <file>]   Use specified file instead of 'lengths.dat'"
 	  write(0,*) "            [-mix sp1 sp2 m n]  Calculate frame n times, after swapping m mols H/D from sp1 and sp2"
 	  stop
 	end if
@@ -86,6 +88,7 @@
 	      case ("-skip"); n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
 	      case ("-partials"); writepartials = .TRUE.
 	      case ("-npt"); npt = .TRUE.
+	      case ("-lengths"); n = n + 1; call getarg(n,lengthsfile)
 	      case ("-readmap"); readmap = .TRUE.; n = n + 1; call getarg(n,namemap)
 	      case ("-altheader"); altheader = .TRUE.; n = n + 1; call getarg(n,headerfile)
 	      case ("-mix"); mix = .TRUE.
@@ -179,7 +182,7 @@
 	  end if
 
 	  ! Read in forcefield names, the related internal types, and the corresponding isotope/element symbols
-	  open(unit=15,file="lengths.dat",form="formatted",status="old")
+	  open(unit=15,file=lengthsfile,form="formatted",status="old")
 	  read(15,"(I4)") nfftypes
 	  allocate(origtype(nfftypes))
 	  allocate(newtype(nfftypes))
@@ -365,7 +368,7 @@
 	  write(12,*) "  Name     Frac    S.Length   NTypes"
 	  do n=1,NISOTOPES
 	    if (isopops(n).eq.0) cycle
-	    write(12,"(i2,2x,a6,1x,f7.5,3x,f7.4,2x,i4)") n,isonames(n),isofrac(n),isoscatter(n),isontypes(n)
+	    write(12,"(i2,2x,a6,1x,f8.5,3x,f7.4,2x,i4)") n,isonames(n),isofrac(n),isoscatter(n),isontypes(n)
 	  end do
 
 	  ! Set the name lengths of each of the typenames
