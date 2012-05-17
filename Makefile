@@ -17,8 +17,8 @@ ANALYSE = moldist dlpgeom counthb cn cagecor2 msd msd2 lifehb getcell angle inte
 ANALYSE2 = axishist axishist2 legendre cryscomp cluster zangle bident bident2 bident2anal bident3 bident4 dahist #planedist
 GLUCOSE = glucgeom glucanal gluchb gluchbeach glucsphere
 PDENS = pdens pdenstrim pdensmirror pdensint rpairs surfacify
-MISC = dlpsize point avgconfig pairs probedlp velconfig
-MISCP = genlb gengg stats trapezium
+MISC = dlpsize point avgconfig pairs probedlp velconfig tweaker
+MISCP = genlb gengg
 ALL = $(CONVERTERS) $(RDF) $(ANALYSE2) $(GLUCOSE) $(PDENS) $(MISC) $(MISCP) $(ANALYSE) $(SQ)
 
 all: $(MODULES) $(ALL)

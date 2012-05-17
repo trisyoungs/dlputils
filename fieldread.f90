@@ -25,8 +25,6 @@
 	logical function readfield(fieldfile)
 	use parse
 	implicit none
-!	dlpun_his = Fortran unit number to read from.
-!	his_in_format = Form of the history file: 0 = Unformatted, 1 = Formatted.
 	character*8 :: discard
 	character*80 :: fieldfile
 	integer :: n,m,sp,sp2,i,j, num,last
