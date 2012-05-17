@@ -106,7 +106,7 @@
 	  end if
 	else     ! Read formatted history file....
           read(dlpun_his,"(8X,4I10,F12.6)",end=91,ERR=103) nstep, natms, keytrj, imcon, tstep
-	  write(0,*) nstep, natms, keytrj, imcon, tstep
+	  !write(0,*) nstep, natms, keytrj, imcon, tstep
           if (imcon.GT.0) then     ! Read in the cell coords if necessary
 	    !write(0,*) imcon
             !read(dlpun_his,12,ERR=104,end=104) cell
@@ -560,6 +560,33 @@
 	allocate(cfgname(natms),stat=s); if (s.NE.0) stop "Allocation error for <cfgname>"
 	xyz_alloc = .true.
 	end subroutine alloc_xyz
+
+	subroutine dealloc_xyz
+	implicit none
+	integer :: s
+	if (.not.xyz_alloc) then
+	  write(6,*) "Arrays not yet allocated."
+	  return
+	end if
+	deallocate(xpos,stat=s); if (s.NE.0) stop "Deallocation error for <xpos>"
+	deallocate(ypos,stat=s); if (s.NE.0) stop "Deallocation error for <ypos>"
+	deallocate(zpos,stat=s); if (s.NE.0) stop "Deallocation error for <xpos>"
+	deallocate(charge,stat=s); if (s.NE.0) stop "Deallocation error for <charge>"
+	deallocate(mass,stat=s); if (s.NE.0) stop "Deallocation error for <mass>"
+	deallocate(xvel,stat=s); if (s.NE.0) stop "Deallocation error for <xvel>"
+	deallocate(yvel,stat=s); if (s.NE.0) stop "Deallocation error for <yvel>"
+	deallocate(zvel,stat=s); if (s.NE.0) stop "Deallocation error for <zvel>"
+        deallocate(xfor,stat=s); if (s.NE.0) stop "Deallocation error for <xfor>"
+	deallocate(yfor,stat=s); if (s.NE.0) stop "Deallocation error for <yfor>"
+	deallocate(zfor,stat=s); if (s.NE.0) stop "Deallocation error for <zfor>"
+	deallocate(atmname,stat=s); if (s.NE.0) stop "Deallocation error for <atmnam>"
+	! Config arrays
+	deallocate(cfgxyz,stat=s); if (s.NE.0) stop "Deallocation error for <cfgxyz>"
+	deallocate(cfgvel,stat=s); if (s.NE.0) stop "Deallocation error for <cfgvel>"
+	deallocate(cfgfrc,stat=s); if (s.NE.0) stop "Deallocation error for <cfgfrc>"
+	deallocate(cfgname,stat=s); if (s.NE.0) stop "Deallocation error for <cfgname>"
+	xyz_alloc = .false.
+	end subroutine dealloc_xyz
 
 !	\/\/\/\/\/\/\/\/\/\/\/
 !	** Misc Subroutines **
