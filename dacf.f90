@@ -229,13 +229,13 @@
 	end if
 
 	if (framestodiscard.gt.0) then
-	  if (MASTER.and.mod(framestodiscard,100).EQ.0) write(0,"('Skipping ',i)") framestodiscard
+	  if (MASTER.and.mod(framestodiscard,100).EQ.0) write(0,"('Skipping ',i6)") framestodiscard
 	  framestodiscard = framestodiscard - 1
 	  goto 101
 	end if
 
 	nframes = nframes+1
-	if (MASTER.and.mod(nframes,100).EQ.0) write(0,"(i)") nframes
+	if (MASTER.and.mod(nframes,100).EQ.0) write(0,"(i10)") nframes
 
 	! Calculate quantities for correlation function (only if acftype != FROMFILE)
 	if (acftype.ne.FROMFILE) then
