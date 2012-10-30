@@ -69,7 +69,7 @@
 	do n=1,nexpected
 	  acf(n,1:7) = acf(n,1:7) / accum(n)
 	end do
-	write(0,"(A,i,A)") "Averaged ACF over ",nargs," files"
+	write(0,"(A,i3,A)") "Averaged ACF over ",nargs," files"
 
 	! Print out the data
 	write(6,"(10a14)") "#t","total","xx","yy","zz","xy","xz","yz","acc"

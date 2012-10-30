@@ -45,7 +45,7 @@
                 write(0,"(A,3I4)") "Using COMpair for species 2 ",compair(:)
               case ("-discard")
                 n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodiscard
-                write(0,"(A,I)") "Frames to discard at start of trajectory:", framestodiscard
+                write(0,"(a,i6)") "Frames to discard at start of trajectory:", framestodiscard
 	      case default
 		write(0,*) "Unrecognised argument: ", temp
 		stop

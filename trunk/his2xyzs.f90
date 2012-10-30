@@ -50,6 +50,8 @@
         outfile = hisfile(1:dot-1)//"-frame"//frameid//".xyz"
 	open(unit=10,file=outfile,form="formatted",status="replace")
 
+	write(10,*) natms
+	write(10,"(a,9(f9.4,1x))") "Cell ", cell
 	do n=1,natms
 	  write(10,"(a8,2x,3(f12.8,1x))")  atmname(n),xpos(n),ypos(n),zpos(n)
 	end do

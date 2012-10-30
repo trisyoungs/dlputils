@@ -307,7 +307,7 @@
 	do alpha=1,ntypes
 	  do beta=1,ntypes
 	    ! Number density of central atom and frame count
-	write(0,"(a,2i,2f10.4,i)") "a/b/popa/popb/framesdone", alpha,beta,typepops(alpha), typepops(beta), framesdone
+	write(0,"(a,2i2,2f10.4,i10)") "a/b/popa/popb/framesdone", alpha,beta,typepops(alpha), typepops(beta), framesdone
 	    do n=1,nbins
 	      partialgr(alpha,beta,n) =  partialgr(alpha,beta,n) / (typepops(alpha) * framesdone)
 	    end do

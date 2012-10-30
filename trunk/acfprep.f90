@@ -71,7 +71,7 @@
 	if (success.ne.0) goto 799  ! End of file encountered, or file error....
 
 	nframes = nframes+1
-	if (mod(nframes,100).EQ.0) write(0,"(i)") nframes
+	if (mod(nframes,100).EQ.0) write(0,"(i10)") nframes
 
 	! Calculate quantities for correlation function, writing after each species
 	idx = 1
