@@ -287,11 +287,10 @@
 !	dlpun_his = Fortran unit number to read from.
 !	his_out_format = Format of history file: 0 = Unformatted, 1 = Formatted.
 	integer :: n
-12	FORMAT (3F12.8)
-13	FORMAT (A8,4I10,2F12.6)
-14	FORMAT (A8,I10,2F12.6)
-15	FORMAT (3F12.6)
-16	FORMAT (3e12.5)
+12	FORMAT (3e12.4)		 ! coordinate, velocity, or force line
+13	FORMAT (A8,4I10,2F12.6)	 ! 'timestep' line
+14	FORMAT (A8,I10,2F12.6)	 ! 'atom' line
+15	FORMAT (3g12.4)		 ! 'cell' lines
 	if (his_out_format.EQ.-1) stop "HISfile format not yet determined / file not yet opened!"
 	if (his_out_format.EQ.0) then   ! Write unformatted history file.....
 	  write(dlpun_newhis,ERR=91) DBLE(nstep),DBLE(NATMS),DBLE(keytrj),DBLE(imcon),tstep
@@ -316,8 +315,8 @@
 	  do n=1,natms
 	    write(dlpun_newhis,14,ERR=91) atmname(n),n,mass(n),charge(n)
 	    write(dlpun_newhis,12,ERR=91) xpos(n),ypos(n),zpos(n)
-	    if (keytrj.GT.0) write(dlpun_newhis,16,ERR=91) xvel(n),yvel(n),zvel(n)
-	    if (keytrj.GT.1) write(dlpun_newhis,16,ERR=91) xfor(n),yfor(n),zfor(n)
+	    if (keytrj.GT.0) write(dlpun_newhis,12,ERR=91) xvel(n),yvel(n),zvel(n)
+	    if (keytrj.GT.1) write(dlpun_newhis,12,ERR=91) xfor(n),yfor(n),zfor(n)
 	  end do
 	end if
 	! Return conditions:
