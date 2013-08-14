@@ -6,7 +6,7 @@
 	implicit none
 
 	! Isotope definitions
-	integer, parameter :: NISOTOPES = 9
+	integer, parameter :: NISOTOPES = 12
 	character*6 :: isonames(NISOTOPES)
 	character :: c
 	real*8 :: isoscatter(NISOTOPES), isofrac(NISOTOPES), isopops(NISOTOPES), selfscatter
@@ -19,7 +19,7 @@
 	real*8, allocatable :: typepops(:), typefrac(:)
 
 	! General variables
-	character*80 :: dlpoutfile,basename,resfile,namemap,hisfile,headerfile
+	character*80 :: dlpoutfile,basename,resfile,namemap,hisfile,headerfile,lengthsfile
 	character*20 :: temp
 	integer :: i,j,k,baselen,bin,success,nargs,nfftypes,alpha,beta
 	integer :: n, m, o, nbins, found
@@ -30,18 +30,19 @@
 	integer, allocatable :: totaladded(:)
 
 	! Scattering lengths for H,D,C,N,O,F,P,S,Cl
-	isoscatter = (/ -3.706, 6.671, 6.646, 9.36, 5.803, 5.654, 5.13, 2.847, 9.577 /)
-	isonames = (/ "H ", "D ", "C ", "N ", "O ", "F ", "P ", "S ", "Cl" /)
-	isonamelens = (/ 1,1,1,1,1,1,1,1,2 /)
+	isoscatter = (/ 0.0, -3.706, 6.671, 6.646, 9.36, 5.803, 5.654, 5.13, 2.847, 9.577, 4.1491, 7.718 /)
+	isonames = (/ "X ", "H ", "D ", "C ", "N ", "O ", "F ", "P ", "S ", "Cl", "Si", "Cu" /)
+	isonamelens = (/ 1,1,1,1,1,1,1,1,1,2,2,2 /)
 
 	binwidth=0.1   ! In Angstroms
 	kcut = 5.0    ! Reciprocal space cutoff (box integers)
+        lengthsfile="lengths.dat"
 
 	nargs = iargc()
 	if (nargs.LT.2) then
 	  write(0,*) "Usage : raw2sq <DLP HISfile> <DLP OUTPUTfile> ...options"
 	  write(0,*) "       [-bin binwidth] [-kcut cutoff] [-partials]"
-	  write(0,*) "       [-readmap <file>] [-altheader <file>]"
+	  write(0,*) "       [-readmap <file>] [-altheader <file>] [-lengths <file>]"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -56,6 +57,7 @@
 	      case ("-readmap"); readmap = .TRUE.; n = n + 1; call getarg(n,namemap)
 	      case ("-altheader"); altheader = .TRUE.; n = n + 1; call getarg(n,headerfile)
 	      case ("-partials"); writepartials = .TRUE.
+	      case ("-lengths"); n = n + 1; call getarg(n,lengthsfile)
 	      case default
 		write(0,*) "Unrecognised command line argument:", temp
 		stop
@@ -109,7 +111,7 @@
 	end if
 
 	! Read in forcefield names, the related internal types, and the corresponding isotope/element symbols
-	open(unit=15,file="lengths.dat",form="formatted",status="old")
+	open(unit=15,file=lengthsfile,form="formatted",status="old")
 	read(15,"(I4)") nfftypes
 	allocate(origtype(nfftypes))
 	allocate(newtype(nfftypes))
