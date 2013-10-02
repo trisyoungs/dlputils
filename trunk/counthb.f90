@@ -83,7 +83,7 @@
 	write(6,*) "Minimum X-H...Y angle  :",minang
 	if (nxh.eq.0) stop "Error: No XH sites defined on species 1"
 	write(6,*) "Number of XH sites defined on species 1: ", nxh
-	write(6,"(12x,i3,' (',a8,') - ',i3,' (',a8,')')") (xh(n,1), s_atom(sp1,xh(n,1)), xh(n,2), s_atom(sp2,xh(n,2)), n=1,nxh)
+	write(6,"(12x,i3,' (',a8,') - ',i3,' (',a8,')')") (xh(n,1), s_atom(sp1,xh(n,1)), xh(n,2), s_atom(sp1,xh(n,2)), n=1,nxh)
 	if (nxh.eq.0) stop "Error: No Y sites defined on species 2"
 	write(6,*) "Number of Y sites defined on species 2: ", ny
 	write(6,"(12x,i3,' (',a8,')')") (y(n), s_atom(sp2,y(n)), n=1,ny)
@@ -205,7 +205,7 @@
 851	format (76x,4(es10.4,2x),'  [STDEV]')
 	total = 0.0
 	do n=1,nxh
-	  write(6,850) xh(n,1), s_atom(sp1,xh(n,1)), xh(n,2), s_atom(sp2,xh(n,2)), ncontacts(n), real(ncontacts(n))/framesdone, real(ncontacts(n))/framesdone/s_nmols(sp1),averages(n,1:4)
+	  write(6,850) xh(n,1), s_atom(sp1,xh(n,1)), xh(n,2), s_atom(sp1,xh(n,2)), ncontacts(n), real(ncontacts(n))/framesdone, real(ncontacts(n))/framesdone/s_nmols(sp1),averages(n,1:4)
 	  write(6,851) dsqrt(sds(n,1:4))
 	  total = total + real(ncontacts(n))/framesdone/s_nmols(sp1)
 	end do
