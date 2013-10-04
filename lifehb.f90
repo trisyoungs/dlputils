@@ -83,7 +83,7 @@
 	write(6,*) "Minimum X-H...Y angle  :",minang
 	if (nxh.eq.0) stop "Error: No XH sites defined on species 1"
 	write(6,*) "Number of XH sites defined on species 1: ", nxh
-	write(6,"(12x,i3,' (',a8,') - ',i3,' (',a8,')')") (xh(n,1), s_atom(sp1,xh(n,1)), xh(n,2), s_atom(sp2,xh(n,2)), n=1,nxh)
+	write(6,"(12x,i3,' (',a8,') - ',i3,' (',a8,')')") (xh(n,1), s_atom(sp1,xh(n,1)), xh(n,2), s_atom(sp1,xh(n,2)), n=1,nxh)
 	if (nxh.eq.0) stop "Error: No Y sites defined on species 2"
 	write(6,*) "Number of Y sites defined on species 2: ", ny
 	write(6,"(12x,i3,' (',a8,')')") (y(n), s_atom(sp2,y(n)), n=1,ny)
