@@ -31,7 +31,7 @@ Included Codes (and their intended function)
 --------------------------------------------
 
 Codes marked [OLD] were useful once, but haven't been updated/used in a long time. Investigate them
-thoroughly before use! Similarly, codes marked [UNFINISHED] are just that. Either they are in the
+thoroughly before use! Similarly, codes marked [UNTESTED] are just that. Either they are in the
 process of being written, or have never fully been used/tested and so are potentially unfit for
 purpose. They might offer a good basis for something, though.
 
@@ -52,11 +52,16 @@ dlp2dlpshift	[OLD] As 'dlp2dlp', but shifting coordinates in the process
 dlp2xyzf	Convert history file to 7-column XYZ+forces file
 dlpreorder	[OLD] Reorder the species in a history file
 dlpsize		Determine usable size (i.e. number of readable frames) in history file
-filterdlp	
+filterdlp	Filter frames from a HISTORY file
 his2config	Retrieve frame(s) from a history file, writing CONFIG files in the process
+his2xyzs	Dump XYZ files of frames in supplied HISTORY file
 probedlp	Investigate history file - useful for pinning down bad appends, restarts etc.
 
 [Distribution Functions]
+cdf		Calculate a cylindrical distribution function of molecules about an axis (e.g. a pore centre)
+dahist		Calculate distance (RDF) and angle map between specific atoms of species
+dist2		Calculate RDFs over subset of molecules (i.e. restricted by proximity, coordinates etc.)
+moldist		Calculate distance histogram between specific atom of one species and the COM of another
 pdens		Calculate probability densities (spatial distribution functions or SDFs)
 pdensint	Integrate output from 'pdens'
 pdensmirror	Mirror (i.e. average) output from 'pdens' along x, y, or z
@@ -67,48 +72,46 @@ rdf		Calculate RDFs between molecular species centres-of-mass
 rdf_ss		Calculate site-site RDFs
 rdfsum		[OLD] Take averages of one or more RDF outputs
 sq		Calculate neutron-weighted static structure factors
+surfacify	Calculate density 'surface' of atoms throughout box
 totalgr		[UNTESTED] Calculate total, neutron-weighted g(r) 
-
-[Other Properties]
-cn		Calculate coordination numbers
-counthb		Count the number and average geometry of specified close contacts (e.g. HB)
-getcell		Retrieve cell information from history file
-lifehb		Calculate the frame 'lifetime' of specified close contacts
+zangle		Calculate angles between X and Y planes of molecules (from an axis definition)
+zdens		Calculate z-density profiles of species in the system
 
 [Geometry]
 angle		Calculate angle between same vector on different molecules of a species
+avgconfig	Determine the averaged coordinates over a series of trajectory frames
+cryscomp	Compare a reference structure (e.g. a crystal) with a HISTORY trajectory
+dlpgeom		Determine average geometric criteria (i.e. bonds, angles, torsions) from a history or CONFIG
+intertorsion	Calculate torsion histogram for torsion angle defined over the atoms of two species
+intratorsion	Calculate torsion histogram for torsion angle defined in one species
+pairs2		Outputs coordinates of pairs of molecules from a given species which are within some distance of each other
 
 [Correlation Functions]
 acfcat		Concatenate two input files for the 'acf' program
 acf		Calculate dipole autocorrelation functions
 acfprep		Prepare an 'acf' input file from a DL_POLY history file
 acfsum		Sum the results of one or more 'acf' calculations
+cluster		Calculate 'cluster' sizes based on COM of species
+dacf		Calculate the system dipole autocorrelation function
+msd[2]		Calculate MSD
+msdxyz		Calculate MSD, outputting individual XYZ components
+vac[2]		Calculate velocity autocorrelation function
+
+[Other Properties]
+bident2anal	Analyse dump files written by bident
+bident[234]	Analyse style of contacts between a bidentate central species and other species
+cn		Calculate coordination numbers
+counthb		Count the number and average geometry of specified close contacts (e.g. HB)
+getcell		Retrieve cell information from history file
+legendre	Calculate first and second-order Legendre polynomials of specified vector with a given surface
+lifehb		Calculate the frame 'lifetime' of specified close contacts
 
 [Misc Utils]
 editconfig	Edit a CONFIG file, changing atom type names within it
 gengg		Combine Lennard-Jones parameters for single atoms, outputting list for FIELD file
 genlb		As 'gengg', but using Lorentz-Berthelot combination rules instead of sqr/sqr
 
-[Not Yet Classified / Too Old to Care]
-avgconfig	
-avsq		
-axishist2	
-axishist	
-bident2anal	
-bident2		
-bident3		
-bident4		
-bident		
-cdf
-centreconfig
-cluster
-config2bgf
-cryscomp
-dacf
-dahist
-dist2
-dlpgeom		
-everydlp
+[Specific Programs - Not for general use]
 gammadist
 glucanal
 glucgeom
@@ -116,36 +119,6 @@ glucgeom_old
 gluchbeach
 gluchb
 glucsphere
-his2xyzs
-intertorsion
-intratorsion
-legendre
-moldist
-msd2
-msd3
-msd_bak
-msd
-msdtest
-msdx
-msdxyz
-ort
-pairs2
-pairs
-planedist
-point
-pointrdf
-raw2sq
-rpairs
-surfacify
-thindlp
-vac2
-vac3
-vac
-vacf
-velconfig
-vplot
-zangle
-zdens
 
 Program-Specific Usage Notes
 ----------------------------
