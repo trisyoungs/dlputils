@@ -595,7 +595,7 @@
 	  crr(l)=crr(j)
 	  crr(j)=c
 	  jstack=jstack+2
-	  if(jstack.gt.NSTACK) pause 'NSTACK too small in sort2'
+	  if(jstack.gt.NSTACK) stop "Sort2 error"
 	  if(ir-i+1.ge.j-l)then
 	    istack(jstack)=ir
 	    istack(jstack-1)=i
