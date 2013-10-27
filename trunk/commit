@@ -68,9 +68,9 @@ MINOR=`printf "%02i" $(( REVISION%100 ))`
 
 if [ "$TEST" = "false" ]
 then
-  sed -i -e "s/m4_define(\[JV_VERSION\],\[.\+\])/m4_define([JV_VERSION],[r$REVISION])/g" configure.ac
+  sed -i -e "s/m4_define(\[DLPUTILS_VERSION\],\[.\+\])/m4_define([DLPUTILS_VERSION],[r$REVISION])/g" configure.ac
 else
-  sed -e "s/m4_define(\[JV_VERSION\],\[.\+\])/m4_define([JV_VERSION],[r$REVISION])/g" configure.ac | head -n 10
+  sed -e "s/m4_define(\[DLPUTILS_VERSION\],\[.\+\])/m4_define([DLPUTILS_VERSION],[r$REVISION])/g" configure.ac | head -n 10
 fi
 
 # If this was just a test we're done at this point
