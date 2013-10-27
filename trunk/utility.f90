@@ -379,7 +379,7 @@
 	            icol=k
 	          endif
 	        else if (ipiv(k).gt.1) then
-	          pause 'singular matrix in gaussj'
+	          stop "Singular matrix encountered"
 	        endif
 12	      continue
 	    endif
@@ -394,7 +394,7 @@
 	  endif
 	  indxr(i)=irow
 	  indxc(i)=icol
-	  if (a(icol,icol).eq.0.d0) pause 'singular matrix in gaussj'
+	  if (a(icol,icol).eq.0.d0) stop "Singular matrix encountered"
 	  pivinv=1.d0/a(icol,icol)
 	  a(icol,icol)=1.d0
 	  do 16 l=1,n

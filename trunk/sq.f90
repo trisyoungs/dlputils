@@ -25,7 +25,7 @@
 	real*8, parameter :: pi = 3.14159265358979d0
 	character*80 :: hisfile,dlpoutfile,basename,resfile,namemap,headerfile,lengthsfile
 	character*20 :: temp
-	integer :: i,j,k,baselen,bin,nframes,success,nargs,framestodo,nfftypes,alpha,beta
+	integer :: i,j,k,baselen,bin,nframes,nargs,framestodo,nfftypes,alpha,beta
 	integer :: n, m, o, nbins, found, kx, ky, kz, newkx, newky, newkz, nvec, newnvec, frameskip, sumfac, framestodiscard, framesdone
 	integer :: nproc_mpi, id_mpi, err_mpi, mpistat(MPI_STATUS_SIZE)
 	integer :: kpernode, kremain, kstart, kend
@@ -33,7 +33,7 @@
 	integer :: iargc
 	real*8 :: binwidth,factor,weight,x1,x2,x3, selfscatter, fac1, fac2
 	logical :: MASTER, SLAVE, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE., npt = .FALSE.
-	logical :: mix = .FALSE.
+	logical :: mix = .FALSE., success
 	integer, allocatable :: frameadded(:), kvectors(:,:), slaveadded(:), totaladded(:)
 	real*8 :: kcut,kmin,magx,magy,magz,mag, numdensity, rposx, rposy, rposz
 	real*8, allocatable :: framesq(:,:,:), sq(:), slavesq(:,:,:), partialsq(:,:,:), sanitysq(:), framesanitysq(:)
@@ -309,11 +309,11 @@
 	      alpha = typemap(s_start(mix_sp1)+n)
 	      beta = typemap(s_start(mix_sp2)+n)
 	      if (alpha.ne.beta) then
-		success = 1
+		success = .true.
 		! Unique type name IDs are not the same - BUT we accept H/D mismatches
-		if ((isonames(uniqueiso(alpha)).ne."H").and.(isonames(uniqueiso(alpha)).ne."D")) success = 0
-		if ((isonames(uniqueiso(beta)).ne."H").and.(isonames(uniqueiso(beta)).ne."D")) success = 0
-		if (success.eq.0) then
+		if ((isonames(uniqueiso(alpha)).ne."H").and.(isonames(uniqueiso(alpha)).ne."D")) success = .false.
+		if ((isonames(uniqueiso(beta)).ne."H").and.(isonames(uniqueiso(beta)).ne."D")) success = .false.
+		if (success) then
 		  write(12,*) "Error - Mismatch in atom elements for mixing pair (at least one is not H or D)."
 		  call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 		  goto 999
@@ -427,15 +427,15 @@
 
 100	if (MASTER) then
 	  ! The master will read in the configuration and send the coords out to the slaves
-101	  success=readframe()
-	  if (success.EQ.1) then   ! End of file encountered....
+101	  n = readframe()
+	  if (n.EQ.1) then   ! End of file encountered....
 	    !open(unit=12,file=basename(1:baselen)//"out",form="formatted",status="old")
 	    write(12,*) "End of history file found."
 	    !close(12)
 	    call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
 	    goto 120
 	  end if
-	  if (success.EQ.-1) then  ! File error....
+	  if (n.EQ.-1) then  ! File error....
 	    !open(unit=12,file=basename(1:baselen)//"out",form="formatted",status="old")
 	    write(12,*) "History file ended prematurely..."
 	    !close(12)
