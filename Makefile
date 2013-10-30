@@ -515,17 +515,17 @@ OTOOL64 =
 PACKAGE = dlputils
 PACKAGE_BUGREPORT = tris@projectaten.net
 PACKAGE_NAME = aten
-PACKAGE_STRING = aten r85
+PACKAGE_STRING = aten r86
 PACKAGE_TARNAME = aten
 PACKAGE_URL = 
-PACKAGE_VERSION = r85
+PACKAGE_VERSION = r86
 PATH_SEPARATOR = :
 RANLIB = ranlib
 SED = /usr/bin/sed
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = strip
-VERSION = r85
+VERSION = r86
 abs_builddir = /home/tris/src/dlputils
 abs_srcdir = /home/tris/src/dlputils
 abs_top_builddir = /home/tris/src/dlputils
@@ -589,6 +589,9 @@ PARSE = parse.f90
 DLPRW = dlprw.f90 
 UTILITY = utility.f90
 FIELDREAD = fieldread.f90
+
+# In order to compile the last few programs, MPI is required.
+# Set the following two lines to reflect the locations of the includes and libraries on your system
 MPIFC = "-I/usr/lib64/mpi/gcc/openmpi/include"
 MPILD = "-L/usr/lib64/mpi/gcc/openmpi/lib64 -lmpi_f90"
 
