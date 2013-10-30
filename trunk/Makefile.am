@@ -12,6 +12,9 @@ PARSE=parse.f90
 DLPRW=dlprw.f90 
 UTILITY=utility.f90
 FIELDREAD=fieldread.f90
+
+# In order to compile the last few programs, MPI is required.
+# Set the following two lines to reflect the locations of the includes and libraries on your system
 MPIFC="-I/usr/lib64/mpi/gcc/openmpi/include"
 MPILD="-L/usr/lib64/mpi/gcc/openmpi/lib64 -lmpi_f90"
 
