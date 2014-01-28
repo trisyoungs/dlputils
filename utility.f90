@@ -175,40 +175,29 @@
 
 	subroutine calc_rcell()
 	use dlprw; implicit none
-	real*8 :: vol
+	real*8 :: rvol
 	real*8, parameter :: pi = 3.14159265358979d0
 	integer :: n
 	if (imcon.gt.3) stop "calc_rcell can't handle this image convention."
-!	rcell(1)=cell(5)*cell(9)-cell(6)*cell(8)
-!	rcell(2)=cell(6)*cell(7)-cell(4)*cell(9)
-!	rcell(3)=cell(4)*cell(8)-cell(5)*cell(7)
-!	rcell(4)=cell(3)*cell(8)-cell(2)*cell(9)
-!	rcell(5)=cell(1)*cell(9)-cell(3)*cell(7)
-!	rcell(6)=cell(2)*cell(7)-cell(1)*cell(8)
-!	rcell(7)=cell(2)*cell(6)-cell(3)*cell(5)
-!	rcell(8)=cell(3)*cell(4)-cell(1)*cell(6)
-!	rcell(9)=cell(1)*cell(5)-cell(2)*cell(4)
-!	vol = abs( cell(1)*rcell(1) + cell(2)*rcell(2) + cell(3)*rcell(3))
-!	do n=1,9
-!	  rcell(n)=2.0d0*pi*rcell(n)/vol
-!	end do
 
 	! Calculate the reciprocal cell (cubic, orthorhombic, or parallelepiped)
 	! Take cross products of original cell vectors to get reciprocal cell vectors
 	! R(1,4,7) = C(Y) * C(Z)
-	! R(2,5,8) = C(X) * C(Z)
+	! R(2,5,8) = C(Z) * C(X)
 	! R(3,6,9) = C(X) * C(Y)
 	rcell(1) = cell(5) * cell(9) - cell(8) * cell(6)
 	rcell(4) = cell(8) * cell(3) - cell(2) * cell(9)
 	rcell(7) = cell(2) * cell(6) - cell(5) * cell(3)
-	rcell(2) = cell(4) * cell(9) - cell(7) * cell(6)
-	rcell(5) = cell(7) * cell(3) - cell(1) * cell(9)
-	rcell(8) = cell(1) * cell(6) - cell(4) * cell(3)
+
+	rcell(2) = cell(6) * cell(7) - cell(9) * cell(4)
+	rcell(5) = cell(9) * cell(1) - cell(3) * cell(7)
+	rcell(8) = cell(3) * cell(4) - cell(6) * cell(1)
+
 	rcell(3) = cell(4) * cell(8) - cell(7) * cell(5)
 	rcell(6) = cell(7) * cell(2) - cell(1) * cell(8)
 	rcell(9) = cell(1) * cell(5) - cell(4) * cell(2)
-	vol = dabs(cell(1)*rcell(1) + cell(5)*rcell(5) + cell(9)*rcell(9))
-	rcell = 2.0d0*pi*rcell / vol
+	rvol = 2.0d0*pi / volume(cell)
+	rcell = rcell * rvol
 	write(0,"(3F12.4)") rcell
 	end subroutine calc_rcell
 
