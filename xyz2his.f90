@@ -6,6 +6,7 @@
 	use dlprw; use parse
 	implicit none
 	character*80 :: xyzfile,temp,outfile,header
+	real*8 :: a
 	integer :: nargs,n,i,m,success,nframes,destfmt
 	integer :: iargc
 	logical :: hascell = .FALSE., extraline = .FALSE.
@@ -28,9 +29,19 @@
 	        call getarg(n,temp); read(temp, "(f20.14)") cell(n)
 	      end do
 	      hascell = .TRUE.
-	      imcon = 2
-              write(0,"(A)") "Read cell specification as:"
-	      write(0,"(9f12.4)") cell
+	      imcon = 3
+              write(0,"(A)") "Read full cell specification as:"
+	      write(0,"(3f12.4)") cell
+	    case ("-cubic")
+	      n = n + 1; 
+	      call getarg(n,temp); read(temp, "(f20.14)") a
+	      cell = 0.0
+	      cell(1) = a
+	      cell(5) = a
+	      cell(9) = a
+	      hascell = .TRUE.
+	      imcon = 1
+	      write(0,*) "Cubic cell will be written, with side length ", cell(1)
             case ("-extraline")
 	      extraline = .TRUE.
               write(0,"(A)") "Assuming presence of blank line in between frames"
