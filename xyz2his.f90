@@ -8,25 +8,37 @@
 	character*80 :: xyzfile,temp,outfile,header
 	integer :: nargs,n,i,m,success,nframes,destfmt
 	integer :: iargc
-	logical :: hascell = .FALSE.
+	logical :: hascell = .FALSE., extraline = .FALSE.
 
 	nargs = iargc()
-	if (nargs.lt.2) stop " Usage: xyz2his <xyz file> <output.HISu> [ax ay az bx by bz cx cy cz]"
+	if (nargs.lt.2) stop " Usage: xyz2his <xyz file> <output.HISu> [-cell ax ay az bx by bz cx cy cz] [-extraline]"
 	call getarg(1,xyzfile)
 	call getarg(2,outfile)
 	imcon = 0
-	if (nargs.gt.2) then
-	  if (nargs.eq.11) then
-	    do n=1,9
-	      call getarg(n+2,temp)
-	      read(temp, "(f20.14)") cell(n)
-	    end do
-	    hascell = .TRUE.
-	    imcon = 2
-	  else
-	    stop "Error: Partial cell specification given?"
-	  end if
-	end if
+
+	n = 2
+        do
+          n = n + 1; if (n.GT.nargs) exit
+          call getarg(n,temp)
+          select case (temp)
+            case ("-cell")
+	      do m=1,9
+                n = n + 1
+	        if (n.GT.nargs) stop "Error: Partial cell specification given?"
+	        call getarg(n,temp); read(temp, "(f20.14)") cell(n)
+	      end do
+	      hascell = .TRUE.
+	      imcon = 2
+              write(0,"(A)") "Read cell specification as:"
+	      write(0,"(9f12.4)") cell
+            case ("-extraline")
+	      extraline = .TRUE.
+              write(0,"(A)") "Assuming presence of blank line in between frames"
+	    case default
+	      write(0,"(a,a)") "Unrecognised command line option:",temp
+	      stop
+	  end select
+	end do
 
 	! Set destination format (0 = unformatted history file, 1 = formatted history file)
 	destfmt = 0
@@ -50,9 +62,22 @@
 	if (writeheader(outfile,14,destfmt).EQ.-1) stop "Failed to write new history file header!"
 
 10	read(15,"(i20)",end=15,err=15) natms
+
+	! Check number of atoms - if zero, we probably tried to read something other than the natms integer
+	if (natms.eq.0) then
+	  write(0,*) "Error reading natoms for frame ", nframes+1
+	  goto 15
+	end if
 	read(15,"(a80)") header
 	do n=1,natms
-	  if (.not.readline(15)) goto 999
+	  if (.not.readline(15)) then
+	    write(0,*) "Error reading frame at atom ", n
+	    goto 999
+	  end if
+	  if (nargsparsed.lt.3) then
+	    write(0,*) "Error reading frame at atom ", n
+	    goto 999
+	  end if
 	  xpos(n) = argr(2)
 	  ypos(n) = argr(3)
 	  zpos(n) = argr(4)
@@ -67,11 +92,19 @@
 	    zfor(n) = argr(10)
 	  end if
 	end do
+
 	nframes = nframes + 1
 	if (MOD(nframes,100).EQ.0) write(0,*) nframes
+
 	! Write out the frame...
 	success = writeframe()
 	if (success.EQ.-1) stop "Failed to write frame!"
+
+	! Skip extra blank line if requested
+	if (extraline) then
+	  if (.NOT.readline(15)) goto 15
+	end if
+
 	goto 10
 15	close(15)  ! end of file..
 	write(0,"(A,I5,A,A)") "Read/wrote ",nframes," from file ",xyzfile
