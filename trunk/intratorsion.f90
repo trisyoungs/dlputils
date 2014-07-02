@@ -9,14 +9,12 @@
 	character*2 :: a1, a2, a3, a4
 	character*20 :: temp
 	integer :: status,  nargs, success, baselen
-	integer :: ntorsionbins,aoff1,n,m,s1,s2,bin,nframes,numadded,sp,atom1,atom2,atom3,atom4
+	integer :: aoff1,n,m,s1,s2,bin,nframes,numadded,sp,atom1,atom2,atom3,atom4
 	integer :: iargc
 	real*8 :: i(3), j(3), k(3), l(3), v(3), vecji(3), vecjk(3), veckj(3), veckl(3), xp1(3), xp2(3)
-	real*8 :: norm, dp, torsionbin, torsion, rij, tx, ty, tz, ktx, kty, ktz, mag1, mag2
+	real*8 :: norm, dp, torsion, rij, tx, ty, tz, ktx, kty, ktz, mag1, mag2
 	real*8, allocatable :: ijkl(:)
 	real*8 :: dist, magnitude, dotproduct
-
-	torsionbin=0.5	! In degrees
 
 	nargs = iargc()
 	if (nargs.ne.7) then
@@ -37,13 +35,10 @@
         ! Now, read in the history header so that we have cell()
         if (readheader().EQ.-1) goto 799
 
-	ntorsionbins = 180.0 / torsionbin
-	write(0,"(A,F6.3)") "Torsion binwidth is ",torsionbin
-	write(0,"(A,I5,A)") "There will be ",ntorsionbins," torsion bins."
 	write(0,"(A,I5)") "Target species is ",sp
 	write(0,"(a,4(i3))") "Calculating torsion angle from atoms ",atom1,atom2,atom3,atom4
 	
-	allocate(ijkl(ntorsionbins),stat=status); if (status.GT.0) stop "Allocation error for ijkl()"
+	allocate(ijkl(-180:180),stat=status); if (status.GT.0) stop "Allocation error for ijkl()"
 
 	! Initialise the arrays...
 	ijkl = 0.0
@@ -109,8 +104,8 @@
 	  torsion = acos(dp)*radcon
 	  ! Calculate sign
 	  dp = dotproduct(xp1, veckl)
-	  !if (dp.lt.0) torsion = -torsion
-	  bin = int(torsion * (1.0 / torsionbin)) + 1
+	  if (dp.lt.0) torsion = -torsion
+	  bin = int(torsion)
 	  ijkl(bin) = ijkl(bin) + 1
 
 	  ! Global counter
@@ -168,8 +163,8 @@
 	! Write torsion histogram ijkl
 	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".tors"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	do n=1,ntorsionbins
-	  write(9,"(f7.3,2x,f12.8)") torsionbin*(n-0.5),ijkl(n)
+	do n=-180,180
+	  write(9,"(f7.3,2x,f12.8)") n-0.5,ijkl(n)
 	end do
 	close(9)
 
