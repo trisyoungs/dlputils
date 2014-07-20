@@ -6,16 +6,16 @@
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
 	character*20 :: temp
-	character*4 :: molpart
-	integer :: n,a1,s1,sp1,sp2,m1,m2,baselen,nframes,success,nargs,divide = -1, compairs(10,2)
+	integer :: n,a1,s1,sp1,sp2,m1,m2,baselen,nframes,success,nargs, compairs(10,2) = 0
 	integer :: count, start, finish, framestodo = -1, framesdone, frameskip = 0
-	integer :: iargc
+	integer :: iargc, bin, currentcn, maxcn = 100
 	logical :: altheader = .FALSE.
-	real*8 :: c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz,rij,cutoff, total,raverage
+	real*8 :: c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz,rij,cutoff, raverage
+	integer, allocatable :: cnumber(:)
 
 	nargs = iargc()
 	if (nargs.lt.5) then
-	  write(0,"(A)") "Usage : cn <DLP HISTORYfile> <DLP OUTPUTfile> <sp1> <sp2> <cutoff> [-header file] [-frames n] [-discard n] [-divide n] [-compair sp i j]"
+	  write(0,"(A)") "Usage : cn <DLP HISTORYfile> <DLP OUTPUTfile> <sp1> <sp2> <cutoff> [-header file] [-frames n] [-discard n] [-compair sp i j] [-maxcn max]"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -39,14 +39,14 @@
             case ("-discard")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
               write(0,"(A,I4)") "Frames to discard at start: ",frameskip
-            case ("-divide")
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") divide
-              write(0,"(A,I4)") "Output will be partitioned into chunk of (frames) ",divide
             case ("-compair")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") s1
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(s1,1)
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(s1,2)
               write(0,"(A,3I4)") "Using COMpair for species ",s1, compairs(s1,:)
+            case ("-maxcn")
+              n = n + 1; call getarg(n,temp); read(temp,"(i6)") maxcn
+              write(0,"(A,I4)") "Maximum coordination number set to ", maxcn
 	    case default
 	      write(0,"(a,a)") "Unrecognised command line option:",temp
 	      stop
@@ -89,8 +89,12 @@
 	open(unit=9,file=resfile,form="formatted",status="replace")
 	write(9,"(a,i2,a,i2,a,f10.4)") "# CN of species ",sp2," around ",sp1," within ",cutoff
 
+	! Allocate results array
+	allocate(cnumber(0:maxcn))
+	cnumber = 0
+
 	! XXXX
-	! XXXX Main RDF routine....
+	! XXXX Main routine....
 	! XXXX
 	! Set up the vars...
 	raverage = 0.0
@@ -124,12 +128,12 @@
 	  end if
 	end do
 
-	total = 0.0
 	do m1=1,s_nmols(sp1)
 	  ! Get the centre of mass for species sp1 mol m1...
 	  c1x=comx(sp1,m1)
 	  c1y=comy(sp1,m1)
 	  c1z=comz(sp1,m1)
+	  currentcn = 0
 	  do m2=1,s_nmols(sp2)
 	    ! Must do a quick check to exclude m1=m2 if sp1=sp2
 	    if ((sp1.EQ.sp2).AND.(m1.EQ.m2)) cycle
@@ -140,28 +144,19 @@
 	    call pbc(c2x,c2y,c2z,c1x,c1y,c1z,tx,ty,tz)
 	    rij=sqrt( (tx-c1x)**2 + (ty-c1y)**2 + (tz-c1z)**2 )
 	    ! Store this distance...
-	    if (rij.lt.cutoff) total = total + 1.0
+	    if (rij.le.cutoff) then
+	      currentcn = currentcn + 1
+	      ! Increase total accumulator
+	      raverage = raverage + 1
+	    end if
 	    !if (rij.lt.cutoff) write(0,*) nframes,m2, rij
 	    !if (rij.lt.cutoff) write(0,"(6f12.6)") c1x,c1y,c1z,tx,ty,tz
 	  end do
-	end do
 
-	! Normalise
-	if (sp1.EQ.sp2) then
-	  total = total / (s_nmols(sp1)-1)
-	else
-	  total = total / s_nmols(sp1)
-	end if
+	  ! Add this CN to the results array
+	  cnumber(currentcn) = cnumber(currentcn) + 1
 	
-	! Increase total accumulator
-	raverage = raverage + total
-
-	if (divide.eq.-1) then
-	  write(9,"(2F10.6)") total,raverage/framesdone
-	else if (mod(framesdone,divide).eq.0) then
-	  write(9,"(i8,f10.6)") framesdone, raverage/divide
-	  raverage = 0.0
-	end if
+	end do
 
 	if (framesdone.EQ.framestodo) goto 800
 	! Next frame
@@ -177,6 +172,15 @@
 	goto 801
 800	write(0,*) "Framestodo was fulfilled."
 801	write(0,*) ""
+
+	! Normalise?
+	!cnumber = cnumber / s_nmols(sp1) / nframes
+
+	write(9,"(a,i9)") "# NFrames used : ", nframes
+	write(9,"(a,f10.4)") "# Average CN : ", raverage / s_nmols(sp1) / nframes
+	do n=0,maxcn
+	  write(9,"(i4,2x,i9)") n, cnumber(n)
+	end do
 
 	close(9)
 	write(0,*) "Finished."

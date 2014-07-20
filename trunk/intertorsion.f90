@@ -184,7 +184,7 @@
 
 	! Next frame
 	goto 101
-	! Work on the results now to get the proper RDF
+
 120	write(0,*) "Finished."
 	goto 801
 

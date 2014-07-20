@@ -153,4 +153,21 @@ The mappings are important since the number and names of the (optional) partial 
 output files (requested with the -partials switch) depends on the number and names of
 'remapped' names (second column) in 'lengths.dat'. All names are case-sensitive.
 
+pdens
+----------------------------
+The molecule type on which the probability density is to be centered must have a set of
+axes defined for it, so that the rest of the molecules in the system can be rotated into
+this local geometric frame, and the probability density formed. To do this, the program
+requires that you provide two atoms which define the vector along which the x-axis lays,
+and two atoms which lay on the y axis (the average position is taken, and the same atom
+can be specified twice if necessary). The origin of the axis system is then taken to be
+the average position of the two atoms given for the x axis, and the y axis is then assumed
+to pass through this point and the centre of the two atoms provided for the y axis. The
+z axis is then calculated from the cross product of these two vectors.
+
+For example, with water you have only one option, really, and that is to use the two
+hydrogen atoms to define the x vector, and the oxygen to define y. So, if your water
+molecule atoms were arranged ‘H’, ‘O’, ‘H’, you would use the ‘-axis’ switch as follows:
+ 
+–axis 1 1 3 2 2
 
