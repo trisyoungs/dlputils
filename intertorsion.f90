@@ -7,13 +7,13 @@
 	implicit none
 	real*8, parameter :: pi = 3.14159265358979d0, radcon = 57.29577951d0
 	character*80 :: hisfile,dlpoutfile,basename,resfile
-	character*2 :: a1, a2
+	character*2 :: a1, a2, a3, a4
 	character*20 :: temp
 	integer :: status,  nargs, success, baselen
-	integer :: nanglebins, ntorsionbins,ndistbins,aoff1,aoff2,n,m,s1,s2,bin,bin2,nframes,numadded,sp,atom1,atom2
+	integer :: nanglebins, ntorsionbins,ndistbins,aoff1,aoff2,n,m,s1,s2,bin,bin2,nframes,numadded,sp1,sp2,atom_i,atom_j,atom_k,atom_l
 	integer :: iargc
 	real*8 :: i(3), j(3), k(3), l(3), v(3), vecji(3), vecjk(3), veckj(3), veckl(3), xp1(3), xp2(3)
-	real*8 :: norm, dp, distbin, anglebin, torsionbin, torsion, angle, rij, tx, ty, tz, ktx, kty, ktz, mag1, mag2, cutoff
+	real*8 :: dp, distbin, anglebin, torsionbin, torsion, angle, rij, tx, ty, tz, ktx, kty, ktz, mag1, mag2, cutoff
 	real*8, allocatable :: ijk(:), jkl(:), ijkl(:), ijkl_jk(:,:)
 	real*8 :: dist, magnitude, dotproduct
 
@@ -23,18 +23,21 @@
 	cutoff=-1.0
 
 	nargs = iargc()
-	if (nargs.lt.5) then
-	  write(0,*) "Usage : intertorsion <DLP HISTORYfile> <DLP OUTPUTfile> <species> <atom1> <atom2> [jj cutoff]"
+	if (nargs.lt.8) then
+	  write(0,*) "Usage : intertorsion <DLP HISTORYfile> <DLP OUTPUTfile> <species 1> <atom i> <atom j> <species 2> <atom k> <atom l> [jj cutoff]"
 	  write(0,*) "             --- Torsion angle is i1-j1-j2-i2 (i-j-k-l)"
 	  stop
 	end if
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
-	call getarg(3,temp); read(temp,"(i4)") sp
-	call getarg(4,temp); read(temp,"(i4)") atom1
-	call getarg(5,temp); read(temp,"(i4)") atom2
-	if (nargs.eq.6) then
-	  call getarg(6,temp)
+	call getarg(3,temp); read(temp,"(i4)") sp1
+	call getarg(4,temp); read(temp,"(i4)") atom_i
+	call getarg(5,temp); read(temp,"(i4)") atom_j
+	call getarg(6,temp); read(temp,"(i4)") sp2
+	call getarg(7,temp); read(temp,"(i4)") atom_k
+	call getarg(8,temp); read(temp,"(i4)") atom_l
+	if (nargs.eq.9) then
+	  call getarg(9,temp)
 	  read(temp,"(f8.4)") cutoff
 	endif
 
@@ -47,13 +50,13 @@
 	ntorsionbins = 180.0 / torsionbin
 	nanglebins = 180.0 / anglebin
 	ndistbins = cell(1) / distbin
-	write(0,"(A,F6.3,A,F6.3,F6.3)") "Distance, angle, torsion binwidths are ",distbin,anglebin,torsionbin
+	write(0,"(A,F6.3,F6.3,F6.3)") "Distance, angle, torsion binwidths are ",distbin,anglebin,torsionbin
 	write(0,"(A,I5,A)") "There will be ",ntorsionbins," torsion bins."
 	write(0,"(A,I5,A)") "There will be ",nanglebins," angle bins."
 	write(0,"(A,I5,A)") "There will be ",ndistbins," distance bins."
-	if (cutoff.gt.0) write(0,"(A,F7.3)") "Enforcing j1-j2 cutoff of ",cutoff
-	write(0,"(A,I5)") "Target species is ",sp
-	write(0,"(a,i2,a,i2)") "Calculating between vectors from atoms ",atom1," and ",atom2
+	if (cutoff.gt.0) write(0,"(A,F7.3)") "Enforcing j-k cutoff of ",cutoff
+	write(0,"(A,i5,i5)") "Target species are ",sp1, sp2
+	write(0,"(a,i2,a,i2,a,i2,a,i2,a)") "Calculating i(sp1,",atom_i,")-j(sp1,",atom_j,")-k(sp2,",atom_k,")-l(sp2,",atom_l,")"
 	
 	allocate(ijk(nanglebins),stat=status); if (status.GT.0) stop "Allocation error for ijk()"
 	allocate(jkl(nanglebins),stat=status); if (status.GT.0) stop "Allocation error for jkl()"
@@ -67,44 +70,45 @@
 	ijkl_jk = 0.0
 
 	! XXXX
-	! XXXX Main RDF routine....
+	! XXXX Main routine....
 	! XXXX
 	! Set up the vars...
 100	nframes=0
+	numadded = 0
 101	success=readframe()
 	if (success.EQ.1) goto 120  ! End of file encountered....
-	if (success.EQ.-1) goto 799  ! File error....
+	if (success.LT.0) goto 799  ! File error....
 	nframes=nframes+1
 	if (mod(nframes,100).EQ.0) write(0,*) nframes
 	
-	aoff1 = s_start(sp)
-	do s1 = 1,s_nmols(sp)     ! Loop over all molecules in species
+	aoff1 = s_start(sp1)
+	do s1 = 1,s_nmols(sp1)     ! Loop over all molecules in species
 
 	  ! Grab coordinates of the first vector (i->j)
-	  i(1) = xpos(aoff1+atom1-1)
-	  i(2) = ypos(aoff1+atom1-1)
-	  i(3) = zpos(aoff1+atom1-1)
+	  i(1) = xpos(aoff1+atom_i-1)
+	  i(2) = ypos(aoff1+atom_i-1)
+	  i(3) = zpos(aoff1+atom_i-1)
 
-	  j(1) = xpos(aoff1+atom2-1)
-	  j(2) = ypos(aoff1+atom2-1)
-	  j(3) = zpos(aoff1+atom2-1)
+	  j(1) = xpos(aoff1+atom_j-1)
+	  j(2) = ypos(aoff1+atom_j-1)
+	  j(3) = zpos(aoff1+atom_j-1)
 
-	  aoff2 = s_start(sp)
-	  do s2 = 1,s_nmols(sp)
+	  aoff2 = s_start(sp2)
+	  do s2 = 1,s_nmols(sp2)
 
-	    if (s1.eq.s2) then
-	      aoff2 = aoff2 + s_natoms(sp)
+	    if ((sp1.eq.sp2).and.(s1.eq.s2)) then
+	      aoff2 = aoff2 + s_natoms(sp2)
 	      cycle
 	    end if
 
 	    ! Grab coordinates of second vector (k->l)
-	    k(1) = xpos(aoff2+atom1-1)
-	    k(2) = ypos(aoff2+atom1-1)
-	    k(3) = zpos(aoff2+atom1-1)
+	    k(1) = xpos(aoff2+atom_k-1)
+	    k(2) = ypos(aoff2+atom_k-1)
+	    k(3) = zpos(aoff2+atom_k-1)
 
-	    l(1) = xpos(aoff2+atom2-1)
-	    l(2) = ypos(aoff2+atom2-1)
-	    l(3) = zpos(aoff2+atom2-1)
+	    l(1) = xpos(aoff2+atom_l-1)
+	    l(2) = ypos(aoff2+atom_l-1)
+	    l(3) = zpos(aoff2+atom_l-1)
 
 	    !
 	    ! Calculate vectors
@@ -119,7 +123,7 @@
 	    ! Cutoff check
 	    rij = magnitude(vecjk)
 	    if ((cutoff.gt.0).and.(rij.gt.cutoff)) then
-	      aoff2 = aoff2 + s_natoms(sp)
+	      aoff2 = aoff2 + s_natoms(sp2)
 	      cycle
 	    end if
 	    ! Angle j-k-l (mim w.r.t. k (mim j))
@@ -172,15 +176,12 @@
 	    ! Global counter
 	    numadded = numadded+1
 
-	    aoff2 = aoff2 + s_natoms(sp)
+	    aoff2 = aoff2 + s_natoms(sp2)
 	  end do
-	  aoff1 = aoff1 + s_natoms(sp)
+	  aoff1 = aoff1 + s_natoms(sp1)
 	end do   ! End main loop over all atoms of species1.
 
 	if (nframes.EQ.1) write(0,*) "numadded:=",numadded
-	if (nframes.EQ.1) then
-	  write(0,"(A,I2,A,I4,A)") "PRDF of atoms about ",sp," : averaged over ",s_nmols(sp)," molecules."
-	end if
 
 	! Next frame
 	goto 101
@@ -213,42 +214,50 @@
 	  basename=hisfile(1:baselen)
 	endif
 
-	! Normalise arrays.
-	! Use expected total, not numadded, for uniformity (since some points will never be binned)
-	norm = nframes * s_nmols(sp) * (s_nmols(sp) - 1)
+	! Normalise arrays per frame
 	ijk = ijk / nframes
 	jkl = jkl / nframes
 	ijkl = ijkl / nframes
 	ijkl_jk = ijkl_jk / nframes
 
-	a1 = char(48+atom1/10)//char(48+MOD(atom1,10))
-	a2 = char(48+atom2/10)//char(48+MOD(atom2,10))
+	a1 = char(48+atom_i/10)//char(48+MOD(atom_i,10))
+	a2 = char(48+atom_j/10)//char(48+MOD(atom_j,10))
+	a3 = char(48+atom_k/10)//char(48+MOD(atom_k,10))
+	a4 = char(48+atom_l/10)//char(48+MOD(atom_l,10))
+
+	! Write distance histogram jk
+	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".jk"
+	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
+	do n=1,ndistbins
+	  write(9,"(f7.3,2x,f12.8)") distbin*(n-0.5),sum(ijkl_jk(:,n))
+	end do
+	close(9)
 
 	! Write angle histogram ijk
-	resfile=basename(1:baselen)//a1//"-"//a2//".ijk"
+	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".ijk"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=1,nanglebins
-	  write(9,"(F7.3,3x,F12.8)") anglebin*(n-0.5),ijk(n)
+	  write(9,"(F7.3,2(3x,F12.8))") anglebin*(n-0.5), ijk(n), ijk(n)/sin(anglebin*(n-0.5)/radcon)
 	end do
 	close(9)
 
 	! Write angle histogram jkl
-	resfile=basename(1:baselen)//a1//"-"//a2//".jkl"
+	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".jkl"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=1,nanglebins
-	  write(9,"(F7.3,3x,F12.8)") anglebin*(n-0.5),jkl(n)
+	  write(9,"(F7.3,2(3x,F12.8))") anglebin*(n-0.5), jkl(n), jkl(n)/sin(anglebin*(n-0.5)/radcon)
 	end do
 	close(9)
 
 	! Write torsion histogram ijkl
-	resfile=basename(1:baselen)//a1//"-"//a2//".ijkl"
+	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".ijkl"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=1,ntorsionbins
 	  write(9,"(f7.3,2x,f12.8)") torsionbin*(n-0.5),ijkl(n)
 	end do
 
 	! Write torsion/distance histogram ijkl_jk
-	resfile=basename(1:baselen)//a1//"-"//a2//".ijkl_jk"
+	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".ijkl_jk"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=1,ntorsionbins
 	  do m=1,ndistbins
