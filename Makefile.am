@@ -38,9 +38,9 @@ cdf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} cdf.f90
 dist2_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} dist2.f90
 rdf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdf.f90
 rdfsum_SOURCES = ${PARSE} ${DLPRW} rdfsum.f90
-rdfaa_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdf_aa.f90
-rdfaainter_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdf_aa_inter.f90
-rdfss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdf_ss.f90
+rdfaa_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdfaa.f90
+rdfaainter_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdfaainter.f90
+rdfss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdfss.f90
 zdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} zdens.f90
 
 # SQ
