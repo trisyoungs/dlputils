@@ -11,7 +11,7 @@
 	integer :: status,  nargs, success, baselen, npairs
 	integer :: nbins,aoff1,aoff2,n,s1,s2,bin,nframes,sp1,sp2,atom1(maxpairs),atom2(maxpairs)
 	integer :: iargc,p,framestodo,framestodiscard=0
-	logical :: nonorm = .FALSE.
+	logical :: nonorm = .FALSE., includeintra = .TRUE.
 	real*8 :: r1(3), r2(3), r2min(3), r12(3), dist, binwidth, norm, integral, dumpdist = -1.0, numadded
 	real*8, allocatable :: hist(:,:), rdf(:,:), sumhist(:,:)
 
@@ -22,7 +22,7 @@
 	npairs = 0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : rdf_aa_inter <HIS file> <OUT file> [-sp1 n] [-sp2 n] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-nonorm] [-dump <dist>]"
+	if (nargs.lt.5) stop "Usage : rdf_aa_inter <HIS file> <OUT file> [-sp1 n] [-sp2 n] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-nonorm] [-dump <dist>] [-includeintra]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	n = 2
@@ -48,6 +48,9 @@
             case ("-dump")
 	      n = n + 1; call getarg(n,temp); read(temp,"(f12.5)") dumpdist
               write(0,"(A)") "Dump contacts with distance less than", dumpdist
+	    case ("-includeintra")
+	      write(0,"(A)") "Intramolecular contacts will be included (if sp1 == sp2)."
+	      includeintra = .TRUE.
 	  end select
 	end do
 	     
@@ -97,6 +100,12 @@
 
 	  aoff2 = s_start(sp2) 
 	  do s2 = 1,s_nmols(sp2)     ! Loop over all molecules of species 2
+
+	    ! Check for intramolecular exclusion
+	    if ((sp1.eq.sp2).and.(.not.includeintra)) then
+	      aoff2 = aoff2 + s_natoms(sp2)
+	      cycle
+	    end if
 
 	    ! Loop over all pairs of atoms specified
 	    do p = 1,npairs

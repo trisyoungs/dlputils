@@ -12,7 +12,7 @@
 	logical :: hascell = .FALSE., extraline = .FALSE.
 
 	nargs = iargc()
-	if (nargs.lt.2) stop " Usage: xyz2his <xyz file> <output.HISu> [-cell ax ay az bx by bz cx cy cz] [-extraline]"
+	if (nargs.lt.2) stop " Usage: xyz2his <xyz file> <output.HISu> [-cell ax ay az bx by bz cx cy cz] [-extraline] [-cubic a]"
 	call getarg(1,xyzfile)
 	call getarg(2,outfile)
 	imcon = 0
