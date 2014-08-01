@@ -3,7 +3,7 @@ bin_PROGRAMS += cdf dist2 rdf rdfsum rdfaa rdfaainter rdfss zdens
 bin_PROGRAMS += acfcat acfprep acfsum angle cagecor2 cn counthb dlpgeom getcell intertorsion intratorsion lifehb moldist msd msd2 vac vac2
 bin_PROGRAMS += bident bident2 bident2anal bident3 bident4 cluster cryscomp dahist legendre zangle
 bin_PROGRAMS += glucanal glucgeom gluchb gluchbeach glucsphere
-bin_PROGRAMS += pdens pdensint pdensmirror pdenstrim 
+bin_PROGRAMS += pdens pdensint pdensmirror pdenstrim # pdensgauss
 bin_PROGRAMS += avgconfig dlpsize genlb gengg pairs probedlp
 bin_PROGRAMS += acf dacf sq totalgr
 
@@ -98,6 +98,7 @@ pdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} pdens.f90
 pdensint_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} pdensint.f90
 pdensmirror_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} pdensmirror.f90
 pdenstrim_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} pdenstrim.f90
+#pdensgauss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} pdensgauss.f90
 
 # Misc
 avgconfig_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} avgconfig.f90
