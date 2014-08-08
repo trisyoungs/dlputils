@@ -10,7 +10,7 @@
 	integer :: count, start, finish, framestodo = -1, framesdone, frameskip = 0
 	integer :: iargc, bin, currentcn, maxcn = 100
 	logical :: altheader = .FALSE.
-	real*8 :: c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz,rij,cutoff, raverage
+	real*8 :: c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz,rij,cutoff, total, norm
 	integer, allocatable :: cnumber(:)
 
 	nargs = iargc()
@@ -97,7 +97,7 @@
 	! XXXX Main routine....
 	! XXXX
 	! Set up the vars...
-	raverage = 0.0
+	total = 0.0
 100	nframes=0
 	framesdone = 0
 101	success=readframe()
@@ -147,7 +147,7 @@
 	    if (rij.le.cutoff) then
 	      currentcn = currentcn + 1
 	      ! Increase total accumulator
-	      raverage = raverage + 1
+	      total = total + 1
 	    end if
 	    !if (rij.lt.cutoff) write(0,*) nframes,m2, rij
 	    !if (rij.lt.cutoff) write(0,"(6f12.6)") c1x,c1y,c1z,tx,ty,tz
@@ -173,13 +173,13 @@
 800	write(0,*) "Framestodo was fulfilled."
 801	write(0,*) ""
 
-	! Normalise?
-	!cnumber = cnumber / s_nmols(sp1) / nframes
+	write(0,*) "Total accumulator: ", total
+	norm = sum(cnumber)
 
 	write(9,"(a,i9)") "# NFrames used : ", nframes
-	write(9,"(a,f10.4)") "# Average CN : ", raverage / s_nmols(sp1) / nframes
+	write(9,"(a,f10.4)") "# Average CN : ", total / s_nmols(sp1) / nframes
 	do n=0,maxcn
-	  write(9,"(i4,2x,i9)") n, cnumber(n)
+	  write(9,"(i4,2x,i9,2x,f12.9)") n, cnumber(n), real(cnumber(n)) / norm
 	end do
 
 	close(9)
