@@ -299,15 +299,17 @@
 	write(11,"('Atom       :', 20(3x,i2,4x))") (sp1sites(n,1),n=1,nsp1sites)
 	write(11,"(a)") ""
 	write(11,"('N          :', 20(f7.3,2x))") (sitetotals(n)/nframes/s_nmols(sp1),n=1,nsp1sites)
-	write(11,"('%All       :', 20(f7.3,2x))") (sitetotals(n)/sum(sitetotals)*100.0,n=1,nsp1sites)
+	write(11,"('%All       :', 20(f7.3,2x))") (sitetotals(n)/total*100.0,n=1,nsp1sites)
 	write(11,"(a)") ""
 	write(11,"('Single     :', 20(f7.3,2x))") (singletab(n)/nframes/s_nmols(sp1),n=1,nsp1sites)
 	write(11,"('%Group     :', 20(f7.3,2x))") (singletab(n)/sum(singletab)*100.0,n=1,nsp1sites)
 	write(11,"('%Site      :', 20(f7.3,2x))") (singletab(n)/sitetotals(n)*100.0,n=1,nsp1sites)
+	write(11,"('%All       :', 20(f7.3,2x))") (singletab(n)/total*100.0,n=1,nsp1sites)
 	write(11,"(a)") ""
 	write(11,"('Bidentate  :', 20(f7.3,2x))") (bitab(n)/nframes/s_nmols(sp1),n=1,nsp1sites)
 	write(11,"('%Group     :', 20(f7.3,2x))") (bitab(n)/sum(bitab)*100.0,n=1,nsp1sites)
 	write(11,"('%Site      :', 20(f7.3,2x))") (bitab(n)/sitetotals(n)*100.0,n=1,nsp1sites)
+	write(11,"('%All       :', 20(f7.3,2x))") (bitab(n)/total*100.0,n=1,nsp1sites)
 	write(11,"(a)") ""
 	do m=1,nsp1sites
 	  write(11,"('Bridge  ',i2,' :', 20(f7.3,2x))") m, (bridgetab(m,n)/nframes/s_nmols(sp1),n=1,nsp1sites)
@@ -316,6 +318,7 @@
 	  write(11,"('%Group  ',i2,' :', 20(f7.3,2x))") m, (bridgetab(m,n)/sum(bridgetab)*100.0,n=1,nsp1sites)
 	end do
 	write(11,"('%Site      :', 20(f7.3,2x))") (sum(bridgetab(n,:))/sitetotals(n)*100.0,n=1,nsp1sites)
+	write(11,"('%All       :', 20(f7.3,2x))") (sum(bridgetab(n,:))/total*100.0,n=1,nsp1sites)
 	write(11,"(a)") ""
 	do m=1,nsp1sites
 	  write(11,"('Bifurc  ',i2,' :', 20(f7.3,2x))") m, (bifurtab(m,n)/nframes/s_nmols(sp1),n=1,nsp1sites)
@@ -324,10 +327,12 @@
 	  write(11,"('%Group  ',i2,' :', 20(f7.3,2x))") m, (bifurtab(m,n)/sum(bifurtab)*100.0,n=1,nsp1sites)
 	end do
 	write(11,"('%Site      :', 20(f7.3,2x))") (sum(bifurtab(n,:))/sitetotals(n)*100.0,n=1,nsp1sites)
+	write(11,"('%All       :', 20(f7.3,2x))") (sum(bifurtab(n,:))/total*100.0,n=1,nsp1sites)
 	write(11,"(a)") ""
 	write(11,"('Multi      :', 20(f7.3,2x))") (multitab(n)/nframes/s_nmols(sp1),n=1,nsp1sites)
 	write(11,"('%Group     :', 20(f7.3,2x))") (multitab(n)/sum(multitab)*100.0,n=1,nsp1sites)
 	write(11,"('%Site      :', 20(f7.3,2x))") (multitab(n)/sitetotals(n)*100.0,n=1,nsp1sites)
+	write(11,"('%All       :', 20(f7.3,2x))") (multitab(n)/total*100.0,n=1,nsp1sites)
 
 	close(11)
 

@@ -123,6 +123,44 @@ glucsphere
 Program-Specific Usage Notes
 ----------------------------
 
+bident(2,3,4)
+----------------------------
+Species 1 indicates the 'donor' species, which species 2 indicates the species with the 'bidentate' feature
+(e.g. carboxylate group oxygens). The atoms i and j given for species 2 should correspond to the atoms
+of the bidentate group. Note that it does not make sense to give two atoms that are not close, nor does it
+make sense to give two atoms that are not rigidly positioned relative to each other (e.g. via a bond
+angle).  The maxdist parameter indicates the largest distance interaction to consider between an atom of 
+species 1 and either of the bidentate atoms on species 2.
+
+Some sites on species 1 must also be defined, and which specify the subunits to consider in the calculation.
+For instance, an O-H group on species could be defined. Needless to say, the two atoms must be bound and
+local to each other.
+
+pdens
+----------------------------
+The molecule type on which the probability density is to be centered must have a set of
+axes defined for it, so that the rest of the molecules in the system can be rotated into
+this local geometric frame, and the probability density formed. To do this, the program
+requires that you provide two atoms which define the vector along which the x-axis lays,
+and two atoms which lay on the y axis (the average position is taken, and the same atom
+can be specified twice if necessary). The origin of the axis system is then taken to be
+the average position of the two atoms given for the x axis, and the y axis is then assumed
+to pass through this point and the centre of the two atoms provided for the y axis. The
+z axis is then calculated from the cross product of these two vectors.
+
+For example, with water you have only one option, really, and that is to use the two
+hydrogen atoms to define the x vector, and the oxygen to define y. So, if your water
+molecule atoms were arranged ‘H’, ‘O’, ‘H’, you would use the ‘-axis’ switch as follows:
+ 
+–axis 1 1 3 2 2
+
+rdf
+----------------------------
+Calculates the centre-of-mass radial distribution functions by default. However this can
+be changed by using the -compair option, with which a pair of atoms IDs can be specified
+for each species. If given, the average position of these two atoms used in the
+calculation instead.
+
 sq
 ----------------------------
 sq requires that a file called 'lengths.dat' *must* be present, and is used to provide
@@ -152,22 +190,4 @@ be 'X' which indicates a scattering length of zero should be used for this atom 
 The mappings are important since the number and names of the (optional) partial S(Q)
 output files (requested with the -partials switch) depends on the number and names of
 'remapped' names (second column) in 'lengths.dat'. All names are case-sensitive.
-
-pdens
-----------------------------
-The molecule type on which the probability density is to be centered must have a set of
-axes defined for it, so that the rest of the molecules in the system can be rotated into
-this local geometric frame, and the probability density formed. To do this, the program
-requires that you provide two atoms which define the vector along which the x-axis lays,
-and two atoms which lay on the y axis (the average position is taken, and the same atom
-can be specified twice if necessary). The origin of the axis system is then taken to be
-the average position of the two atoms given for the x axis, and the y axis is then assumed
-to pass through this point and the centre of the two atoms provided for the y axis. The
-z axis is then calculated from the cross product of these two vectors.
-
-For example, with water you have only one option, really, and that is to use the two
-hydrogen atoms to define the x vector, and the oxygen to define y. So, if your water
-molecule atoms were arranged ‘H’, ‘O’, ‘H’, you would use the ‘-axis’ switch as follows:
- 
-–axis 1 1 3 2 2
 
