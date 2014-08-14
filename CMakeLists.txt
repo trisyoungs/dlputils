@@ -47,7 +47,7 @@ foreach (p ${MODULES})
 endforeach (p)
 
 # setup binary builds
-set (PROGRAMS "dlp2xyzf" "catdlp" "dlp2dlp" "addheader" "editconfig" "filterdlp" "his2config" "his2xyzs" "dlp2dlpflipz" "dlp2dlpshift" "dlpreorder" "chunkdlp" "xyz2his" "cdf" "dist2" "rdf" "rdfsum" "rdfaa" "rdfaainter" "rdfss" "zdens" "acfcat" "acfprep" "acfsum" "angle" "cagecor2" "cn" "counthb" "dlpgeom" "getcell" "intertorsion" "intratorsion" "lifehb" "moldist" "msd" "msd2" "vac" "vac2" "bident" "bident2" "bident2anal" "bident3" "bident4" "cluster" "cryscomp" "dahist" "legendre" "zangle" "glucanal" "glucgeom" "gluchb" "gluchbeach" "glucsphere" "pdens" "pdensint" "pdensgauss" "pdensmirror" "pdenstrim" "avgconfig" "dlpsize" "genlb" "gengg" "pairs" "probedlp")
+set (PROGRAMS "dlp2xyzf" "catdlp" "dlp2dlp" "addheader" "editconfig" "filterdlp" "his2config" "his2xyzs" "dlp2dlpflipz" "dlp2dlpshift" "dlpreorder" "chunkdlp" "xyz2his" "cdf" "dist2" "rdf" "rdfsum" "rdfaa" "rdfaainter" "rdfss" "zdens" "acfcat" "acfprep" "acfsum" "angle" "cagecor2" "cn" "counthb" "dlpgeom" "getcell" "intertorsion" "intratorsion" "intratorsion2" "lifehb" "moldist" "msd" "msd2" "vac" "vac2" "bident" "bident2" "bident2anal" "bident3" "bident4" "cluster" "cryscomp" "dahist" "legendre" "zangle" "glucanal" "glucgeom" "gluchb" "gluchbeach" "glucsphere" "pdens" "pdensint" "pdensgauss" "pdensmirror" "pdenstrim" "avgconfig" "dlpsize" "genlb" "gengg" "pairs" "probedlp")
 foreach (p ${PROGRAMS})
   add_executable (${p} "${p}.f90")
   target_link_libraries(${p} "dlprw" "utility" "parse")
