@@ -1,6 +1,6 @@
 bin_PROGRAMS = dlp2xyzf catdlp dlp2dlp addheader editconfig filterdlp his2config his2xyzs dlp2dlpflipz dlp2dlpshift dlpreorder chunkdlp xyz2his
 bin_PROGRAMS += cdf dist2 rdf rdfsum rdfaa rdfaainter rdfss zdens
-bin_PROGRAMS += acfcat acfprep acfsum angle cagecor2 cn counthb dlpgeom getcell intertorsion intratorsion lifehb moldist msd msd2 vac vac2
+bin_PROGRAMS += acfcat acfprep acfsum angle cagecor2 cn counthb dlpgeom getcell intertorsion intratorsion intratorsion2 lifehb moldist msd msd2 vac vac2
 bin_PROGRAMS += bident bident2 bident2anal bident3 bident4 cluster cryscomp dahist legendre zangle
 bin_PROGRAMS += glucanal glucgeom gluchb gluchbeach glucsphere
 bin_PROGRAMS += pdens pdensint pdensmirror pdenstrim pdensgauss
@@ -67,6 +67,7 @@ dlpgeom_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} dlpgeom.f90
 getcell_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} getcell.f90
 intertorsion_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} intertorsion.f90
 intratorsion_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} intratorsion.f90
+intratorsion2_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} intratorsion2.f90
 lifehb_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} lifehb.f90
 moldist_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} moldist.f90
 msd_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} msd.f90

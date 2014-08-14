@@ -84,6 +84,7 @@ cryscomp	Compare a reference structure (e.g. a crystal) with a HISTORY trajector
 dlpgeom		Determine average geometric criteria (i.e. bonds, angles, torsions) from a history or CONFIG
 intertorsion	Calculate torsion histogram for torsion angle defined over the atoms of two species
 intratorsion	Calculate torsion histogram for torsion angle defined in one species
+intratorsion2	Calculate torsion-torsion correlation map for two intramolecular torsions on one species
 pairs2		Outputs coordinates of pairs of molecules from a given species which are within some distance of each other
 
 [Correlation Functions]
