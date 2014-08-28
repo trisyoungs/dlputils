@@ -26,7 +26,7 @@
 	      do m=1,9
                 n = n + 1
 	        if (n.GT.nargs) stop "Error: Partial cell specification given?"
-	        call getarg(n,temp); read(temp, "(f20.14)") cell(n)
+	        call getarg(n,temp); read(temp, "(f20.14)") cell(m)
 	      end do
 	      hascell = .TRUE.
 	      imcon = 3
