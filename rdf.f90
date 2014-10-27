@@ -16,14 +16,15 @@
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
 	character*20 :: temp
 	logical :: altheader = .FALSE., nonorm = .FALSE., zplus = .FALSE., zminus = .FALSE.
-	integer :: n,m,a1,s1,s2,m1,m2,baselen,bin,nframes,success,o,nargs,numadded,framestodo = -1,frameskip = 0,framesdone, compairs(10,2)
+	integer :: n,m,a1,s1,s2,m1,m2,baselen,bin,nframes,success,o,nargs,numadded,framestodo = -1,frameskip = 0,framesdone, compairs(10,2), otherpairs(10,2)
 	integer :: iargc
-	real*8 :: dist,c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz,bdens, integral
+	real*8 :: dist,c1x,c1y,c1z,c2x,c2y,c2z,c3x,c3y,c3z,tx,ty,tz,bdens, integral
 
 	binwidth=0.1   ! In Angstroms
 	compairs = 0
+	otherpairs = 0
 	nargs = iargc()
-	if (nargs.LT.2) stop "Usage : rdf <DLP HISTORYfile> <DLP OUTPUTfile> [-bin width] [-header hisfile] [-frames n] [-nonorm] [-zplus] [-zminus] [-discard n] [-compair sp i j]"
+	if (nargs.LT.2) stop "Usage : rdf <DLP HISTORYfile> <DLP OUTPUTfile> [-bin width] [-header hisfile] [-frames n] [-nonorm] [-zplus] [-zminus] [-discard n] [-compair sp i j] [-otherpair sp i j]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	
@@ -61,6 +62,11 @@
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(s1,1)
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(s1,2)
               write(0,"(A,3I4)") "Using COMpair for species ",s1, compairs(s1,:)
+            case ("-otherpair")
+              n = n + 1; call getarg(n,temp); read(temp,"(I6)") s1
+              n = n + 1; call getarg(n,temp); read(temp,"(I6)") otherpairs(s1,1)
+              n = n + 1; call getarg(n,temp); read(temp,"(I6)") otherpairs(s1,2)
+              write(0,"(A,3I4)") "Using other pair (for surrounding molecules) for species ",s1, otherpairs(s1,:)
 	    case default
 	      write(0,"(a,a)") "Unrecognised command line option:",temp
 	      stop
@@ -107,8 +113,8 @@
 
 	framesdone = framesdone + 1
 
+	! Calculate centres of mass for all molecules
 	call calc_com
-
 	do s1=1,nspecies
 	  ! If compairs were specified, use that instead of COM
 	  if (compairs(s1,1).ne.0) then
@@ -125,22 +131,42 @@
 	      comz(s1,m1) = (c1z+tz)*0.5
 	    end do
 	  end if
-	  do s2=1,nspecies
-	    irdf(s1,s2,1:nbins) = (/ (0,n=1,nbins) /)
-	    do m1=1,s_nmols(s1)     ! Loop over all molecules of species 1...
-	      c1x=comx(s1,m1)
-	      c1y=comy(s1,m1)
-	      c1z=comz(s1,m1)
+	end do
+	
+	irdf = 0
+	do s1=1,nspecies
+
+	  do m1=1,s_nmols(s1)     ! Loop over all molecules of species 1...
+
+	    ! Grab centre-of-mass (or compair) coordinate for central species
+	    c1x=comx(s1,m1)
+	    c1y=comy(s1,m1)
+	    c1z=comz(s1,m1)
+	
+	    do s2=1,nspecies
 	      numadded=0
 	      ! Now loop over all molecules of second species....
 	      do m2=1,s_nmols(s2)
 		! Don't add if same species *and* same molecule
-		if ((m1.eq.m2).and.(s1.eq.s2)) cycle
-		! Grab the centre-of-mass coordinates...
-		c2x=comx(s2,m2)
-		c2y=comy(s2,m2)
-		c2z=comz(s2,m2)
-		! Get the shortest (MIM) distance between the atom pair...
+		if ((s1.eq.s2).and.(m1.eq.m2)) cycle
+		! Grab the other centre coordinates if necessary
+		if (otherpairs(s2,1).ne.0) then
+	          c3x = xpos(s_start(s2)+(m2-1)*s_natoms(s2)+otherpairs(s2,1)-1)
+	          c3y = ypos(s_start(s2)+(m2-1)*s_natoms(s2)+otherpairs(s2,1)-1)
+	          c3z = zpos(s_start(s2)+(m2-1)*s_natoms(s2)+otherpairs(s2,1)-1)
+	          c2x = xpos(s_start(s2)+(m2-1)*s_natoms(s2)+otherpairs(s2,2)-1)
+	          c2y = ypos(s_start(s2)+(m2-1)*s_natoms(s2)+otherpairs(s2,2)-1)
+	          c2z = zpos(s_start(s2)+(m2-1)*s_natoms(s2)+otherpairs(s2,2)-1)
+	          call pbc(c2x,c2y,c2z,c3x,c3y,c3z,tx,ty,tz)
+	          c2x = (c3x+tx)*0.5
+	          c2y = (c3y+ty)*0.5
+	          c2z = (c3z+tz)*0.5
+		else
+		  c2x=comx(s2,m2)
+		  c2y=comy(s2,m2)
+		  c2z=comz(s2,m2)
+		end if
+		! Get the shortest (MIM) distance between the two points
 		call pbc(c2x,c2y,c2z,c1x,c1y,c1z,tx,ty,tz)
 		! Check zplus or zminus
 		if (zplus.and.(tz.gt.c1z)) cycle
