@@ -22,7 +22,7 @@
 	npairs = 0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : rdf_aa_inter <HIS file> <OUT file> [-sp1 n] [-sp2 n] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-nonorm] [-dump <dist>] [-includeintra]"
+	if (nargs.lt.5) stop "Usage : rdf_aa_inter <HIS file> <OUT file> [-sp1 n] [-sp2 n] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-nonorm] [-dump <dist>] [-includeintra] [-bin width]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	n = 2
@@ -30,6 +30,9 @@
 	  n = n + 1; if (n.GT.nargs) exit
 	  call getarg(n,temp)
 	  select case (temp)
+	    case ("-bin") 
+	      n = n + 1; call getarg(n,temp); read(temp,"(f20.14)") binwidth
+	      write(0,"((A),f9.6)") "Bin width set to ", binwidth
 	    case ("-sp1") 
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp1
 	    case ("-sp2") 

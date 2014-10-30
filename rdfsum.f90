@@ -55,7 +55,7 @@
 
 	! Print out the data
 	do n=1,count
-	  write(6,"(F6.3,3x,F12.8,3x,f12.8)") rdf(n,1),rdf(n,2),rdf(n,3)
+	  write(6,"(F6.3,3x,F12.8,3x,e12.6)") rdf(n,1),rdf(n,2),rdf(n,3)
 	end do
 
 	end program rdfsum
