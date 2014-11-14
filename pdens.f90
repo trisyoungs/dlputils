@@ -7,6 +7,7 @@
 	program pdens2
 	use dlprw; use utility
 	implicit none
+	real*8, parameter :: radcon = 57.29577951d0
 	real*8, allocatable :: pdens(:,:,:,:)
 	real*8, allocatable :: avggeom(:,:,:)		! Average species coordinates
 	real*8, allocatable :: pdensintra(:,:,:,:)	! Intramolecular species distributions
@@ -25,7 +26,9 @@
 	integer :: success,n1,n2,n3
 	integer :: n, nframes, m, o, p, i
 	real*8 :: px, py, pz, mindist, maxdist, dist, tx, ty, tz
+	real*8 :: orientangle(20,3), orientdelta(20,3), angdelta, ax, ay, az
 	integer :: centresp,sp1,m1,sp2,m2,startf,endf,n3dcentres
+	logical :: orientcheck(20,3)
 	integer :: iargc
 
 	write(0,*) "*** pdens"
@@ -33,20 +36,22 @@
 	nargs = iargc()
 	if (nargs.LT.2) then
 	  write(*,"(a)") "Usage: pdens <HIStory file> <OUTput file> [-options]"
-	  write(*,"(a)") "        [-centre sp]            Set species sp to be the central one"
-	  write(*,"(a)") "        [-axis sp x1 x2 y1 y2]  Atoms to use for axis calculation in species sp"
-	  write(*,"(a)") "        [-atom sp i]            Atoms to consider for positions instead of the axis centre"
-	  write(*,"(a)") "        [-grid npoints]         Grid points in each direction for prob. densities (default = 20)"
-	  write(*,"(a)") "        [-delta spacing]        Spacing between grid points (default = 0.5 Angstrom)"
-	  write(*,"(a)") "        [-pgrid npoints]        Grid points in each direction for species densities (default = 50)"
-	  write(*,"(a)") "        [-pdelta spacing]       Spacing between pgrid points (default = 0.15 Angstrom)"
-	  write(*,"(a)") "        [-start frameno]        Trajectory frame to start calculations (default = 1)"
-	  write(*,"(a)") "        [-end frameno]          Trajectory frame to end calculations on (default = last)"
-	  write(*,"(a)") "        [-molmap <file>]        Formatted file (I5,1X,n(I2,1x) of frame,mols to use of sp1"
-	  write(*,"(a)") "        [-nopdens,-nointra]     Prohibit parts of the calculation"
-	  write(*,"(a)") "        [-mindist r]            Minimum separation allowed between molecules (default = 0.0)"
-	  write(*,"(a)") "        [-maxdist r]            Maximum separation allowed between molecules (default = 10000.0)"
-	  write(*,"(a)") "        [-header file]          Use specified file to get header"
+	  write(*,"(a)") "        [-centre sp]               Set species sp to be the central one"
+	  write(*,"(a)") "        [-axis sp x1 x2 y1 y2]     Atoms to use for axis calculation in species sp"
+	  write(*,"(a)") "        [-atom sp i]               Atoms to consider for positions instead of the axis centre"
+	  write(*,"(a)") "        [-grid npoints]            Grid points in each direction for prob. densities (default = 20)"
+	  write(*,"(a)") "        [-delta spacing]           Spacing between grid points (default = 0.5 Angstrom)"
+	  write(*,"(a)") "        [-pgrid npoints]           Grid points in each direction for species densities (default = 50)"
+	  write(*,"(a)") "        [-pdelta spacing]          Spacing between pgrid points (default = 0.15 Angstrom)"
+	  write(*,"(a)") "        [-start frameno]           Trajectory frame to start calculations (default = 1)"
+	  write(*,"(a)") "        [-end frameno]             Trajectory frame to end calculations on (default = last)"
+	  write(*,"(a)") "        [-molmap <file>]           Formatted file (I5,1X,n(I2,1x) of frame,mols to use of sp1"
+	  write(*,"(a)") "        [-nopdens,-nointra]        Prohibit parts of the calculation"
+	  write(*,"(a)") "        [-mindist r]               Minimum separation allowed between molecules (default = 0.0)"
+	  write(*,"(a)") "        [-maxdist r]               Maximum separation allowed between molecules (default = 10000.0)"
+	  write(*,"(a)") "        [-header file]             Use specified file to get header"
+	  write(*,"(a)") "        [-orient sp axis angle delta]  Specify a restriction in the angular orientation of the second &
+		& molecule (-delta for symmetry about 90deg)"
 	  stop
 	else
 	  call getarg(1,hisfile)
@@ -88,6 +93,9 @@
 	n3dcentres = 0
 	spatoms = 0
 	nspatoms = 0
+	orientcheck = .FALSE.
+	orientangle = 0.0
+	orientdelta = 0.0
 
 	n = 2
 	do
@@ -159,6 +167,14 @@
               n = n + 1; call getarg(n,altheaderfile)
               write(0,"(A)") "Alternative header file supplied."
               altheader = .TRUE.
+	    case ("-orient")
+	      n = n + 1; call getarg(n,temp); read(temp,"(i10)") sp1
+	      n = n + 1; call getarg(n,temp); read(temp,"(i10)") i
+	      n = n + 1; call getarg(n,temp); read(temp,"(f20.14)") orientangle(sp1,i)
+	      n = n + 1; call getarg(n,temp); read(temp,"(f20.14)") orientdelta(sp1,i)
+	      write(0,"(A,i2,a,i1,a,f10.4,a,f10.4,a)") "Only molecules of sp ",sp1," with axis ", i, " angle delta of ", &
+		& orientdelta(sp1,i), " degrees about ", orientangle(sp1,i), " will be binned"
+	      orientcheck(sp1,i) = .TRUE.
 	    case default
 	      write(0,*) "Unrecognised command line option : ",temp
 	      stop
@@ -169,12 +185,14 @@
 	write(15,"(A,A)") "Input file: ",hisfile
 	write(15,"(A,I3)") "Molecular species in file : ",nspecies
 	do sp1=1,nspecies
-	  ! Check that molecules have had their axes defined
+	  ! Check that the necessary molecules have had their axes defined
 	  if (axisdefined(sp1)) then
 	    write(15,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Axis for species ",sp1," calculated from : X=",aa(sp1,1),"->", &
 	      & aa(sp1,2),", Y=0.5X->0.5(",aa(sp1,3),"->",aa(sp1,4),")"
 	  else if (sp1.eq.centresp) then
 	    stop "A proper set of axes must be defined for the central species."
+	  else if (orientcheck(sp1,1).or.orientcheck(sp1,2).or.orientcheck(sp1,3)) then
+	    stop "Axes must be defined on any species whose orientation is to be considered."
 	  end if
 	end do
 	write(15,"(A,I4)") "Grid (intermolecular) points in each XYZ = ",grid
@@ -291,6 +309,36 @@
 		dist = sqrt(tx*tx + ty*ty + tz*tz)
 		if (dist.lt.mindist) cycle
 		if (dist.gt.maxdist) cycle
+
+		! Check X-axis orientation (if requested)
+		if (orientcheck(sp2,1)) then
+		  ! Take dot product of X-axis on sp2 with that of the central molecule, and calculate the angle delta
+		  ax = axisx(sp2,m2,1)*axisx(sp1,m1,1) + axisx(sp2,m2,2)*axisx(sp1,m1,2) + axisx(sp2,m2,3)*axisx(sp1,m1,3)
+		  angdelta = acos(ax) * radcon
+		  ! If delta is negative, map delta onto +/-90
+		  if ((orientdelta(sp2,1).lt.0.0).and.(angdelta.gt.90.0)) angdelta = angdelta - 180.0
+		  if (dabs(angdelta-orientangle(sp2,1)).gt.dabs(orientdelta(sp2,1))) cycle
+		end if
+
+		! Check Y-axis orientation (if requested)
+		if (orientcheck(sp2,2)) then
+		  ! Take dot product of Y-axis on sp2 with that of the central molecule, and calculate the angle delta
+		  ay = axisy(sp2,m2,1)*axisy(sp1,m1,1) + axisy(sp2,m2,2)*axisy(sp1,m1,2) + axisy(sp2,m2,3)*axisy(sp1,m1,3)
+		  angdelta = acos(ay) * radcon
+		  ! If delta is negative, map delta onto +/-90
+		  if ((orientdelta(sp2,2).lt.0.0).and.(angdelta.gt.90.0)) angdelta = angdelta - 180.0
+		  if (dabs(angdelta-orientangle(sp2,2)).gt.dabs(orientdelta(sp2,2))) cycle
+		end if
+
+		! Check Z-axis orientation (if requested)
+		if (orientcheck(sp2,3)) then
+		  ! Take dot product of Z-axis on sp2 with that of the central molecule, and calculate the angle delta
+		  az = axisz(sp2,m2,1)*axisz(sp1,m1,1) + axisz(sp2,m2,2)*axisz(sp1,m1,2) + axisz(sp2,m2,3)*axisz(sp1,m1,3)
+		  angdelta = acos(az) * radcon
+		  ! If delta is negative, map delta onto +/-90
+		  if ((orientdelta(sp2,3).lt.0.0).and.(angdelta.gt.90.0)) angdelta = angdelta - 180.0
+		  if (dabs(angdelta-orientangle(sp2,3)).gt.dabs(orientdelta(sp2,3))) cycle
+		end if
 
 		! Calculate integer position in grid
 		n1=NINT(tx/delta)
@@ -438,14 +486,14 @@
 801	write(0,"(A,I1)") " Central species = ",centresp
 	do sp1=1,nspecies
 	  write(0,"(A,I1,A,A)") " Species ",sp1,", ",s_name(sp1)
-	  write(0,"(A12,I9,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
-	  write(0,"(A12,I9)") "Found : ",nfound(sp1)
-	  write(0,"(A12,I9,A)") "Caught : ",ncaught(sp1)," (in grid)"
+	  write(0,"(A12,I12,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
+	  write(0,"(A12,I12)") "Found : ",nfound(sp1)
+	  write(0,"(A12,I12,A)") "Caught : ",ncaught(sp1)," (in grid)"
 	  if (sp1.eq.centresp) write(0,"(A12,I9)") "Selected : ",n3dcentres
 	  write(15,"(A,I1,A,A)") " Species ",sp1,", ",s_name(sp1)
-	  write(15,"(A12,I9,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
-	  write(15,"(A12,I9)") "Found : ",nfound(sp1)
-	  write(15,"(A12,I9,A)") "Caught : ",ncaught(sp1)," (in grid)"
+	  write(15,"(A12,I12,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
+	  write(15,"(A12,I12)") "Found : ",nfound(sp1)
+	  write(15,"(A12,I12,A)") "Caught : ",ncaught(sp1)," (in grid)"
 	  if (sp1.eq.centresp) write(15,"(A12,I9)") "Selected : ",n3dcentres
 	end do
 	write(0,"(3(A,I3),A,F4.1,A)") "Grid = ",(grid*2+1),"x",(grid*2+1),"x", &
