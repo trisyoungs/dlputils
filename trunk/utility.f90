@@ -4,10 +4,10 @@
 	  ! Centre-of-mass arrays
 	  real*8, allocatable :: comx(:,:),comy(:,:),comz(:,:)
 	  ! Axis Arrays
-	  integer, allocatable :: aa(:,:)			! Axis atoms
-	  logical, allocatable :: axisdefined(:), axisusecom(:)
-	  real*8, allocatable :: axisx(:,:,:), axisy(:,:,:), axisz(:,:,:)   ! Axis point coords
-	  real*8, allocatable :: axisox(:,:), axisoy(:,:), axisoz(:,:)	! Axis origin
+	  integer, allocatable :: axesAatoms(:,:), axesBatoms(:,:)
+	  logical, allocatable :: axesAdefined(:), axesBdefined(:)
+	  real*8, allocatable :: axesA(:,:,:), axesB(:,:,:)
+	  real*8, allocatable :: axesAorigin(:,:,:), axesBorigin(:,:,:)
 	  logical :: com_alloc = .false., axis_alloc = .false.
 	  ! Reciprocal cell
 	  real*8 :: rcell(9), celldet
@@ -208,109 +208,115 @@
 	has_icell = .true.
 	end subroutine calc_icell
 
-	subroutine genaxis
-	use dlprw;
+	subroutine calculate_axes(aa, axes, origin)
+	use dlprw
+	implicit none
+	integer, intent(in) :: aa(4)
+	real*8, intent(out) :: axes(9), origin(3)
+	real*8 :: dp, tx, ty, tz, vx, vy, vz, xmag, xmagsq, ymag
+	! 1) Determine the X axis of the molecule
+	!    -- Get the vector between atoms 1 and 2...
+	call pbc(xpos(aa(2)), ypos(aa(2)), zpos(aa(2)), xpos(aa(1)), ypos(aa(1)), zpos(aa(1)), tx, ty, tz)
+	call getvector(tx,ty,tz, xpos(aa(1)), ypos(aa(1)), zpos(aa(1)), vx, vy, vz)
+	xmag = SQRT(vx**2 + vy**2 + vz**2)     ! Magnitude of vector
+	xmagsq = xmag * xmag
+	axes(1) = vx		! Store the un-normalised components of the x-axis vector
+	axes(2) = vy
+	axes(3) = vz
+	! 2) Set the origin of the axis system - halfway along the x-axis vector
+	origin(1) = xpos(aa(1)) + 0.5*vx		! N.B. *NOT* the normalised axis, but the actual distance i->j
+	origin(2) = ypos(aa(1)) + 0.5*vy
+	origin(3) = zpos(aa(1)) + 0.5*vz
+	! 3) Determine the Y axis of the molecule
+	!    -- Get the vector between midway along the x-axis vector and midway between
+	!	the positions of aa 3 and 4.
+	call pbc(xpos(aa(3)), ypos(aa(3)), zpos(aa(3)), origin(1), origin(2), origin(3), tx, ty, tz)
+	call pbc(xpos(aa(4)), ypos(aa(4)), zpos(aa(4)), origin(1), origin(2), origin(3), vx, vy, vz)	! Use v_xyz temporarily
+	tx = 0.5*(tx+vx)
+	ty = 0.5*(ty+vy)
+	tz = 0.5*(tz+vz)
+	call getvector(origin(1),origin(2),origin(3),tx,ty,tz,vx,vy,vz)
+	axes(4) = vx   ! Store the un-normalised components of the y-axis vector
+	axes(5) = vy
+	axes(6) = vz
+	! 3a) Orthogonalise the y vector w.r.t. the x vector via Gram-Schmidt
+	dp = axes(1)*axes(4) + axes(2)*axes(5) + axes(3)*axes(6)
+	tx = axes(4) - (dp / xmagsq)*axes(1)
+	ty = axes(5) - (dp / xmagsq)*axes(2)
+	tz = axes(6) - (dp / xmagsq)*axes(3)
+	axes(4) = tx
+	axes(5) = ty
+	axes(6) = tz
+	ymag=SQRT(tx**2 + ty**2 + tz**2)     ! Magnitude of vector
+	! 3b) Normalise the y and x vectors
+	axes(1:3) = axes(1:3) / xmag
+	axes(4:6) = axes(4:6) / ymag
+	! 4) Calculate the z axis from the x and y axes....
+	axes(7) = axes(2)*axes(6) - axes(3)*axes(5)
+	axes(8) = axes(3)*axes(4) - axes(1)*axes(6)
+	axes(9) = axes(1)*axes(5) - axes(2)*axes(4)
+	!write(88,*) "O: ",axisox(sp,n),axisoy(sp,n),axisoz(sp,n)
+	!write(88,*) "X: ",axisx(sp,n,1),axisx(sp,n,2),axisx(sp,n,3)
+	!write(88,*) "Y: ",axisy(sp,n,1),axisy(sp,n,2),axisy(sp,n,3)
+	!write(88,*) "Z: ",axisz(sp,n,1),axisz(sp,n,2),axisz(sp,n,3)
+	end subroutine calculate_axes
+
+	subroutine genaxes
+	use dlprw
 	implicit none
 	! Subroutine to calculate individual molecular axes of species molecules
 	real*8 :: vx,vy,vz,tx,ty,tz
 	real*8 :: xmag, ymag, dp
-	integer :: sp,o,n
-	if (.NOT.axis_alloc) call alloc_axis
+	integer :: sp,m,i
+	if (.NOT.axis_alloc) stop "Axes not allocated, but genaxes() was called."
 	do sp=1,nspecies
 	  ! Calculate local axes if we can
-	  if (axisdefined(sp).and.(s_natoms(sp).gt.2).and.(aa(sp,1).ne.aa(sp,2))) then
-	    o=s_start(sp)
-	    do n=1,s_nmols(sp)
-	      ! 1) Determine the X axis of the molecule
-	      !    -- Get the vector between atoms 1 and 2...
-	      call pbc(xpos(o+aa(sp,2)-1),ypos(o+aa(sp,2)-1),zpos(o+aa(sp,2)-1), &
-	      & xpos(o+aa(sp,1)-1),ypos(o+aa(sp,1)-1),zpos(o+aa(sp,1)-1),tx,ty,tz)
-	      call getvector(tx,ty,tz,xpos(o+aa(sp,1)-1),ypos(o+aa(sp,1)-1),zpos(o+aa(sp,1)-1),vx,vy,vz)
-	      xmag=SQRT(vx**2 + vy**2 + vz**2)     ! Magnitude of vector
-	      axisx(sp,n,1)=vx		! Store the un-normalised components of the x-axis vector
-	      axisx(sp,n,2)=vy
-	      axisx(sp,n,3)=vz
-	      ! 2) Set the origin of the axis system - halfway along the x-axis vector
-	      axisox(sp,n)=xpos(o+aa(sp,1)-1) + 0.5*vx		! N.B. *NOT* the normalised axis, but the actual distance i->j
-	      axisoy(sp,n)=ypos(o+aa(sp,1)-1) + 0.5*vy
-	      axisoz(sp,n)=zpos(o+aa(sp,1)-1) + 0.5*vz
-	      ! 3) Determine the Y axis of the molecule
-	      !    -- Get the vector between midway along the x-axis vector and midway between
-	      !	the positions of aa 3 and 4.
-	      call pbc(xpos(o+aa(sp,3)-1),ypos(o+aa(sp,3)-1),zpos(o+aa(sp,3)-1), &
-	      & axisox(sp,n),axisoy(sp,n),axisoz(sp,n),tx,ty,tz)
-	      call pbc(xpos(o+aa(sp,4)-1),ypos(o+aa(sp,4)-1),zpos(o+aa(sp,4)-1), &
-	      & axisox(sp,n),axisoy(sp,n),axisoz(sp,n),vx,vy,vz)	! Use v_xyz temporarily
-	      tx = 0.5*(tx+vx)
-	      ty = 0.5*(ty+vy)
-	      tz = 0.5*(tz+vz)
-	      call getvector(axisox(sp,n),axisoy(sp,n),axisoz(sp,n),tx,ty,tz,vx,vy,vz)
-	      axisy(sp,n,1)=vx   ! Store the un-normalised components of the y-axis vector
-	      axisy(sp,n,2)=vy
-	      axisy(sp,n,3)=vz
-	      ! 3a) Orthogonalise the y vector w.r.t. the x vector via Gram-Schmidt
-	      dp = axisx(sp,n,1)*axisy(sp,n,1) + axisx(sp,n,2)*axisy(sp,n,2) + axisx(sp,n,3)*axisy(sp,n,3)
-	      tx = axisy(sp,n,1) - (dp / xmag**2)*axisx(sp,n,1)
-	      ty = axisy(sp,n,2) - (dp / xmag**2)*axisx(sp,n,2)
-	      tz = axisy(sp,n,3) - (dp / xmag**2)*axisx(sp,n,3)
-	      axisy(sp,n,1) = tx
-	      axisy(sp,n,2) = ty
-	      axisy(sp,n,3) = tz
-	      ymag=SQRT(tx**2 + ty**2 + tz**2)     ! Magnitude of vector
-	      ! 3b) Normalise the y and x vectors
-	      axisx(sp,n,:) = axisx(sp,n,:) / xmag
-	      axisy(sp,n,:) = axisy(sp,n,:) / ymag
-	      ! 4) Calculate the z axis from the x and y axes....
-	      axisz(sp,n,1)=axisx(sp,n,2)*axisy(sp,n,3) - axisx(sp,n,3)*axisy(sp,n,2)
-	      axisz(sp,n,2)=axisx(sp,n,3)*axisy(sp,n,1) - axisx(sp,n,1)*axisy(sp,n,3)
-	      axisz(sp,n,3)=axisx(sp,n,1)*axisy(sp,n,2) - axisx(sp,n,2)*axisy(sp,n,1)
-	      ! Increase the atom count for the next molecule....
-	      o=o+s_natoms(sp)
-	      !write(88,*) "O: ",axisox(sp,n),axisoy(sp,n),axisoz(sp,n)
-	      !write(88,*) "X: ",axisx(sp,n,1),axisx(sp,n,2),axisx(sp,n,3)
-	      !write(88,*) "Y: ",axisy(sp,n,1),axisy(sp,n,2),axisy(sp,n,3)
-	      !write(88,*) "Z: ",axisz(sp,n,1),axisz(sp,n,2),axisz(sp,n,3)
+	  ! -- Axes A
+	  if (axesAdefined(sp).and.(s_natoms(sp).gt.2)) then
+	    i = s_start(sp) - 1
+	    do m=1,s_nmols(sp)
+	      call calculate_axes(axesAatoms(sp,:)+i, axesA(sp,m,:), axesAorigin(sp,m,:))
+	      i = i + s_natoms(sp)
 	    end do
 	  else
-	    ! No axis definition, or not enough atoms, or two identical x-axis IDs supplied
-	    ! Set the axes to be in standard orientation
-	    if ((.not.axisdefined(sp)).and.(axisusecom(sp))) call calc_spcom(sp)
-	    o=s_start(sp)
-	    do n=1,s_nmols(sp)
-	      axisx(sp,n,:) = (/ 1.0,0.0,0.0 /)
-	      axisy(sp,n,:) = (/ 0.0,1.0,0.0 /)
-	      axisz(sp,n,:) = (/ 0.0,0.0,1.0 /)
-	      if (axisusecom(sp)) then
-	        axisox(sp,n)=comx(sp,n)
-	        axisoy(sp,n)=comy(sp,n)
-	        axisoz(sp,n)=comz(sp,n)
-	      else
-	        axisox(sp,n)=xpos(o+aa(sp,1)-1)
-	        axisoy(sp,n)=ypos(o+aa(sp,1)-1)
-	        axisoz(sp,n)=zpos(o+aa(sp,1)-1)
-	      end if
-	      o=o+s_natoms(sp)
+	    ! No axis definition - Set the axes to be in standard orientation
+	    call calc_spcom(sp)
+	    do m=1,s_nmols(sp)
+	      axesA(sp,m,1:3) = (/ 1.0,0.0,0.0 /)
+	      axesA(sp,m,4:6) = (/ 0.0,1.0,0.0 /)
+	      axesA(sp,m,7:9) = (/ 0.0,0.0,1.0 /)
+	      axesAorigin(sp,m,1) = comx(sp,m)
+	      axesAorigin(sp,m,2) = comy(sp,m)
+	      axesAorigin(sp,m,3) = comz(sp,m)
+	    end do
+	  end if
+	  ! -- Axes B
+	  if (axesBdefined(sp).and.(s_natoms(sp).gt.2)) then
+	    i = s_start(sp) - 1
+	    do m=1,s_nmols(sp)
+	      call calculate_axes(axesBatoms(sp,:)+i, axesB(sp,m,:), axesBorigin(sp,m,:))
+	      i = i + s_natoms(sp)
 	    end do
 	  end if
 	end do
-	end subroutine genaxis
+	end subroutine genaxes
 
 	subroutine alloc_axis()
 	use dlprw; implicit none
 	integer :: status
 	axis_alloc = .true.
-	allocate(axisx(nspecies,maxmols,3),stat=status); if (status.GT.0) stop "Allocation error for axisx()"
-	allocate(axisy(nspecies,maxmols,3),stat=status); if (status.GT.0) stop "Allocation error for axisy()"
-	allocate(axisz(nspecies,maxmols,3),stat=status); if (status.GT.0) stop "Allocation error for axisz()"
-	allocate(axisox(nspecies,maxmols),stat=status); if (status.GT.0) stop "Allocation error for axisox()"
-	allocate(axisoy(nspecies,maxmols),stat=status); if (status.GT.0) stop "Allocation error for axisoy()"
-	allocate(axisoz(nspecies,maxmols),stat=status); if (status.GT.0) stop "Allocation error for axisoz()"
-	allocate(aa(nspecies,4))
-	allocate(axisdefined(nspecies))
-	allocate(axisusecom(nspecies))
-	axisdefined = .false.
-	axisusecom = .true.
-	aa = 0
+	allocate(axesA(nspecies,maxmols,9),stat=status); if (status.GT.0) stop "Allocation error for axisA()"
+	allocate(axesAorigin(nspecies,maxmols,3),stat=status); if (status.GT.0) stop "Allocation error for axisAorigin()"
+	allocate(axesAatoms(nspecies,4))
+	allocate(axesAdefined(nspecies))
+	allocate(axesB(nspecies,maxmols,9),stat=status); if (status.GT.0) stop "Allocation error for axisB()"
+	allocate(axesBorigin(nspecies,maxmols,3),stat=status); if (status.GT.0) stop "Allocation error for axisBorigin()"
+	allocate(axesBatoms(nspecies,4))
+	allocate(axesBdefined(nspecies))
+	axesAdefined = .false.
+	axesBdefined = .false.
+	axesAatoms = 0
+	axesBatoms = 0
 	end subroutine alloc_axis
 
 	subroutine getvector(x1,y1,z1,x2,y2,z2,x3,y3,z3)

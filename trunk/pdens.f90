@@ -4,18 +4,18 @@
 !	Updated version - rotates all molecules about target molecule first, then performs minimum
 !	image before binning
 
-	program pdens2
+	program calcpdens
 	use dlprw; use utility
 	implicit none
+	integer, parameter :: MAXSITES = 20, MAXSPECIES = 5
 	real*8, parameter :: radcon = 57.29577951d0
 	real*8, allocatable :: pdens(:,:,:,:)
 	real*8, allocatable :: avggeom(:,:,:)		! Average species coordinates
 	real*8, allocatable :: pdensintra(:,:,:,:)	! Intramolecular species distributions
-	real*8, allocatable :: rrot(:,:)		! Rotated coordinates of axis centres
-	integer, allocatable :: spatoms(:,:), nspatoms(:)! Atoms to use for positions instead of COM
 	integer, allocatable :: nfound(:), ncaught(:)	! Total and 'binned' mols
 	integer, allocatable :: molflags(:)		! Per-frame map of sp1 mols to include in averaging
 	integer, allocatable :: spexp(:)		! Expected species numbers
+	integer :: atomSites(MAXSPECIES,0:MAXSITES)	! Atoms for surrounding species centres (if any)
 	integer :: grid = 20, pgrid = 50		! Grid in each direction for 3ddist and pdens
 	real*8 :: delta = 0.5, pdelta = 0.15		! Default grid spacings
 	logical :: molmap = .FALSE.			! Whether we're using a file of mol flags
@@ -23,48 +23,49 @@
 	integer :: nmapframes, baselen,nargs,nframesused
 	character*80 :: hisfile,outfile,basename,resfile,temp,flagfile,altheaderfile
 	logical :: altheader = .FALSE.
-	integer :: success,n1,n2,n3
+	integer :: success
 	integer :: n, nframes, m, o, p, i
-	real*8 :: px, py, pz, mindist, maxdist, dist, tx, ty, tz
-	real*8 :: orientangle(20,3), orientdelta(20,3), angdelta, ax, ay, az
-	integer :: centresp,sp1,m1,sp2,m2,startf,endf,n3dcentres
-	logical :: orientcheck(20,3)
+	real*8 :: px, py, pz, mindistsq, maxdistsq, distsq, tx, ty, tz
+	real*8 :: orientangle(20,3), orientdelta(20,3), angdelta, ax
+	integer :: centresp,sp1,m1,sp2,m2,startf,endf,n3dcentres,nx,ny,nz
+	logical :: orientcheck(20,3), failed, getbin
 	integer :: iargc
 
 	write(0,*) "*** pdens"
 
 	nargs = iargc()
-	if (nargs.LT.2) then
-	  write(*,"(a)") "Usage: pdens <HIStory file> <OUTput file> [-options]"
-	  write(*,"(a)") "        [-centre sp]               Set species sp to be the central one"
+	if (nargs.lt.3) then
+	  write(*,"(a)") "Usage: pdens <HIStory file> <OUTput file> <centresp> [-options]"
 	  write(*,"(a)") "        [-axis sp x1 x2 y1 y2]     Atoms to use for axis calculation in species sp"
-	  write(*,"(a)") "        [-atom sp i]               Atoms to consider for positions instead of the axis centre"
-	  write(*,"(a)") "        [-grid npoints]            Grid points in each direction for prob. densities (default = 20)"
+	  write(*,"(a)") "        [-atom sp i]               Add atom i in species sp as a specific atom to use as other point"
 	  write(*,"(a)") "        [-delta spacing]           Spacing between grid points (default = 0.5 Angstrom)"
-	  write(*,"(a)") "        [-pgrid npoints]           Grid points in each direction for species densities (default = 50)"
-	  write(*,"(a)") "        [-pdelta spacing]          Spacing between pgrid points (default = 0.15 Angstrom)"
-	  write(*,"(a)") "        [-start frameno]           Trajectory frame to start calculations (default = 1)"
 	  write(*,"(a)") "        [-end frameno]             Trajectory frame to end calculations on (default = last)"
-	  write(*,"(a)") "        [-molmap <file>]           Formatted file (I5,1X,n(I2,1x) of frame,mols to use of sp1"
-	  write(*,"(a)") "        [-nopdens,-nointra]        Prohibit parts of the calculation"
-	  write(*,"(a)") "        [-mindist r]               Minimum separation allowed between molecules (default = 0.0)"
-	  write(*,"(a)") "        [-maxdist r]               Maximum separation allowed between molecules (default = 10000.0)"
+	  write(*,"(a)") "        [-grid npoints]            Grid points in each direction for prob. densities (default = 20)"
 	  write(*,"(a)") "        [-header file]             Use specified file to get header"
+	  write(*,"(a)") "        [-maxdist r]               Maximum separation allowed between molecules (default = 10000.0)"
+	  write(*,"(a)") "        [-mindist r]               Minimum separation allowed between molecules (default = 0.0)"
+	  write(*,"(a)") "        [-molmap <file>]           Formatted file (I5,1X,n(I2,1x) of frame,mols to use of sp1"
+	  write(*,"(a)") "        [-nointer]                 Prohibit calculation of the intermolecular probability densities"
+	  write(*,"(a)") "        [-nointra]                 Prohibit calculation of the intramolecular probability density"
 	  write(*,"(a)") "        [-orient sp axis angle delta]  Specify a restriction in the angular orientation of the second &
-		& molecule (-delta for symmetry about 90deg)"
+		& molecule (use negative delta for symmetry about 90deg)"
+	  write(*,"(a)") "        [-otheraxis sp x1 x2 y1 y2] Alternative axis definition, for surrounding &
+		& molecule position and orientation"
+	  write(*,"(a)") "        [-pdelta spacing]          Spacing between pgrid points (default = 0.15 Angstrom)"
+	  write(*,"(a)") "        [-pgrid npoints]           Grid points in each direction for species densities (default = 50)"
+	  write(*,"(a)") "        [-start frameno]           Trajectory frame to start calculations (default = 1)"
 	  stop
 	else
 	  call getarg(1,hisfile)
 	  call getarg(2,outfile)
+	  call getarg(3,temp); read (temp,"(i4)") centresp
 	end if
 	n = 10
 	write(0,"(A,A)") "History file : ",hisfile
 	!call openhis(hisfile,n)
 	write(0,"(A,A)") " Output file : ",outfile
 	if (outinfo(outfile,1).eq.-1) goto 798
-
-	! Allocate some arrays: Atoms to consider
-	allocate(spatoms(nspecies,maxatoms), nspatoms(nspecies))
+	write(0,"(A,i3)") "Central species is = ",centresp
 
 	! Ascertain length of basename....
 	baselen=-1
@@ -85,14 +86,13 @@
 
 	! Set some variable defaults before we read in any command-line arguments
 	call alloc_axis()
-	mindist = 0.0
-	maxdist = 10000.0
+	mindistsq = 0.0
+	maxdistsq = 1.0e9
 	centresp = 1
+	atomSites = 0
 	startf = 1
 	endf = 0
 	n3dcentres = 0
-	spatoms = 0
-	nspatoms = 0
 	orientcheck = .FALSE.
 	orientangle = 0.0
 	orientdelta = 0.0
@@ -102,25 +102,21 @@
 	  n = n + 1; if (n.GT.nargs) exit
 	  call getarg(n,temp)
 	  select case (temp)
-	    case ("-atom") 
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp1
-	      nspatoms(sp1) = nspatoms(sp1) + 1
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") spatoms(sp1,nspatoms(sp1))
-	      write(0,"(a,i2,a,i2,a)") "Will consider atom ", spatoms(sp1,nspatoms(sp1)), " in species ",sp1," instead of axis centre"
 	    case ("-axis") 
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp1
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(sp1,1)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(sp1,2)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(sp1,3)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(sp1,4)
-	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp1," calculated from: X=",aa(sp1,1),"->", &
-	        & aa(sp1,2),", Y=0.5X->0.5(r(",aa(sp1,3),")->r(",aa(sp1,4),"))"
-	      axisdefined(sp1) = .true.
-	      if (aa(sp1,1).eq.aa(sp1,2)) then
-		write(0,*) " --- X-axis atom ids are identical - atom will be used as centre but NO axes will be defined."
-	        axisdefined(sp1) = .false.
-		axisusecom(sp1) = .false.
-	      end if
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp1,1)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp1,2)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp1,3)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp1,4)
+	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp1," calculated from: X=",axesAatoms(sp1,1),"->", &
+	        & axesAatoms(sp1,2),", Y=0.5X->0.5(r(",axesAatoms(sp1,3),")->r(",axesAatoms(sp1,4),"))"
+	      axesAdefined(sp1) = .true.
+	    case ("-atom")
+	      n = n + 1; call getarg(n,temp); read(temp,"(I4)") sp1
+	      if (axesBAtoms(sp1,1).ne.0) stop "Definition of sites and otheraxis cannot be used together."
+	      atomSites(sp1,0) = atomSites(sp1,0) + 1
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") atomSites(sp1, atomSites(sp1,0))
+	      write(0,"(A,I3,a,i2)") "Atom ", atomSites(sp1, atomSites(sp1,0)), " added as other site for species ", sp1
 	    case ("-grid")
 	      n = n + 1; call getarg(n,temp); read(temp,"(I4)") grid
 	      write(0,"(A,I4)") "Grid points in each XYZ = ",grid
@@ -133,9 +129,6 @@
 	    case ("-pdelta")
 	      n = n + 1; call getarg(n,temp); read(temp,"(F10.4)") pdelta
 	      write(0,"(A,F6.3)") "PGrid spacing = ",pdelta
-	    case ("-centre")
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") centresp
-	      write(0,"(A,I4)") "Central species is = ",centresp
 	    case ("-start")
 	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") startf
 	      write(0,"(A,I5)") "Starting frame = ",startf
@@ -156,13 +149,15 @@
 	      write(0,"(A,I4)") "Intramolecular probability distributions will not be computed."
 	      write(15,"(A,I4)") "Intramolecular probability distributions will not be computed."
 	    case ("-mindist")
-	      n = n + 1; call getarg(n,temp); read(temp,"(f10.4)") mindist
-	      write(0,"(A,f8.4)") "Minimum separation between molecules = ",mindist
-	      write(15,"(A,f8.4)") "Minimum separation between molecules = ",mindist
+	      n = n + 1; call getarg(n,temp); read(temp,"(f10.4)") mindistsq
+	      write(0,"(A,f8.4)") "Minimum separation between molecules = ",mindistsq
+	      write(15,"(A,f8.4)") "Minimum separation between molecules = ",mindistsq
+	      mindistsq = mindistsq * mindistsq
 	    case ("-maxdist")
-	      n = n + 1; call getarg(n,temp); read(temp,"(f10.4)") maxdist
-	      write(0,"(A,f8.4)") "Maximum separation between molecules = ",maxdist
-	      write(15,"(A,f8.4)") "Maximum separation between molecules = ",maxdist
+	      n = n + 1; call getarg(n,temp); read(temp,"(f10.4)") maxdistsq
+	      write(0,"(A,f8.4)") "Maximum separation between molecules = ",maxdistsq
+	      write(15,"(A,f8.4)") "Maximum separation between molecules = ",maxdistsq
+	      maxdistsq = maxdistsq * maxdistsq
 	    case ("-header")
               n = n + 1; call getarg(n,altheaderfile)
               write(0,"(A)") "Alternative header file supplied."
@@ -175,6 +170,16 @@
 	      write(0,"(A,i2,a,i1,a,f10.4,a,f10.4,a)") "Only molecules of sp ",sp1," with axis ", i, " angle delta of ", &
 		& orientdelta(sp1,i), " degrees about ", orientangle(sp1,i), " will be binned"
 	      orientcheck(sp1,i) = .TRUE.
+	    case ("-otheraxis") 
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp1
+	      if (atomSites(sp1,0).ne.0) stop "Definition of sites and otheraxis cannot be used together."
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesBatoms(sp1,1)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesBatoms(sp1,2)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesBatoms(sp1,3)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesBatoms(sp1,4)
+	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Alternative axes for species ",sp1," calculated from: X=",axesBatoms(sp1,1),"->", &
+	        & axesBatoms(sp1,2),", Y=0.5X->0.5(r(",axesBatoms(sp1,3),")->r(",axesBatoms(sp1,4),"))"
+	      axesBdefined(sp1) = .true.
 	    case default
 	      write(0,*) "Unrecognised command line option : ",temp
 	      stop
@@ -186,9 +191,9 @@
 	write(15,"(A,I3)") "Molecular species in file : ",nspecies
 	do sp1=1,nspecies
 	  ! Check that the necessary molecules have had their axes defined
-	  if (axisdefined(sp1)) then
-	    write(15,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Axis for species ",sp1," calculated from : X=",aa(sp1,1),"->", &
-	      & aa(sp1,2),", Y=0.5X->0.5(",aa(sp1,3),"->",aa(sp1,4),")"
+	  if (axesAdefined(sp1)) then
+	    write(15,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp1," calculated from: X=",axesAatoms(sp1,1),"->", &
+	      & axesAatoms(sp1,2),", Y=0.5X->0.5(r(",axesAatoms(sp1,3),")->r(",axesAatoms(sp1,4),"))"
 	  else if (sp1.eq.centresp) then
 	    stop "A proper set of axes must be defined for the central species."
 	  else if (orientcheck(sp1,1).or.orientcheck(sp1,2).or.orientcheck(sp1,3)) then
@@ -208,8 +213,6 @@
 	allocate(nfound(nspecies))
 	allocate(pdensintra(nspecies,-pgrid:pgrid,-pgrid:pgrid,-pgrid:pgrid))
 	allocate(spexp(nspecies))
-	! Rotated coordinates
-	allocate(rrot(maxmols,3))
 	! Average species etc.
 	allocate(avggeom(nspecies,maxatoms,3))
 	if (molmap) allocate(molflags(s_nmols(centresp)))
@@ -270,7 +273,7 @@
 	nframesused = nframesused + 1
 
 	! Generate all molecular axes
-	call genaxis
+	call genaxes()
 
 	!
 	! Calculate 3D distributions
@@ -284,81 +287,55 @@
 	  end if
 	  n3dcentres = n3dcentres + 1	! Normalisation counter
 	  do sp2=1,nspecies
-	    p = s_start(sp2)
+	    p = s_start(sp2) - 1
 	    do m2=1,s_nmols(sp2)
 
-	      do n=1,max(1,nspatoms(sp2))
+	      ! Don't consider central molecule with itself
+	      if ((sp1.eq.sp2).and.(m1.eq.m2)) cycle
 
-		! Calculate minimum image position of molecule m2 or one of the defined atoms about the central molecules axis centre
-		! If no spatoms are defined, use axis origin
-		if (nspatoms(sp2).eq.0) then
-		  call pbc(axisox(sp2,m2),axisoy(sp2,m2),axisoz(sp2,m2),axisox(sp1,m1),axisoy(sp1,m1),axisoz(sp1,m1),tx,ty,tz)
-		else
-		  i = p + spatoms(sp2,n) - 1
-		  call pbc(xpos(i),ypos(i),zpos(i),axisox(sp1,m1),axisoy(sp1,m1),axisoz(sp1,m1),tx,ty,tz)
-		end if
-
-		px = tx - axisox(sp1,m1)
-		py = ty - axisoy(sp1,m1)
-		pz = tz - axisoz(sp1,m1)
-		tx = px*axisx(sp1,m1,1) + py*axisx(sp1,m1,2) + pz*axisx(sp1,m1,3)
-		ty = px*axisy(sp1,m1,1) + py*axisy(sp1,m1,2) + pz*axisy(sp1,m1,3)
-		tz = px*axisz(sp1,m1,1) + py*axisz(sp1,m1,2) + pz*axisz(sp1,m1,3)
-
-		! Check minimum / maximum separation
-		dist = sqrt(tx*tx + ty*ty + tz*tz)
-		if (dist.lt.mindist) cycle
-		if (dist.gt.maxdist) cycle
-
-		! Check X-axis orientation (if requested)
-		if (orientcheck(sp2,1)) then
-		  ! Take dot product of X-axis on sp2 with that of the central molecule, and calculate the angle delta
-		  ax = axisx(sp2,m2,1)*axisx(sp1,m1,1) + axisx(sp2,m2,2)*axisx(sp1,m1,2) + axisx(sp2,m2,3)*axisx(sp1,m1,3)
-		  angdelta = acos(ax) * radcon
-		  ! If delta is negative, map delta onto +/-90
-		  if ((orientdelta(sp2,1).lt.0.0).and.(angdelta.gt.90.0)) angdelta = angdelta - 180.0
-		  if (dabs(angdelta-orientangle(sp2,1)).gt.dabs(orientdelta(sp2,1))) cycle
-		end if
-
-		! Check Y-axis orientation (if requested)
-		if (orientcheck(sp2,2)) then
-		  ! Take dot product of Y-axis on sp2 with that of the central molecule, and calculate the angle delta
-		  ay = axisy(sp2,m2,1)*axisy(sp1,m1,1) + axisy(sp2,m2,2)*axisy(sp1,m1,2) + axisy(sp2,m2,3)*axisy(sp1,m1,3)
-		  angdelta = acos(ay) * radcon
-		  ! If delta is negative, map delta onto +/-90
-		  if ((orientdelta(sp2,2).lt.0.0).and.(angdelta.gt.90.0)) angdelta = angdelta - 180.0
-		  if (dabs(angdelta-orientangle(sp2,2)).gt.dabs(orientdelta(sp2,2))) cycle
-		end if
-
-		! Check Z-axis orientation (if requested)
-		if (orientcheck(sp2,3)) then
-		  ! Take dot product of Z-axis on sp2 with that of the central molecule, and calculate the angle delta
-		  az = axisz(sp2,m2,1)*axisz(sp1,m1,1) + axisz(sp2,m2,2)*axisz(sp1,m1,2) + axisz(sp2,m2,3)*axisz(sp1,m1,3)
-		  angdelta = acos(az) * radcon
-		  ! If delta is negative, map delta onto +/-90
-		  if ((orientdelta(sp2,3).lt.0.0).and.(angdelta.gt.90.0)) angdelta = angdelta - 180.0
-		  if (dabs(angdelta-orientangle(sp2,3)).gt.dabs(orientdelta(sp2,3))) cycle
-		end if
-
-		! Calculate integer position in grid
-		n1=NINT(tx/delta)
-		n2=NINT(ty/delta)
-		n3=NINT(tz/delta)
-
-		! If any of the n's are over grid, then only increase the counter
-		if (MAX(ABS(n1),MAX(ABS(n2),ABS(n3))).GT.grid) then
-		  nfound(sp2) = nfound(sp2) + 1      ! No position, just count it....
-		else
-		  if ((sp1.eq.sp2).and.(m1.eq.m2)) then
-		  ! Same molecule, so don't add at all
+	      ! Check orientation if it has been specified
+	      failed = .false.
+	      do n=1,3
+	        if (orientcheck(sp2,n)) then
+	          ! Take dot product of X-axis on sp2 with that of the central molecule, and calculate the angle delta
+		  if (axesBdefined(sp2)) then
+		    ax = axesB(sp2,m2,(n-1)*3+1)*axesA(sp1,m1,(n-1)*3+1) + axesB(sp2,m2,(n-1)*3+2)*axesA(sp1,m1,(n-1)*3+2) + axesB(sp2,m2,(n-1)*3+3)*axesA(sp1,m1,(n-1)*3+3)
 		  else
-	          ! Check to make sure the same molecule isn't being consider with itself  XXXXX
-	            pdens(sp2,n1,n2,n3) = pdens(sp2,n1,n2,n3) + 1
-	            nfound(sp2) = nfound(sp2) + 1
-	            ncaught(sp2) = ncaught(sp2) + 1
+		    ax = axesA(sp2,m2,(n-1)*3+1)*axesA(sp1,m1,(n-1)*3+1) + axesA(sp2,m2,(n-1)*3+2)*axesA(sp1,m1,(n-1)*3+2) + axesA(sp2,m2,(n-1)*3+3)*axesA(sp1,m1,(n-1)*3+3)
 		  end if
-	        end if
+	          angdelta = acos(ax) * radcon
+	          ! If delta is negative, map delta onto +/-90
+	          if ((orientdelta(sp2,n).lt.0.0).and.(angdelta.gt.90.0)) angdelta = angdelta - 180.0
+	          if (dabs(angdelta-orientangle(sp2,n)).gt.dabs(orientdelta(sp2,n))) failed = .true.
+		end if
+		if (failed) exit
 	      end do
+	      if (failed) cycle
+
+	      ! Pass position of axesAorigin, or axesBorogin, or individual atomSites, depending on what has been defined
+	      if (axesBdefined(sp2)) then
+		if (getbin(sp1,m1,mindistsq,maxdistsq,axesBorigin(sp2,m2,1),axesBorigin(sp2,m2,2),axesBorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
+		  pdens(sp2,nx,ny,nz) = pdens(sp2,nx,ny,nz) + 1
+		  ncaught(sp2) = ncaught(sp2) + 1
+		end if
+		nfound(sp2) = nfound(sp2) + 1
+	      else if (atomSites(sp2,0).gt.0) then
+		if (getbin(sp1,m1,mindistsq,maxdistsq,axesAorigin(sp2,m2,1),axesAorigin(sp2,m2,2),axesAorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
+		  pdens(sp2,nx,ny,nz) = pdens(sp2,nx,ny,nz) + 1
+		  ncaught(sp2) = ncaught(sp2) + 1
+		end if
+		nfound(sp2) = nfound(sp2) + 1
+	      else
+		do n=1,atomSites(sp2,0)
+		  i = p+atomSites(sp2,n)
+		  if (getbin(sp1,m1,mindistsq,maxdistsq,xpos(i),ypos(i),zpos(i),nx,ny,nz,grid,delta)) then
+		    pdens(sp2,nx,ny,nz) = pdens(sp2,nx,ny,nz) + 1
+		    ncaught(sp2) = ncaught(sp2) + 1
+		  end if
+		  nfound(sp2) = nfound(sp2) + 1
+		end do
+	      end if
+
 	      p=p+s_natoms(sp2)
 	    end do
 	  end do
@@ -378,28 +355,28 @@
 	    end if
 	    do n=1,s_natoms(sp1)
 	      ! PBC the atom
-	      call pbc(xpos(p+n-1),ypos(p+n-1),zpos(p+n-1),axisox(sp1,m1), &
-	  	& axisoy(sp1,m1),axisoz(sp1,m1),tx,ty,tz)
+	      call pbc(xpos(p+n-1),ypos(p+n-1),zpos(p+n-1),axesAorigin(sp1,m1,1), &
+	  	& axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
 	      ! 'Zero' its position with respect to the axis centre...
-	      tx=tx-axisox(sp1,m1)
-	      ty=ty-axisoy(sp1,m1)
-	      tz=tz-axisoz(sp1,m1)
+	      tx=tx-axesAorigin(sp1,m1,1)
+	      ty=ty-axesAorigin(sp1,m1,2)
+	      tz=tz-axesAorigin(sp1,m1,3)
 	      ! Transform the coordinate into the local coordinate system...
-	      px=tx*axisx(sp1,m1,1) + ty*axisx(sp1,m1,2) + tz*axisx(sp1,m1,3)
-	      py=tx*axisy(sp1,m1,1) + ty*axisy(sp1,m1,2) + tz*axisy(sp1,m1,3)
-	      pz=tx*axisz(sp1,m1,1) + ty*axisz(sp1,m1,2) + tz*axisz(sp1,m1,3)
+	      px=tx*axesA(sp1,m1,1) + ty*axesA(sp1,m1,2) + tz*axesA(sp1,m1,3)
+	      py=tx*axesA(sp1,m1,4) + ty*axesA(sp1,m1,5) + tz*axesA(sp1,m1,6)
+	      pz=tx*axesA(sp1,m1,7) + ty*axesA(sp1,m1,8) + tz*axesA(sp1,m1,9)
 	      ! Accumulate the position....
 	      avggeom(sp1,n,1)=avggeom(sp1,n,1)+px
 	      avggeom(sp1,n,2)=avggeom(sp1,n,2)+py
 	      avggeom(sp1,n,3)=avggeom(sp1,n,3)+pz
 	      ! Intramolecular distribution.....
-	      n1=NINT(px/pdelta)
-	      n2=NINT(py/pdelta)
-	      n3=NINT(pz/pdelta)
-	      if (MAX(ABS(n1),MAX(ABS(n2),ABS(n3))).lt.pgrid) then
-	        pdensintra(sp1,n1,n2,n3)=pdensintra(sp1,n1,n2,n3)+1
+	      nx=NINT(px/pdelta)
+	      ny=NINT(py/pdelta)
+	      nz=NINT(pz/pdelta)
+	      if (MAX(ABS(nx),MAX(ABS(ny),ABS(nz))).lt.pgrid) then
+	        pdensintra(sp1,nx,ny,nz)=pdensintra(sp1,nx,ny,nz)+1
 	      else
-		write(0,*) "Large distance : n1,n2,n3 = ",n1,n2,n3
+		write(0,*) "Large distance : nx,ny,nz = ",nx,ny,nz
 	      end if
 	    end do
 	    p=p+s_natoms(sp1)
@@ -432,28 +409,28 @@
 	do sp1=1,nspecies
 
 	  ! Calculate expected species numbers
-	  spexp(sp1) = s_nmols(centresp) * s_nmols(sp1) * nframesused * max(1,nspatoms(sp1))
-	  if (centresp.eq.sp1) spexp(sp1) = spexp(sp1) - s_nmols(sp1) * nframesused * max(1,nspatoms(sp1))
+	  spexp(sp1) = s_nmols(centresp) * s_nmols(sp1) * nframesused * max(1,atomSites(sp1,0))
+	  if (centresp.eq.sp1) spexp(sp1) = spexp(sp1) - s_nmols(sp1) * nframesused * max(1,atomSites(sp2,0))
 
 	  ! Species density about central species
-	  do n1=-grid,grid
-	    do n2=-grid,grid
-	      do n3=-grid,grid
-	        ! pdens(sp1,n1,n2,n3)=pdens(sp1,n1,n2,n3)/norm1/(delta**3)
-	        pdens(sp1,n1,n2,n3)=pdens(sp1,n1,n2,n3)/n3dcentres/(delta**3)
+	  do nx=-grid,grid
+	    do ny=-grid,grid
+	      do nz=-grid,grid
+	        ! pdens(sp1,nx,ny,nz)=pdens(sp1,nx,ny,nz)/norm1/(delta**3)
+	        pdens(sp1,nx,ny,nz)=pdens(sp1,nx,ny,nz)/n3dcentres/(delta**3)
 	      end do
 	    end do
 	  end do
  
 	  ! Intramolecular distribution
-	  do n1=-pgrid,pgrid
-	    do n2=-pgrid,pgrid
-	      do n3=-pgrid,pgrid
+	  do nx=-pgrid,pgrid
+	    do ny=-pgrid,pgrid
+	      do nz=-pgrid,pgrid
 		!pdensintra(sp1,n1,n2,n3)=pdensintra(sp1,n1,n2,n3)/nframes/s_nmols(sp1)/(pdelta**3)
 		if (sp1.eq.centresp) then
-		  pdensintra(sp1,n1,n2,n3)=pdensintra(sp1,n1,n2,n3)/n3dcentres/(pdelta**3)
+		  pdensintra(sp1,nx,ny,nz)=pdensintra(sp1,nx,ny,nz)/n3dcentres/(pdelta**3)
 		else
-		  pdensintra(sp1,n1,n2,n3)=pdensintra(sp1,n1,n2,n3)/(nframesused*s_nmols(sp1))/(pdelta**3)
+		  pdensintra(sp1,nx,ny,nz)=pdensintra(sp1,nx,ny,nz)/(nframesused*s_nmols(sp1))/(pdelta**3)
 		end if
 	      end do
 	    end do
@@ -560,4 +537,43 @@
 999	close(10)
 	close(13)
 
-	end program pdens2
+	end program calcpdens
+
+	logical function getbin(sp1,m1,mindistsq,maxdistsq,x,y,z,nx,ny,nz,grid,griddelta)
+	use utility
+	implicit none
+	integer, intent(in) :: sp1, m1, grid
+	integer, intent(out) :: nx, ny, nz
+	real*8, intent(in) :: x, y, z, mindistsq, maxdistsq
+	real*8 :: px, py, pz, tx, ty, tz, distsq, griddelta
+
+	! Check minimum / maximum separation
+	distsq = x*x + y*y + z*z
+	if ((distsq.lt.mindistsq).or.(distsq.gt.maxdistsq)) then
+	  getbin = .false.
+	  return
+	end if
+
+	! Get mim of supplied coordinate with the origin of the central species
+	call pbc(x,y,z,axesAorigin(sp1,m1,1),axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
+
+	! Get vector between minimuim image coordinates and central molecule axis origin
+	px = tx - axesAorigin(sp1,m1,1)
+	py = ty - axesAorigin(sp1,m1,2)
+	pz = tz - axesAorigin(sp1,m1,3)
+	tx = px*axesA(sp1,m1,1) + py*axesA(sp1,m1,2) + pz*axesA(sp1,m1,3)
+	ty = px*axesA(sp1,m1,4) + py*axesA(sp1,m1,5) + pz*axesA(sp1,m1,6)
+	tz = px*axesA(sp1,m1,7) + py*axesA(sp1,m1,8) + pz*axesA(sp1,m1,9)
+
+	! Calculate integer position in grid
+	nx=NINT(tx/griddelta)
+	ny=NINT(ty/griddelta)
+	nz=NINT(tz/griddelta)
+
+	if (MAX(ABS(nx),MAX(ABS(ny),ABS(nz))).gt.grid) then
+	  getbin = .false.
+	else
+	  getbin = .true.
+	end if
+
+	end function getbin

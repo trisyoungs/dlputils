@@ -14,7 +14,7 @@
 
 	nargs = iargc()
 	if (nargs.NE.4) then
-	  write(0,"(A)") "Usage : msd <DLP HISTORYfile> <DLP OUTPUTfile> <delta t> <framestodo>"
+	  write(0,"(A)") "Usage : vacf <DLP HISTORYfile> <DLP OUTPUTfile> <delta t> <framestodo>"
 	  stop
 	end if
 	call getarg(1,hisfile)

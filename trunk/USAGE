@@ -157,10 +157,22 @@ molecule atoms were arranged ‘H’, ‘O’, ‘H’, you would use the ‘-ax
 
 rdf
 ----------------------------
-Calculates the centre-of-mass radial distribution functions by default. However this can
-be changed by using the -compair option, with which a pair of atoms IDs can be specified
-for each species. If given, the average position of these two atoms used in the
-calculation instead.
+Calculates basic radial distribution functions between species, using a default binwidth of 0.1 Angstroms.
+The centre-of-mass RDFs between all species are calculated by default, but this can be overridden with the
+-compair and -otherpair options (see below).
+
+Available command-line options:
+	-bin <width>	Set the bin width to use in all histograms
+	-header <file>	Specify an alternative HISTORY file to use, from which header information is taken
+	-frames <n>	Terminate calculation after reading a specific number of frames
+	-nonorm		Turn off normalisation of the RDF to bulk number density of the species
+	-zplus		Restrict calculation to molecules with z greater than that of the central one	
+	-zminus		Restrict calculation to molecules with z smaller than that of the central one	
+	-discard <n>	Skip a number of frames at the beginning of the trajectory
+	-compair <sp> <i> <j>	Instead of using the centre-of-mass for the specified species, use the
+			geometric average of the two atom indices supplied
+	-otherpair <sp> <i> <j>   Instead of using the centre-of-mass (or compair atoms) for the position
+			of the surrounding species, use the geometric average of the two atom indices supplied
 
 sq
 ----------------------------

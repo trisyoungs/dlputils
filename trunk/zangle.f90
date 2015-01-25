@@ -70,13 +70,13 @@
 	  select case (temp)
 	    case ("-axis") 
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") m
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(m,1)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(m,2)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(m,3)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(m,4)
-	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",m," calculated from: X=",aa(m,1),"->", &
-	        & aa(m,2),", Y=0.5X->0.5(r(",aa(m,3),")->r(",aa(m,4),"))"
-	      axisdefined(m) = .true.
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(m,1)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(m,2)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(m,3)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(m,4)
+	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",m," calculated from: X=",axesAatoms(m,1),"->", &
+	        & axesAatoms(m,2),", Y=0.5X->0.5(r(",axesAatoms(m,3),")->r(",axesAatoms(m,4),"))"
+	      axesAdefined(m) = .true.
 	    case ("-start")
 	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") startf
 	      write(0,"(A,I5)") "Starting frame = ",startf
@@ -104,9 +104,9 @@
 	write(15,"(A,I3)") "Molecular species in file : ",nspecies
 	do n=1,nspecies
 	  ! Check that molecules have had their axes defined
-	  if (axisdefined(n)) then
-	    write(15,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Axis for species ",n," calculated from : X=",aa(n,1),"->", &
-	      & aa(n,2),", Y=0.5X->0.5(",aa(n,3),"->",aa(n,4),")"
+	  if (axesAdefined(n)) then
+	    write(15,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",n," calculated from: X=",axesAatoms(n,1),"->", &
+	        & axesAatoms(n,2),", Y=0.5X->0.5(r(",axesAatoms(n,3),")->r(",axesAatoms(n,4),"))"
 	  else
 	    if ((n.eq.sp1).or.(n.eq.sp2)) stop "Axes must be defined for the two target species."
 	  end if
@@ -151,7 +151,7 @@
 	nframesused = nframesused + 1
 
 	! Generate all molecular axes
-	call genaxis
+	call genaxes()
 
 	! Calculate histogram
 	do m1=1,s_nmols(sp1)      ! Loop over all molecules of species 1...
@@ -162,16 +162,16 @@
 	    if ((m1.eq.m2).and.(sp1.eq.sp2)) cycle
 
 	    ! Get minimum image position of second centre with first
-	    call pbc(axisox(sp2,m2),axisoy(sp2,m2),axisoz(sp2,m2),axisox(sp1,m1),axisoy(sp1,m1),axisoz(sp1,m1),tx,ty,tz)
-	    tx = tx - axisox(sp1,m1)
-	    ty = ty - axisoy(sp1,m1)
-	    tz = tz - axisoz(sp1,m1)
+	    call pbc(axesAorigin(sp2,m2,1),axesAorigin(sp2,m2,2),axesAorigin(sp2,m2,3),axesAorigin(sp1,m1,1),axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
+	    tx = tx - axesAorigin(sp1,m1,1)
+	    ty = ty - axesAorigin(sp1,m1,2)
+	    tz = tz - axesAorigin(sp1,m1,3)
 	    dist = sqrt(tx*tx + ty*ty + tz*tz)
 	    if (dist.lt.mindist) cycle
 	    if (dist.gt.maxdist) cycle
 
 	    ! This molecule is within the limits defined, so get dot product of z-axes
-	    angle = acos( axisz(sp2,m2,1)*axisz(sp1,m1,1) + axisz(sp2,m2,2)*axisz(sp1,m1,2) + axisz(sp2,m2,3)*axisz(sp1,m1,3) ) * 57.29577951d0
+	    angle = acos( axesA(sp2,m2,7)*axesA(sp1,m1,7) + axesA(sp2,m2,8)*axesA(sp1,m1,8) + axesA(sp2,m2,9)*axesA(sp1,m1,9) ) * 57.29577951d0
 	    bin = int(angle) 
 	    ahist(bin) = ahist(bin) + 1.0
 
