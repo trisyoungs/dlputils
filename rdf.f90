@@ -36,37 +36,37 @@
             case ("-bin")
               n = n + 1; call getarg(n,temp); read(temp,"(F10.4)") binwidth
               write(0,"(A,f6.2)") "Binwidth set to ",binwidth
-            case ("-header")
-              n = n + 1; call getarg(n,altheaderfile)
-              write(0,"(A,I4)") "Alternative header file supplied."
-	      altheader = .TRUE.
-            case ("-frames")
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
-              write(0,"(A,I4)") "Frames to process: ",framestodo
-            case ("-nonorm")
-              write(0,"(A)") "RDFs will not be normalised by species number density."
-	      nonorm = .TRUE.
-            case ("-zplus")
-              write(0,"(A)") "Minimum image molecules will only be accepted if z > zcentre."
-	      if (zminus) stop "Can't use both -zplus and -zminus"
-	      zplus = .TRUE.
-            case ("-zminus")
-              write(0,"(A)") "Minimum image molecules will only be accepted if z < zcentre."
-	      if (zplus) stop "Can't use both -zplus and -zminus"
-	      zminus = .TRUE.
-            case ("-discard")
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
-              write(0,"(A,I4)") "Frames to discard at start: ",frameskip
             case ("-compair")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") s1
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(s1,1)
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(s1,2)
               write(0,"(A,3I4)") "Using COMpair for species ",s1, compairs(s1,:)
+            case ("-discard")
+              n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
+              write(0,"(A,I4)") "Frames to discard at start: ",frameskip
+            case ("-frames")
+              n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
+              write(0,"(A,I4)") "Frames to process: ",framestodo
+            case ("-header")
+              n = n + 1; call getarg(n,altheaderfile)
+              write(0,"(A,I4)") "Alternative header file supplied."
+	      altheader = .TRUE.
+            case ("-nonorm")
+              write(0,"(A)") "RDFs will not be normalised by species number density."
+	      nonorm = .TRUE.
             case ("-otherpair")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") s1
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") otherpairs(s1,1)
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") otherpairs(s1,2)
               write(0,"(A,3I4)") "Using other pair (for surrounding molecules) for species ",s1, otherpairs(s1,:)
+            case ("-zminus")
+              write(0,"(A)") "Minimum image molecules will only be accepted if z < zcentre."
+	      if (zplus) stop "Can't use both -zplus and -zminus"
+	      zminus = .TRUE.
+            case ("-zplus")
+              write(0,"(A)") "Minimum image molecules will only be accepted if z > zcentre."
+	      if (zminus) stop "Can't use both -zplus and -zminus"
+	      zplus = .TRUE.
 	    case default
 	      write(0,"(a,a)") "Unrecognised command line option:",temp
 	      stop

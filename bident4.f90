@@ -72,18 +72,13 @@
               n = n + 1; call getarg(n,temparg); read(temparg,"(i6)") MAXPATTERNS
 	      write(0,*) "MAXPATTERNS set to ", MAXPATTERNS
 	    case ("-calc3d") 
-	      n = n + 1; call getarg(n,temparg); read(temparg,"(I3)") aa(sp1,1)
-	      n = n + 1; call getarg(n,temparg); read(temparg,"(I3)") aa(sp1,2)
-	      n = n + 1; call getarg(n,temparg); read(temparg,"(I3)") aa(sp1,3)
-	      n = n + 1; call getarg(n,temparg); read(temparg,"(I3)") aa(sp1,4)
-	      write(0,"(A,I2,A,I2,A,I2,A,I2,A)") "Local axes for central species calculated from: X=",aa(sp1,1),"->", &
-	        & aa(sp1,2),", Y=0.5X->0.5(r(",aa(sp1,3),")->r(",aa(sp1,4),"))"
-	      axisdefined(sp1) = .true.
-	      if (aa(sp1,1).eq.aa(sp1,2)) then
-		write(0,*) " --- X-axis atom ids are identical - atom will be used as centre but NO axes will be defined."
-	        axisdefined(sp1) = .false.
-		axisusecom(sp1) = .false.
-	      end if
+	      n = n + 1; call getarg(n,temparg); read(temparg,"(I3)") axesAatoms(sp1,1)
+	      n = n + 1; call getarg(n,temparg); read(temparg,"(I3)") axesAatoms(sp1,2)
+	      n = n + 1; call getarg(n,temparg); read(temparg,"(I3)") axesAatoms(sp1,3)
+	      n = n + 1; call getarg(n,temparg); read(temparg,"(I3)") axesAatoms(sp1,4)
+	      write(0,"(A,I2,A,I2,A,I2,A,I2,A)") "Local axes for central species calculated from: X=",axesAatoms(sp1,1),"->", &
+	        & axesAatoms(sp1,2),", Y=0.5X->0.5(r(",axesAatoms(sp1,3),")->r(",axesAatoms(sp1,4),"))"
+	      axesAdefined(sp1) = .true.
 	      calc3d = .TRUE.
 	    case ("-equiv")
 	      write(0,*) "Sites on central species will be treated as equivalent for single contacts."
@@ -176,7 +171,7 @@
 	if (mod(nframes,100).EQ.0) write(0,*) nframes
 
 	! Generate all molecular axes
-	if (calc3d) call genaxis()
+	if (calc3d) call genaxes()
 
 	! Loop over central species (bidentate target)
 
@@ -392,13 +387,13 @@
 	!write(0,"(4f12.6)") axisz(sp1,m1,1), axisz(sp1,m1,2), axisz(sp1,m1,3), sqrt(sum(axisz(sp1,m1,:)*axisz(sp1,m1,:)))
 	    do i=1,s_natoms(sp1)
 	      ! Calculate minimum image position of each atom about axis origin
-	      call pbc(xpos(aoff1+i),ypos(aoff1+i),zpos(aoff1+i),axisox(sp1,m1),axisoy(sp1,m1),axisoz(sp1,m1),tx,ty,tz)
-	      px = tx - axisox(sp1,m1)
-	      py = ty - axisoy(sp1,m1)
-	      pz = tz - axisoz(sp1,m1)
-	      tx = px*axisx(sp1,m1,1) + py*axisx(sp1,m1,2) + pz*axisx(sp1,m1,3)
-	      ty = px*axisy(sp1,m1,1) + py*axisy(sp1,m1,2) + pz*axisy(sp1,m1,3)
-	      tz = px*axisz(sp1,m1,1) + py*axisz(sp1,m1,2) + pz*axisz(sp1,m1,3)
+	      call pbc(xpos(aoff1+i),ypos(aoff1+i),zpos(aoff1+i),axesAorigin(sp1,m1,1),axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
+	      px = tx - axesAorigin(sp1,m1,1)
+	      py = ty - axesAorigin(sp1,m1,2)
+	      pz = tz - axesAorigin(sp1,m1,3)
+	      tx = px*axesA(sp1,m1,1) + py*axesA(sp1,m1,2) + pz*axesA(sp1,m1,3)
+	      ty = px*axesA(sp1,m1,4) + py*axesA(sp1,m1,5) + pz*axesA(sp1,m1,6)
+	      tz = px*axesA(sp1,m1,7) + py*axesA(sp1,m1,8) + pz*axesA(sp1,m1,9)
 	      geom(found,i,1) = geom(found,i,1) + tx
 	      geom(found,i,2) = geom(found,i,2) + ty
 	      geom(found,i,3) = geom(found,i,3) + tz
@@ -411,13 +406,13 @@
 	      aoff2 = s_start(sp2) + s_natoms(sp2)*(m2-1) - 1
 	      do i = 1,s_natoms(sp2)
 		! Calculate minimum image position of each atom about central molecule axis origin
-		call pbc(xpos(aoff2+i),ypos(aoff2+i),zpos(aoff2+i),axisox(sp1,m1),axisoy(sp1,m1),axisoz(sp1,m1),tx,ty,tz)
-		px = tx - axisox(sp1,m1)
-		py = ty - axisoy(sp1,m1)
-		pz = tz - axisoz(sp1,m1)
-		tx = px*axisx(sp1,m1,1) + py*axisx(sp1,m1,2) + pz*axisx(sp1,m1,3)
-		ty = px*axisy(sp1,m1,1) + py*axisy(sp1,m1,2) + pz*axisy(sp1,m1,3)
-		tz = px*axisz(sp1,m1,1) + py*axisz(sp1,m1,2) + pz*axisz(sp1,m1,3)
+		call pbc(xpos(aoff2+i),ypos(aoff2+i),zpos(aoff2+i),axesAorigin(sp1,m1,1),axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
+		px = tx - axesAorigin(sp1,m1,1)
+		py = ty - axesAorigin(sp1,m1,2)
+		pz = tz - axesAorigin(sp1,m1,3)
+		tx = px*axesA(sp1,m1,1) + py*axesA(sp1,m1,2) + pz*axesA(sp1,m1,3)
+		ty = px*axesA(sp1,m1,4) + py*axesA(sp1,m1,5) + pz*axesA(sp1,m1,6)
+		tz = px*axesA(sp1,m1,7) + py*axesA(sp1,m1,8) + pz*axesA(sp1,m1,9)
 		geom(found,i+aoff1,1) = geom(found,i+aoff1,1) + tx
 		geom(found,i+aoff1,2) = geom(found,i+aoff1,2) + ty
 		geom(found,i+aoff1,3) = geom(found,i+aoff1,3) + tz
@@ -426,13 +421,13 @@
 	      do site=1,nsp2sites(sp2)
 		if (btest(sp1molcontacts(m1,n,3),site-1).or.btest(sp1molcontacts(m1,n,3),nsp2sites(sp2)+site-1)) then
 		  i = sp2sites(sp2,site,1)
-		  call pbc(xpos(aoff2+i),ypos(aoff2+i),zpos(aoff2+i),axisox(sp1,m1),axisoy(sp1,m1),axisoz(sp1,m1),tx,ty,tz)
-		  px = tx - axisox(sp1,m1)
-		  py = ty - axisoy(sp1,m1)
-		  pz = tz - axisoz(sp1,m1)
-		  tx = px*axisx(sp1,m1,1) + py*axisx(sp1,m1,2) + pz*axisx(sp1,m1,3)
-		  ty = px*axisy(sp1,m1,1) + py*axisy(sp1,m1,2) + pz*axisy(sp1,m1,3)
-		  tz = px*axisz(sp1,m1,1) + py*axisz(sp1,m1,2) + pz*axisz(sp1,m1,3)
+		  call pbc(xpos(aoff2+i),ypos(aoff2+i),zpos(aoff2+i),axesAorigin(sp1,m1,1),axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
+		  px = tx - axesAorigin(sp1,m1,1)
+		  py = ty - axesAorigin(sp1,m1,2)
+		  pz = tz - axesAorigin(sp1,m1,3)
+		  tx = px*axesA(sp1,m1,1) + py*axesA(sp1,m1,2) + pz*axesA(sp1,m1,3)
+		  ty = px*axesA(sp1,m1,4) + py*axesA(sp1,m1,5) + pz*axesA(sp1,m1,6)
+		  tz = px*axesA(sp1,m1,7) + py*axesA(sp1,m1,8) + pz*axesA(sp1,m1,9)
 		  binx = NINT(tx/delta)
 		  biny = NINT(ty/delta)
 		  binz = NINT(tz/delta)

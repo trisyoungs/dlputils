@@ -8,7 +8,7 @@
 	integer :: nargs, n, sp, m, baselen, nframes, nframesused, success, startf = 1, endf = 0
 	logical :: altheader = .false., npt = .false.
 	real*8, allocatable :: refxyz(:,:,:), devxyz(:,:,:,:), spdevxyz(:,:,:), sprmsdxyz(:,:)
-	real*8, allocatable :: refaxes(:,:,:,:), devangle(:,:,:,:), spdevangle(:,:,:), sprmsdangle(:,:)
+	real*8, allocatable :: refaxes(:,:,:), devangle(:,:,:,:), spdevangle(:,:,:), sprmsdangle(:,:)
 	integer :: bin(4),nbins,nanglebins,tth,th,hun,units,ten
 	real*8 :: tx, ty, tz, dist, dp(3), binwidth = 0.1, width = 5.0, anglebinwidth = 0.01
 	integer :: iargc
@@ -53,9 +53,9 @@
 	open(unit=15,file=basename(1:baselen)//"cc",form="formatted",status="replace")
 
 	! Allocate arrays
-	call alloc_axis
+	call alloc_axis()
 	allocate(refxyz(nspecies,maxval(s_nmols),3))
-	allocate(refaxes(nspecies,maxval(s_nmols),3,3))
+	allocate(refaxes(nspecies,maxval(s_nmols),9))
 
 	n = 3
         do
@@ -64,13 +64,13 @@
           select case (temp)
 	    case ("-axis") 
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(sp,1)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(sp,2)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(sp,3)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(sp,4)
-	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp," calculated from: X=",aa(sp,1),"->", &
-	        & aa(sp,2),", Y=0.5X->0.5(r(",aa(sp,3),")->r(",aa(sp,4),"))"
-	      axisdefined(sp) = .true.
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp,1)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp,2)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp,3)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp,4)
+	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp," calculated from: X=",axesAatoms(sp,1),"->", &
+	        & axesAatoms(sp,2),", Y=0.5X->0.5(r(",axesAatoms(sp,3),")->r(",axesAatoms(sp,4),"))"
+	      axesAdefined(sp) = .true.
 	    case ("-header")
               n = n + 1; call getarg(n,altheaderfile)
               write(0,"(A)") "Alternative header file supplied."
@@ -111,9 +111,9 @@
 	write(15,"(A,I3)") "Molecular species in file : ",nspecies
 	do sp=1,nspecies
 	  ! Check that molecules have had their axes defined
-	  if (axisdefined(sp)) then
-	    write(15,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Axis for species ",sp," calculated from : X=",aa(sp,1),"->", &
-	      & aa(sp,2),", Y=0.5X->0.5(",aa(sp,3),"->",aa(sp,4),")"
+	  if (axesAdefined(sp)) then
+	    write(15,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp," calculated from: X=",axesAatoms(sp,1),"->", &
+	      & axesAatoms(sp,2),", Y=0.5X->0.5(r(",axesAatoms(sp,3),")->r(",axesAatoms(sp,4),"))"
 	  else
 	    if (s_natoms(sp).gt.2) stop "Axes must be defined for all molecular species where possible."
 	  end if
@@ -145,7 +145,7 @@
 	  ypos(n) = cfgxyz(n,2)
 	  zpos(n) = cfgxyz(n,3)
 	end do
-	call genaxis
+	call genaxes()
 	call calc_com
 	! Store axis systems and geometric centres
 	do sp=1,nspecies
@@ -153,9 +153,7 @@
 	    refxyz(sp,m,1) = comx(sp,m)
 	    refxyz(sp,m,2) = comy(sp,m)
 	    refxyz(sp,m,3) = comz(sp,m)
-	    refaxes(sp,m,1,:) = axisx(sp,m,:)
-	    refaxes(sp,m,2,:) = axisy(sp,m,:)
-	    refaxes(sp,m,3,:) = axisz(sp,m,:)
+	    refaxes(sp,m,:) = axesA(sp,m,:)
 	  end do
 	end do
 
@@ -184,7 +182,7 @@
 	nframesused = nframesused + 1
 
 	! Generate all molecular axes and geometric centres
-	call genaxis
+	call genaxes()
 	call calc_com
 
 	do sp=1,nspecies
@@ -224,9 +222,9 @@
 	    ! Angular variation
 	    ! -----------------
 
-	    dp(1) = refaxes(sp,m,1,1)*axisx(sp,m,1) + refaxes(sp,m,1,2)*axisx(sp,m,2) + refaxes(sp,m,1,3)*axisx(sp,m,3)
-	    dp(2) = refaxes(sp,m,2,1)*axisy(sp,m,1) + refaxes(sp,m,2,2)*axisy(sp,m,2) + refaxes(sp,m,2,3)*axisy(sp,m,3)
-	    dp(3) = refaxes(sp,m,3,1)*axisz(sp,m,1) + refaxes(sp,m,3,2)*axisz(sp,m,2) + refaxes(sp,m,3,3)*axisz(sp,m,3)
+	    dp(1) = refaxes(sp,m,1)*axesA(sp,m,1) + refaxes(sp,m,2)*axesA(sp,m,2) + refaxes(sp,m,3)*axesA(sp,m,3)
+	    dp(2) = refaxes(sp,m,4)*axesA(sp,m,4) + refaxes(sp,m,5)*axesA(sp,m,5) + refaxes(sp,m,6)*axesA(sp,m,6)
+	    dp(3) = refaxes(sp,m,7)*axesA(sp,m,7) + refaxes(sp,m,8)*axesA(sp,m,8) + refaxes(sp,m,9)*axesA(sp,m,9)
 
 	    ! Store RMSD
 	    sprmsdangle(sp,1) = sprmsdangle(sp,1) + (1.0-dp(1))*(1.0-dp(1))
