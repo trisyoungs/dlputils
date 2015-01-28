@@ -82,8 +82,6 @@
 	  basename=hisfile(1:baselen)
 	endif
 
-	open(unit=15,file=basename(1:baselen)//"out",form="formatted",status="replace")
-
 	! Set some variable defaults before we read in any command-line arguments
 	call alloc_axis()
 	mindistsq = 0.0
@@ -144,20 +142,16 @@
 	    case ("-nopdens")
 	      nopdens = .TRUE.
 	      write(0,"(A,I4)") "Intermolecular probability distributions will not be computed."
-	      write(15,"(A,I4)") "Intermolecular probability distributions will not be computed."
 	    case ("-nointra")
 	      nointra = .TRUE.
 	      write(0,"(A,I4)") "Intramolecular probability distributions will not be computed."
-	      write(15,"(A,I4)") "Intramolecular probability distributions will not be computed."
 	    case ("-mindist")
 	      n = n + 1; call getarg(n,temp); read(temp,"(f10.4)") mindistsq
 	      write(0,"(A,f8.4)") "Minimum separation between molecules = ",mindistsq
-	      write(15,"(A,f8.4)") "Minimum separation between molecules = ",mindistsq
 	      mindistsq = mindistsq * mindistsq
 	    case ("-maxdist")
 	      n = n + 1; call getarg(n,temp); read(temp,"(f10.4)") maxdistsq
 	      write(0,"(A,f8.4)") "Maximum separation between molecules = ",maxdistsq
-	      write(15,"(A,f8.4)") "Maximum separation between molecules = ",maxdistsq
 	      maxdistsq = maxdistsq * maxdistsq
 	    case ("-header")
               n = n + 1; call getarg(n,altheaderfile)
@@ -188,12 +182,12 @@
 	end do
 	
 	! Print out a summary of the control variables to the output file.
-	write(15,"(A,A)") "Input file: ",hisfile
-	write(15,"(A,I3)") "Molecular species in file : ",nspecies
+	write(5,"(A,A)") "Input file: ",hisfile
+	write(5,"(A,I3)") "Molecular species in file : ",nspecies
 	do sp1=1,nspecies
 	  ! Check that the necessary molecules have had their axes defined
 	  if (axesAdefined(sp1)) then
-	    write(15,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp1," calculated from: X=",axesAatoms(sp1,1),"->", &
+	    write(5,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp1," calculated from: X=",axesAatoms(sp1,1),"->", &
 	      & axesAatoms(sp1,2),", Y=0.5X->0.5(r(",axesAatoms(sp1,3),")->r(",axesAatoms(sp1,4),"))"
 	  else if (sp1.eq.centresp) then
 	    stop "A proper set of axes must be defined for the central species."
@@ -201,12 +195,12 @@
 	    stop "Axes must be defined on any species whose orientation is to be considered."
 	  end if
 	end do
-	write(15,"(A,I4)") "Grid (intermolecular) points in each XYZ = ",grid
-	write(15,"(A,I4)") "PGrid (intramolecular) points in each XYZ = ",pgrid
-	write(15,"(A,F6.3)") "Grid spacing = ",delta
-	write(15,"(A,F6.3)") "PGrid spacing = ",pdelta
-	write(15,"(A,I4)") "Central species = ",centresp
-	write(15,"(A,I5,A,I5,A)") "Frame range = ",startf," to ",endf," (0=last)"
+	write(5,"(A,I4)") "Grid (intermolecular) points in each XYZ = ",grid
+	write(5,"(A,I4)") "PGrid (intramolecular) points in each XYZ = ",pgrid
+	write(5,"(A,F6.3)") "Grid spacing = ",delta
+	write(5,"(A,F6.3)") "PGrid spacing = ",pdelta
+	write(5,"(A,I4)") "Central species = ",centresp
+	write(5,"(A,I5,A,I5,A)") "Frame range = ",startf," to ",endf," (0=last)"
 	if (nointra.and.nopdens) stop "Nothing to do (both -nointra and -nopdens given)."
 
 	! Probability density arrays
@@ -391,24 +385,21 @@
 115	if (nframes.EQ.endf) goto 120
 	goto 101
 
-117	write(0,*) "Error reading mapfile."
-	write(0,*) "Selected ",nmapframes," from trajectory before error."
+117	write(5,*) "Error reading mapfile."
+	write(5,*) "Selected ",nmapframes," from trajectory before error."
 	goto 120
-118	write(0,*) "Reached end of mapfile."
-	write(0,*) "Selected ",nmapframes," from trajectory."
+118	write(5,*) "Reached end of mapfile."
+	write(5,*) "Selected ",nmapframes," from trajectory."
 	goto 120
-119	write(0,*) "HISTORY file ended prematurely!"
-	write(0,"(A,I5,A)") "Managed ",nframesused," frames before error."
-	write(15,"(A)") "HISTORY file ended prematurely!"
-	write(15,"(A,I5,A)") "Managed ",nframesused," frames before error."
-120	write(0,*) "Finished."
-	write(15,"(A)") "Finished."
-	write(15,"(A,I5,A)") "Averages will be taken over ",nframesused," frames."
+119	write(5,*) "HISTORY file ended prematurely!"
+	write(5,"(A,I5,A)") "Managed ",nframesused," frames before error."
+120	write(5,*) "Finished."
+	write(5,"(A,I5,A)") "Averages will be taken over ",nframesused," frames."
 
 	! ### Normalise the data
 
-	write(0,"(a,i1,a,i7,a,i7,a)") "Intermolecular calculation consideres ",npdenscentres," molecules"
-	write(0,"(a,i1,a,i7,a,i7,a)") "Intramolecular calculation consideres ",nintracentres," molecules"
+	write(5,"(a,i1,a,i7,a,i7,a)") "Intermolecular calculation considers ",npdenscentres," molecules"
+	write(5,"(a,i1,a,i7,a,i7,a)") "Intramolecular calculation considers ",nintracentres," molecules"
 
 	! Set normalisation over frames and central species molecules
 	do sp1=1,nspecies
@@ -456,28 +447,19 @@
 	goto 999
 799	write(0,*) "Problem with HISTORY file - failed to read header."
 	goto 999
-	write(0,*) "End of unformatted HISTORY file found."
-	write(15,"(A)") "End of unformatted HISTORY file found."
-801	write(0,"(A,I1)") " Central species = ",centresp
+	write(5,"(A)") "End of unformatted HISTORY file found."
+801	write(5,"(A,I1)") " Central species = ",centresp
 	do sp1=1,nspecies
-	  write(0,"(A,I1,A,A)") " Species ",sp1,", ",s_name(sp1)
-	  write(0,"(A12,I12,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
-	  write(0,"(A12,I12)") "Found : ",nfound(sp1)
-	  write(0,"(A12,I12,A)") "Caught : ",ncaught(sp1)," (in grid)"
-	  if (sp1.eq.centresp) write(0,"(A12,I9)") "Selected (inter) : ",npdenscentres
-	  if (sp1.eq.centresp) write(0,"(A12,I9)") "Selected (intra) : ",nintracentres
-	  write(15,"(A,I1,A,A)") " Species ",sp1,", ",s_name(sp1)
-	  write(15,"(A12,I12,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
-	  write(15,"(A12,I12)") "Found : ",nfound(sp1)
-	  write(15,"(A12,I12,A)") "Caught : ",ncaught(sp1)," (in grid)"
-	  if (sp1.eq.centresp) write(15,"(A12,I9)") "Selected (inter) : ",npdenscentres
-	  if (sp1.eq.centresp) write(15,"(A12,I9)") "Selected (intra) : ",nintracentres
+	  write(5,"(A,I1,A,A)") " Species ",sp1,", ",s_name(sp1)
+	  write(5,"(A12,I12,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
+	  write(5,"(A12,I12)") "Found : ",nfound(sp1)
+	  write(5,"(A12,I12,A)") "Caught : ",ncaught(sp1)," (in grid)"
+	  if (sp1.eq.centresp) write(5,"(A12,I9)") "Selected (inter) : ",npdenscentres
+	  if (sp1.eq.centresp) write(5,"(A12,I9)") "Selected (intra) : ",nintracentres
 	end do
-	write(0,"(3(A,I3),A,F4.1,A)") "Grid = ",(grid*2+1),"x",(grid*2+1),"x", &
+	write(5,"(3(A,I3),A,F4.1,A)") "Grid = ",(grid*2+1),"x",(grid*2+1),"x", &
 	  & (grid*2+1)," ( x ",delta," Angstrom )"
-	write(15,"(3(A,I3),A,F4.1,A)") "Grid = ",(grid*2+1),"x",(grid*2+1),"x", &
-	  & (grid*2+1)," ( x ",delta," Angstrom )"
-	write(0,"(A)") "-- Writing output files..."
+	write(5,"(A)") "-- Writing output files..."
 
 	do sp1=1,nspecies
 
@@ -531,10 +513,8 @@
 	  close(9)
 	end if
 
-	write(0,*) "Finished!"
-	write(15,"(A)") "Finished!"
+	write(5,"(A)") "Finished!"
 999	close(10)
-	close(13)
 
 	end program calcpdens
 
