@@ -10,8 +10,8 @@
 	integer, parameter :: MAXSITES = 20, MAXSPECIES = 5
 	real*8, parameter :: radcon = 57.29577951d0
 	real*8, allocatable :: pdens(:,:,:,:)
-	real*8, allocatable :: avggeom(:,:,:)		! Average species coordinates
-	real*8, allocatable :: pdensintra(:,:,:,:)	! Intramolecular species distributions
+	real*8, allocatable :: avggeom(:,:)		! Average species coordinates
+	real*8, allocatable :: pdensintra(:,:,:)	! Intramolecular species distributions
 	integer, allocatable :: nfound(:), ncaught(:)	! Total and 'binned' mols
 	integer, allocatable :: molflags(:)		! Per-frame map of sp1 mols to include in averaging
 	integer, allocatable :: spexp(:)		! Expected species numbers
@@ -27,7 +27,7 @@
 	integer :: n, nframes, m, o, p, i
 	real*8 :: px, py, pz, mindistsq, maxdistsq, distsq, tx, ty, tz
 	real*8 :: orientangle(20,3), orientdelta(20,3), angdelta, ax
-	integer :: centresp,sp1,m1,sp2,m2,startf,endf,n3dcentres,nx,ny,nz
+	integer :: centresp,sp1,m1,sp2,m2,startf,endf,npdenscentres,nintracentres,nx,ny,nz
 	logical :: orientcheck(20,3), failed, getbin
 	integer :: iargc
 
@@ -46,7 +46,7 @@
 	  write(*,"(a)") "        [-mindist r]               Minimum separation allowed between molecules (default = 0.0)"
 	  write(*,"(a)") "        [-molmap <file>]           Formatted file (I5,1X,n(I2,1x) of frame,mols to use of sp1"
 	  write(*,"(a)") "        [-nointer]                 Prohibit calculation of the intermolecular probability densities"
-	  write(*,"(a)") "        [-nointra]                 Prohibit calculation of the intramolecular probability density"
+	  write(*,"(a)") "        [-nointra]                 Prohibit calculation of the intramolecular probability density and average molecule"
 	  write(*,"(a)") "        [-orient sp axis angle delta]  Specify a restriction in the angular orientation of the second &
 		& molecule (use negative delta for symmetry about 90deg)"
 	  write(*,"(a)") "        [-otheraxis sp x1 x2 y1 y2] Alternative axis definition, for surrounding &
@@ -92,12 +92,13 @@
 	atomSites = 0
 	startf = 1
 	endf = 0
-	n3dcentres = 0
+	npdenscentres = 0
+	nintracentres = 0
 	orientcheck = .FALSE.
 	orientangle = 0.0
 	orientdelta = 0.0
 
-	n = 2
+	n = 3
 	do
 	  n = n + 1; if (n.GT.nargs) exit
 	  call getarg(n,temp)
@@ -206,15 +207,16 @@
 	write(15,"(A,F6.3)") "PGrid spacing = ",pdelta
 	write(15,"(A,I4)") "Central species = ",centresp
 	write(15,"(A,I5,A,I5,A)") "Frame range = ",startf," to ",endf," (0=last)"
+	if (nointra.and.nopdens) stop "Nothing to do (both -nointra and -nopdens given)."
 
 	! Probability density arrays
 	allocate(pdens(nspecies,-grid:grid,-grid:grid,-grid:grid))
 	allocate(ncaught(nspecies))
 	allocate(nfound(nspecies))
-	allocate(pdensintra(nspecies,-pgrid:pgrid,-pgrid:pgrid,-pgrid:pgrid))
+	allocate(pdensintra(-pgrid:pgrid,-pgrid:pgrid,-pgrid:pgrid))
 	allocate(spexp(nspecies))
 	! Average species etc.
-	allocate(avggeom(nspecies,maxatoms,3))
+	allocate(avggeom(maxatoms,3))
 	if (molmap) allocate(molflags(s_nmols(centresp)))
 
 	! Clear the arrays before we start...
@@ -260,9 +262,9 @@
 
 	if (MOD(nframes,100).eq.0) then
 	  if (molmap) then
-	    write(0,"(I6,2x,'(',I6,',',I10,')')") nframes,nmapframes,n3dcentres
+	    write(0,"(I6,2x,'(',I6,',',I10,',',I10')')") nframes,nmapframes,npdenscentres,nintracentres
 	  else
-	    write(0,"(i6,2x,'(',I10,')')") nframes,n3dcentres
+	    write(0,"(i6,2x,'(',I10,',',I10,')')") nframes,npdenscentres,nintracentres
 	  end if
 	end if
 	if (nframes.LT.startf) goto 102
@@ -285,7 +287,7 @@
 	  if (molmap) then
 	    if (molflags(m1).eq.0) cycle 
 	  end if
-	  n3dcentres = n3dcentres + 1	! Normalisation counter
+	  npdenscentres = npdenscentres + 1	! Normalisation counter
 	  do sp2=1,nspecies
 	    p = s_start(sp2) - 1
 	    do m2=1,s_nmols(sp2)
@@ -341,46 +343,47 @@
 	  end do
 	end do
 
-	! Calculate average molecules and intramolecular distributions.
+	! Calculate average molecule and intramolecular distribution
 115	if (nointra) goto 116
-	do sp1=1,nspecies
-	  p=s_start(sp1)
-	  do m1=1,s_nmols(sp1)
-	    ! If we're using a mapfile, decide whether to include this molecule
-	    if ((sp1.eq.centresp).AND.(molmap)) then
-	      if (molflags(m1).eq.0) then
-		p = p+s_natoms(sp1)
-		cycle
-	      end if
+	p=s_start(centresp)
+	do m1=1,s_nmols(centresp)
+	  ! If we're using a mapfile, decide whether to include this molecule
+	  if (molmap) then
+	    if (molflags(m1).eq.0) then
+	      p = p+s_natoms(centresp)
+	      cycle
 	    end if
-	    do n=1,s_natoms(sp1)
-	      ! PBC the atom
-	      call pbc(xpos(p+n-1),ypos(p+n-1),zpos(p+n-1),axesAorigin(sp1,m1,1), &
-	  	& axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
-	      ! 'Zero' its position with respect to the axis centre...
-	      tx=tx-axesAorigin(sp1,m1,1)
-	      ty=ty-axesAorigin(sp1,m1,2)
-	      tz=tz-axesAorigin(sp1,m1,3)
-	      ! Transform the coordinate into the local coordinate system...
-	      px=tx*axesA(sp1,m1,1) + ty*axesA(sp1,m1,2) + tz*axesA(sp1,m1,3)
-	      py=tx*axesA(sp1,m1,4) + ty*axesA(sp1,m1,5) + tz*axesA(sp1,m1,6)
-	      pz=tx*axesA(sp1,m1,7) + ty*axesA(sp1,m1,8) + tz*axesA(sp1,m1,9)
-	      ! Accumulate the position....
-	      avggeom(sp1,n,1)=avggeom(sp1,n,1)+px
-	      avggeom(sp1,n,2)=avggeom(sp1,n,2)+py
-	      avggeom(sp1,n,3)=avggeom(sp1,n,3)+pz
-	      ! Intramolecular distribution.....
-	      nx=NINT(px/pdelta)
-	      ny=NINT(py/pdelta)
-	      nz=NINT(pz/pdelta)
-	      if (MAX(ABS(nx),MAX(ABS(ny),ABS(nz))).lt.pgrid) then
-	        pdensintra(sp1,nx,ny,nz)=pdensintra(sp1,nx,ny,nz)+1
-	      else
-		write(0,*) "Large distance : nx,ny,nz = ",nx,ny,nz
-	      end if
-	    end do
-	    p=p+s_natoms(sp1)
+	    nintracentres = nintracentres + 1
+	  else
+	    nintracentres = nintracentres + 1
+	  end if
+	  do n=1,s_natoms(centresp)
+	    ! PBC the atom
+	    call pbc(xpos(p+n-1),ypos(p+n-1),zpos(p+n-1),axesAorigin(centresp,m1,1), &
+	  	& axesAorigin(centresp,m1,2),axesAorigin(centresp,m1,3),tx,ty,tz)
+	    ! 'Zero' its position with respect to the axis centre...
+	    tx=tx-axesAorigin(centresp,m1,1)
+	    ty=ty-axesAorigin(centresp,m1,2)
+	    tz=tz-axesAorigin(centresp,m1,3)
+	    ! Transform the coordinate into the local coordinate system...
+	    px=tx*axesA(centresp,m1,1) + ty*axesA(centresp,m1,2) + tz*axesA(centresp,m1,3)
+	    py=tx*axesA(centresp,m1,4) + ty*axesA(centresp,m1,5) + tz*axesA(centresp,m1,6)
+	    pz=tx*axesA(centresp,m1,7) + ty*axesA(centresp,m1,8) + tz*axesA(centresp,m1,9)
+	    ! Accumulate the position....
+	    avggeom(n,1) = avggeom(n,1)+px
+	    avggeom(n,2) = avggeom(n,2)+py
+	    avggeom(n,3) = avggeom(n,3)+pz
+	    ! Intramolecular distribution.....
+	    nx=NINT(px/pdelta)
+	    ny=NINT(py/pdelta)
+	    nz=NINT(pz/pdelta)
+	    if (MAX(ABS(nx),MAX(ABS(ny),ABS(nz))).lt.pgrid) then
+	      pdensintra(nx,ny,nz) = pdensintra(nx,ny,nz) + 1
+	    else
+	      write(0,*) "Large distance : nx,ny,nz = ",nx,ny,nz
+	    end if
 	  end do
+	  p=p+s_natoms(centresp)
 	end do
 
 	! Next frame (or finish)
@@ -403,7 +406,8 @@
 
 	! ### Normalise the data
 
-	write(0,"(a,i1,a,i7,a,i7,a)") "Central species consisted ",n3dcentres," molecules"
+	write(0,"(a,i1,a,i7,a,i7,a)") "Intermolecular calculation consideres ",npdenscentres," molecules"
+	write(0,"(a,i1,a,i7,a,i7,a)") "Intramolecular calculation consideres ",nintracentres," molecules"
 
 	! Set normalisation over frames and central species molecules
 	do sp1=1,nspecies
@@ -413,41 +417,34 @@
 	  if (centresp.eq.sp1) spexp(sp1) = spexp(sp1) - s_nmols(sp1) * nframesused * max(1,atomSites(sp2,0))
 
 	  ! Species density about central species
-	  do nx=-grid,grid
-	    do ny=-grid,grid
-	      do nz=-grid,grid
-	        ! pdens(sp1,nx,ny,nz)=pdens(sp1,nx,ny,nz)/norm1/(delta**3)
-	        pdens(sp1,nx,ny,nz)=pdens(sp1,nx,ny,nz)/n3dcentres/(delta**3)
-	      end do
-	    end do
-	  end do
- 
-	  ! Intramolecular distribution
-	  do nx=-pgrid,pgrid
-	    do ny=-pgrid,pgrid
-	      do nz=-pgrid,pgrid
-		!pdensintra(sp1,n1,n2,n3)=pdensintra(sp1,n1,n2,n3)/nframes/s_nmols(sp1)/(pdelta**3)
-		if (sp1.eq.centresp) then
-		  pdensintra(sp1,nx,ny,nz)=pdensintra(sp1,nx,ny,nz)/n3dcentres/(pdelta**3)
-		else
-		  pdensintra(sp1,nx,ny,nz)=pdensintra(sp1,nx,ny,nz)/(nframesused*s_nmols(sp1))/(pdelta**3)
-		end if
-	      end do
-	    end do
-	  end do
-
-	  ! Average molecule
-	  do n=1,s_natoms(sp1)
-	    do m=1,3
-	      if (sp1.eq.centresp) then
-	        avggeom(sp1,n,m)=avggeom(sp1,n,m)/n3dcentres
-	      else
-	        avggeom(sp1,n,m)=avggeom(sp1,n,m)/(nframesused*s_nmols(sp1))
-	      end if
-	    end do
-	  end do
+	  pdens(sp1,:,:,:) = pdens(sp1,:,:,:)/npdenscentres/(delta**3)
+	  !do nx=-grid,grid
+	  !  do ny=-grid,grid
+	  !    do nz=-grid,grid
+	  !      pdens(sp1,nx,ny,nz)=pdens(sp1,nx,ny,nz)/n3dcentres/(delta**3)
+	  !    end do
+	  !  end do
+	  !end do
 
 	end do
+ 
+	! Intramolecular distribution
+        pdensintra(:,:,:) = pdensintra(:,:,:)/nintracentres/(pdelta**3)
+	!do nx=-pgrid,pgrid
+	!  do ny=-pgrid,pgrid
+	!    do nz=-pgrid,pgrid
+        !      pdensintra(sp1,nx,ny,nz)=pdensintra(sp1,nx,ny,nz)/(nframesused*s_nmols(sp1))/(pdelta**3)
+	!    end do
+	!  end do
+	!end do
+
+	! Average molecule
+	avggeom(:,:) = avggeom(:,:)/nintracentres
+	!do n=1,s_natoms(sp1)
+	!  do m=1,3
+	!    avggeom(sp1,n,m)=avggeom(sp1,n,m)/(nframesused*s_nmols(sp1))
+	!  end do
+	!end do
 
 	goto 801
 
@@ -466,12 +463,14 @@
 	  write(0,"(A12,I12,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
 	  write(0,"(A12,I12)") "Found : ",nfound(sp1)
 	  write(0,"(A12,I12,A)") "Caught : ",ncaught(sp1)," (in grid)"
-	  if (sp1.eq.centresp) write(0,"(A12,I9)") "Selected : ",n3dcentres
+	  if (sp1.eq.centresp) write(0,"(A12,I9)") "Selected (inter) : ",npdenscentres
+	  if (sp1.eq.centresp) write(0,"(A12,I9)") "Selected (intra) : ",nintracentres
 	  write(15,"(A,I1,A,A)") " Species ",sp1,", ",s_name(sp1)
 	  write(15,"(A12,I12,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
 	  write(15,"(A12,I12)") "Found : ",nfound(sp1)
 	  write(15,"(A12,I12,A)") "Caught : ",ncaught(sp1)," (in grid)"
-	  if (sp1.eq.centresp) write(15,"(A12,I9)") "Selected : ",n3dcentres
+	  if (sp1.eq.centresp) write(15,"(A12,I9)") "Selected (inter) : ",npdenscentres
+	  if (sp1.eq.centresp) write(15,"(A12,I9)") "Selected (intra) : ",nintracentres
 	end do
 	write(0,"(3(A,I3),A,F4.1,A)") "Grid = ",(grid*2+1),"x",(grid*2+1),"x", &
 	  & (grid*2+1)," ( x ",delta," Angstrom )"
@@ -499,38 +498,37 @@
 	    close(9)
 	  end if
 
-	  if (.not.nointra) then
-	    ! -- Average molecule
-	    resfile=basename(1:baselen)//"avg"//char(48+sp1)//".xyz"
-	    open(unit=9,file=resfile,form="formatted")
-	    ! Write out pdb files of the average molecules
-900	    FORMAT (a2,5x,3(F9.5,2x))
-	    write(9,*) s_natoms(sp1)
-	    write(9,*) "Average: ", s_name(sp1)
-	    do n=1,s_natoms(sp1)
-	      write(9,900) atmname(s_start(sp1)-1+n)(1:2),(avggeom(sp1,n,m),m=1,3)
-	    end do
-	    close(9)
+	end do
 
-	    ! -- Intramolecular probability distribution
-	    resfile=basename(1:baselen)//"intra"//char(48+sp1)//".pdens"
-	    open(unit=9,file=resfile,form="formatted")
-	    write(9,*) 2*pgrid+1, 2*pgrid+1, 2*pgrid+1
-	    write(9,"(9f8.4)") pdelta,0.0,0.0,0.0,pdelta,0.0,0.0,0.0,pdelta
-	    write(9,"(3f10.4)") -pgrid*pdelta,-pgrid*pdelta,-pgrid*pdelta
-	    write(9,*) "zyx"
-	    do n=-pgrid,pgrid
-	      do m=-pgrid,pgrid
-	        do o=-pgrid,pgrid
-	          !write(9,*) n*pdelta,m*pdelta,o*pdelta,pdensintra(sp1,n,m,o)
-	          write(9,"(F12.8)") pdensintra(sp1,n,m,o)
-	        end do
+	if (.not.nointra) then
+	  ! -- Average molecule
+	  resfile=basename(1:baselen)//"avg"//char(48+centresp)//".xyz"
+	  open(unit=9,file=resfile,form="formatted")
+	  ! Write out pdb files of the average molecules
+900	  FORMAT (a2,5x,3(F9.5,2x))
+	  write(9,*) s_natoms(centresp)
+	  write(9,*) "Average: ", s_name(centresp)
+	  do n=1,s_natoms(centresp)
+	    write(9,900) atmname(s_start(centresp)-1+n)(1:2),(avggeom(n,m),m=1,3)
+	  end do
+	  close(9)
+
+	  ! -- Intramolecular probability distribution
+	  resfile=basename(1:baselen)//"intra"//char(48+centresp)//".pdens"
+	  open(unit=9,file=resfile,form="formatted")
+	  write(9,*) 2*pgrid+1, 2*pgrid+1, 2*pgrid+1
+	  write(9,"(9f8.4)") pdelta,0.0,0.0,0.0,pdelta,0.0,0.0,0.0,pdelta
+	  write(9,"(3f10.4)") -pgrid*pdelta,-pgrid*pdelta,-pgrid*pdelta
+	  write(9,*) "zyx"
+	  do n=-pgrid,pgrid
+	    do m=-pgrid,pgrid
+	      do o=-pgrid,pgrid
+	        write(9,"(F12.8)") pdensintra(n,m,o)
 	      end do
 	    end do
-	    close(9)
-	  end if
-
-	end do
+	  end do
+	  close(9)
+	end if
 
 	write(0,*) "Finished!"
 	write(15,"(A)") "Finished!"
