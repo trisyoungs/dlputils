@@ -260,13 +260,6 @@
 	IF (success.lt.0) goto 119  ! File error....
 	nframes=nframes+1
 
-	if (MOD(nframes,100).eq.0) then
-	  if (molmap) then
-	    write(0,"(I6,2x,'(',I6,',',I10,',',I10')')") nframes,nmapframes,npdenscentres,nintracentres
-	  else
-	    write(0,"(i6,2x,'(',I10,',',I10,')')") nframes,npdenscentres,nintracentres
-	  end if
-	end if
 	if (nframes.LT.startf) goto 102
 
 	if ((molmap).and.(m1.ne.nframes)) goto 102
@@ -280,7 +273,7 @@
 	!
 	! Calculate 3D distributions
 	!
-	if (nopdens) goto 115
+	if (nopdens) goto 105
 	sp1 = centresp
 	do m1=1,s_nmols(sp1)      ! Loop over all molecules of species 1...
 	  ! If we're using a mapfile, decide whether to include this molecule
@@ -344,7 +337,7 @@
 	end do
 
 	! Calculate average molecule and intramolecular distribution
-115	if (nointra) goto 116
+105	if (nointra) goto 110
 	p=s_start(centresp)
 	do m1=1,s_nmols(centresp)
 	  ! If we're using a mapfile, decide whether to include this molecule
@@ -386,8 +379,16 @@
 	  p=p+s_natoms(centresp)
 	end do
 
+110	if (MOD(nframes,100).eq.0) then
+	  if (molmap) then
+	    write(0,"(I6,2x,'(',I6,',',I10,',',I10')')") nframes,nmapframes,npdenscentres,nintracentres
+	  else
+	    write(0,"(i6,2x,'(',I10,',',I10,')')") nframes,npdenscentres,nintracentres
+	  end if
+	end if
+
 	! Next frame (or finish)
-116	if (nframes.EQ.endf) goto 120
+115	if (nframes.EQ.endf) goto 120
 	goto 101
 
 117	write(0,*) "Error reading mapfile."
