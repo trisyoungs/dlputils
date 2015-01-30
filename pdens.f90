@@ -86,7 +86,6 @@
 	call alloc_axis()
 	mindistsq = 0.0
 	maxdistsq = 1.0e9
-	centresp = 1
 	atomSites = 0
 	startf = 1
 	endf = 0
@@ -182,12 +181,12 @@
 	end do
 	
 	! Print out a summary of the control variables to the output file.
-	write(5,"(A,A)") "Input file: ",hisfile
-	write(5,"(A,I3)") "Molecular species in file : ",nspecies
+	write(6,"(A,A)") "Input file: ",hisfile
+	write(6,"(A,I3)") "Molecular species in file : ",nspecies
 	do sp1=1,nspecies
 	  ! Check that the necessary molecules have had their axes defined
 	  if (axesAdefined(sp1)) then
-	    write(5,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp1," calculated from: X=",axesAatoms(sp1,1),"->", &
+	    write(6,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp1," calculated from: X=",axesAatoms(sp1,1),"->", &
 	      & axesAatoms(sp1,2),", Y=0.5X->0.5(r(",axesAatoms(sp1,3),")->r(",axesAatoms(sp1,4),"))"
 	  else if (sp1.eq.centresp) then
 	    stop "A proper set of axes must be defined for the central species."
@@ -195,12 +194,12 @@
 	    stop "Axes must be defined on any species whose orientation is to be considered."
 	  end if
 	end do
-	write(5,"(A,I4)") "Grid (intermolecular) points in each XYZ = ",grid
-	write(5,"(A,I4)") "PGrid (intramolecular) points in each XYZ = ",pgrid
-	write(5,"(A,F6.3)") "Grid spacing = ",delta
-	write(5,"(A,F6.3)") "PGrid spacing = ",pdelta
-	write(5,"(A,I4)") "Central species = ",centresp
-	write(5,"(A,I5,A,I5,A)") "Frame range = ",startf," to ",endf," (0=last)"
+	write(6,"(A,I4)") "Grid (intermolecular) points in each XYZ = ",grid
+	write(6,"(A,I4)") "PGrid (intramolecular) points in each XYZ = ",pgrid
+	write(6,"(A,F6.3)") "Grid spacing = ",delta
+	write(6,"(A,F6.3)") "PGrid spacing = ",pdelta
+	write(6,"(A,I4)") "Central species = ",centresp
+	write(6,"(A,I5,A,I5,A)") "Frame range = ",startf," to ",endf," (0=last)"
 	if (nointra.and.nopdens) stop "Nothing to do (both -nointra and -nopdens given)."
 
 	! Probability density arrays
@@ -308,7 +307,7 @@
 		  ncaught(sp2) = ncaught(sp2) + 1
 		end if
 		nfound(sp2) = nfound(sp2) + 1
-	      else if (atomSites(sp2,0).gt.0) then
+	      else if (atomSites(sp2,0).eq.0) then
 		if (getbin(sp1,m1,mindistsq,maxdistsq,axesAorigin(sp2,m2,1),axesAorigin(sp2,m2,2),axesAorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
 		  pdens(sp2,nx,ny,nz) = pdens(sp2,nx,ny,nz) + 1
 		  ncaught(sp2) = ncaught(sp2) + 1
@@ -385,21 +384,21 @@
 115	if (nframes.EQ.endf) goto 120
 	goto 101
 
-117	write(5,*) "Error reading mapfile."
-	write(5,*) "Selected ",nmapframes," from trajectory before error."
+117	write(6,*) "Error reading mapfile."
+	write(6,*) "Selected ",nmapframes," from trajectory before error."
 	goto 120
-118	write(5,*) "Reached end of mapfile."
-	write(5,*) "Selected ",nmapframes," from trajectory."
+118	write(6,*) "Reached end of mapfile."
+	write(6,*) "Selected ",nmapframes," from trajectory."
 	goto 120
-119	write(5,*) "HISTORY file ended prematurely!"
-	write(5,"(A,I5,A)") "Managed ",nframesused," frames before error."
-120	write(5,*) "Finished."
-	write(5,"(A,I5,A)") "Averages will be taken over ",nframesused," frames."
+119	write(6,*) "HISTORY file ended prematurely!"
+	write(6,"(A,I5,A)") "Managed ",nframesused," frames before error."
+120	write(6,*) "Finished."
+	write(6,"(A,I5,A)") "Averages will be taken over ",nframesused," frames."
 
 	! ### Normalise the data
 
-	write(5,"(a,i1,a,i7,a,i7,a)") "Intermolecular calculation considers ",npdenscentres," molecules"
-	write(5,"(a,i1,a,i7,a,i7,a)") "Intramolecular calculation considers ",nintracentres," molecules"
+	write(6,"(a,i7,a)") "Intermolecular calculation considers ",npdenscentres," molecules"
+	write(6,"(a,i7,a)") "Intramolecular calculation considers ",nintracentres," molecules"
 
 	! Set normalisation over frames and central species molecules
 	do sp1=1,nspecies
@@ -447,19 +446,19 @@
 	goto 999
 799	write(0,*) "Problem with HISTORY file - failed to read header."
 	goto 999
-	write(5,"(A)") "End of unformatted HISTORY file found."
-801	write(5,"(A,I1)") " Central species = ",centresp
+	write(6,"(A)") "End of unformatted HISTORY file found."
+801	write(6,"(A,I1)") " Central species = ",centresp
 	do sp1=1,nspecies
-	  write(5,"(A,I1,A,A)") " Species ",sp1,", ",s_name(sp1)
-	  write(5,"(A12,I12,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
-	  write(5,"(A12,I12)") "Found : ",nfound(sp1)
-	  write(5,"(A12,I12,A)") "Caught : ",ncaught(sp1)," (in grid)"
-	  if (sp1.eq.centresp) write(5,"(A12,I9)") "Selected (inter) : ",npdenscentres
-	  if (sp1.eq.centresp) write(5,"(A12,I9)") "Selected (intra) : ",nintracentres
+	  write(6,"(A,I1,A,A)") " Species ",sp1,", ",s_name(sp1)
+	  write(6,"(A12,I12,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
+	  write(6,"(A12,I12)") "Found : ",nfound(sp1)
+	  write(6,"(A12,I12,A)") "Caught : ",ncaught(sp1)," (in grid)"
+	  if (sp1.eq.centresp) write(6,"(A12,I9)") "Selected (inter) : ",npdenscentres
+	  if (sp1.eq.centresp) write(6,"(A12,I9)") "Selected (intra) : ",nintracentres
 	end do
-	write(5,"(3(A,I3),A,F4.1,A)") "Grid = ",(grid*2+1),"x",(grid*2+1),"x", &
+	write(6,"(3(A,I3),A,F4.1,A)") "Grid = ",(grid*2+1),"x",(grid*2+1),"x", &
 	  & (grid*2+1)," ( x ",delta," Angstrom )"
-	write(5,"(A)") "-- Writing output files..."
+	write(6,"(A)") "-- Writing output files..."
 
 	do sp1=1,nspecies
 
@@ -513,7 +512,7 @@
 	  close(9)
 	end if
 
-	write(5,"(A)") "Finished!"
+	write(6,"(A)") "Finished!"
 999	close(10)
 
 	end program calcpdens
@@ -523,8 +522,8 @@
 	implicit none
 	integer, intent(in) :: sp1, m1, grid
 	integer, intent(out) :: nx, ny, nz
-	real*8, intent(in) :: x, y, z, mindistsq, maxdistsq
-	real*8 :: px, py, pz, tx, ty, tz, distsq, griddelta
+	real*8, intent(in) :: x, y, z, mindistsq, maxdistsq, griddelta
+	real*8 :: px, py, pz, tx, ty, tz, distsq
 
 	! Check minimum / maximum separation
 	distsq = x*x + y*y + z*z
