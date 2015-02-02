@@ -19,7 +19,7 @@
 	minoo = 2.0
 
 	nargs = iargc()
-	if (nargs.NE.3) stop "Usage : glucgeom <DLP HISTORYfile> <DLP OUTPUTfile> <nframes> "
+	if (nargs.NE.3) stop "Usage : glucgeom <HISTORYfile> <OUTPUTfile> <nframes> "
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temparg); read(temparg,"(I5)") framestodo

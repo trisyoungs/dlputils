@@ -58,7 +58,7 @@
 
 	nargs = iargc()
 	if (nargs.LT.2) then
-	  write(0,*) "Usage : sq <DLP HISTORYfile> <DLP OUTPUTfile> ...options"
+	  write(0,*) "Usage : sq <HISTORYfile> <OUTPUTfile> ...options"
 	  write(0,*) "            [-bin width]        Set x binwidth to use in S(Q) output"
 	  write(0,*) "            [-frames n]         Set maximum number of frames to accumulate"
 	  write(0,*) "            [-kcut cutoff]      Set maximum k magnitude to bin"

@@ -18,7 +18,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.4) then
-	  write(*,"(a)") "Usage: zangle <HIStory file> <OUTput file> <sp1> <sp2>"
+	  write(*,"(a)") "Usage: zangle <HISTORYfile> <OUTPUTfile> <sp1> <sp2>"
 	  write(*,"(a)") "        [-axis sp x1 x2 y1 y2]  Atoms to use for axis calculation in species sp"
 	  write(*,"(a)") "        [-start frameno]        Trajectory frame to start calculations (default = 1)"
 	  write(*,"(a)") "        [-end frameno]          Trajectory frame to end calculations on (default = last)"

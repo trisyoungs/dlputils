@@ -21,7 +21,7 @@
 	npairs = 0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : rdf_aa <HIS file> <OUT file> [-sp n] [-intra] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-discard n]"
+	if (nargs.lt.5) stop "Usage : rdf_aa <HISTORYfile> <OUTPUTfile> [-sp n] [-intra] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-discard n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	n = 2

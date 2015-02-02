@@ -28,7 +28,7 @@
 	compair = 0
 
 	nargs = iargc()
-	if (nargs.LT.2) stop "Usage : rdf_ss <DLP HISTORYfile> <DLP OUTPUTfile> [-bin binwidth] [-sp1 species] [-sp2 species] [-compair i j] [-discard n]"
+	if (nargs.LT.2) stop "Usage : rdf_ss <HISTORYfile> <OUTPUTfile> [-bin binwidth] [-sp1 species] [-sp2 species] [-compair i j] [-discard n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	if (nargs.GE.3) then

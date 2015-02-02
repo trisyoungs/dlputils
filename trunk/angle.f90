@@ -19,7 +19,7 @@
 
 	nargs = iargc()
 	if (nargs.ne.5) then
-	  write(0,*) "Usage : angle <DLP HISTORYfile> <DLP OUTPUTfile> <species> <atom1> <atom2>"
+	  write(0,*) "Usage : angle <HISTORYfile> <OUTPUTfile> <sp> <atom1> <atom2>"
 	  write(0,*) "             --- Geometry is i1-j1...j2-i2"
 	  stop
 	end if

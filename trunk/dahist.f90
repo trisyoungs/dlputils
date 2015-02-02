@@ -22,7 +22,7 @@
 	ntriplets = 0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : dahist <HIS file> <OUT file> <maxdist> [-triplet a1 a2 a3, where a1(sp1)...a2-a3(sp2)] [-sp1 n] [-sp2 n] [-frames n] [-mindist d]"
+	if (nargs.lt.5) stop "Usage : dahist <HISTORYfile> <OUTPUTfile> <maxdist> [-triplet a1 a2 a3, where a1(sp1)...a2-a3(sp2)] [-sp1 n] [-sp2 n] [-frames n] [-mindist d]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temp); read(temp,"(f20.14)") maxdist

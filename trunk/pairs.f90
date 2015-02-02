@@ -13,7 +13,7 @@
 	real*8, external :: ran2
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : pairs <DLP HISTORYfile> <DLP OUTPUTfile> <sp1> <sp2> <dist> [-nframes n] [-header] [-ranlim r] [-seed i] [-separate]"
+	if (nargs.lt.5) stop "Usage : pairs <HISTORYfile> <OUTPUTfile> <sp1> <sp2> <dist> [-nframes n] [-header] [-ranlim r] [-seed i] [-separate]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
         call getarg(3,temp); read(temp,"(I6)") s1

@@ -11,7 +11,7 @@
 	logical :: failed_header
 
 	nargs = iargc()
-	if (nargs.lt.2) stop " Usage: dlp2 <HIStory file> <format (0=unformatted, 1=formatted)> [nframes]"
+	if (nargs.lt.2) stop " Usage: dlp2 <HISTORYfile> <format (0=unformatted, 1=formatted)> [nframes]"
 	call getarg(1,hisfile)
 	call getarg(2,temp)
 	read(temp,"(I2)") destfmt

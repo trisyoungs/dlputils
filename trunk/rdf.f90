@@ -24,7 +24,7 @@
 	compairs = 0
 	otherpairs = 0
 	nargs = iargc()
-	if (nargs.LT.2) stop "Usage : rdf <DLP HISTORYfile> <DLP OUTPUTfile> [-bin width] [-header hisfile] [-frames n] [-nonorm] [-zplus] [-zminus] [-discard n] [-compair sp i j] [-otherpair sp i j]"
+	if (nargs.LT.2) stop "Usage : rdf <HISTORYfile> <OUTPUTfile> [-bin width] [-header hisfile] [-frames n] [-nonorm] [-zplus] [-zminus] [-discard n] [-compair sp i j] [-otherpair sp i j]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	

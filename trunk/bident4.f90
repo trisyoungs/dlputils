@@ -22,7 +22,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.6) then
-	  write(0,"(a120)") "Usage : bident4 <HISfile> <OUTfile> <sp1> <sp1 atom i> <sp1 atom j>"
+	  write(0,"(a120)") "Usage : bident4 <HISTORYfile> <OUTfile> <sp1> <sp1 atom i> <sp1 atom j>"
 	  write(0,"(a80)") "    [-nframes n] [-discard n] [-site sp2 a b maxdist (e.g. H(a)-O(b))] [-maxpatterns n]"
 	  write(0,"(a80)") "    [-grid n] [-delta d] [-maxatomcontacts n] [-maxmolcontacts n]"
 	  write(0,"(a80)") "    [-calc3d x1 x2 y1 y2] [-writeone] [-writecontact sp]"

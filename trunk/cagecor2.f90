@@ -18,7 +18,7 @@
 
 	nargs = iargc()
 	if (nargs.LT.10) then
-	  write(0,"(A)") "Usage : cagecor2 <DLP HISTORYfile> <DLP OUTPUTfile> <centresp> <outersp> <cagecutoff> <c> <maxnbrs> <length> <framestodo> <deltat>"
+	  write(0,"(A)") "Usage : cagecor2 <HISTORYfile> <OUTPUTfile> <centresp> <outersp> <cagecutoff> <c> <maxnbrs> <length> <framestodo> <deltat>"
 	  write(0,"(A)") "	 Set <centresp> or <outersp> to zero to specify 'any molecule'"
 	  stop
 	end if

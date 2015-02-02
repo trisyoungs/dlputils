@@ -18,7 +18,7 @@
 
 	nargs = iargc()
 	if (nargs.ne.7) then
-	  write(0,*) "Usage : intratorsion <DLP HISTORYfile> <DLP OUTPUTfile> <species> <i> <j> <k> <l>"
+	  write(0,*) "Usage : intratorsion <HISTORYfile> <OUTPUTfile> <sp> <i> <j> <k> <l>"
 	  stop
 	end if
 	call getarg(1,hisfile)

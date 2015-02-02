@@ -19,7 +19,7 @@
 	minoo = 2.0
 
 	nargs = iargc()
-	if (nargs.LT.9) stop "Usage : pickhb <DLP HISTORYfile> <DLP OUTPUTfile> <nframes> <maxoo> <minang> <sp2> <O> <H1> <H2>"
+	if (nargs.LT.9) stop "Usage : pickhb <HISTORYfile> <OUTPUTfile> <nframes> <maxoo> <minang> <sp2> <O> <H1> <H2>"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temparg); read(temparg,"(I5)") framestodo

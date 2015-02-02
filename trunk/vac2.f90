@@ -18,7 +18,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.8) then
-	  write(0,"(a)") "Usage : vac2 <DLP HISTORYfile> <DLP OUTPUTfile> <headerfile [0 for none]> <delta t> <framestodo> <length> <species> <atom> <[-]selector> [extra data]"
+	  write(0,"(a)") "Usage : vac2 <HISTORYfile> <OUTPUTfile> <headerfile [0 for none]> <delta t> <framestodo> <length> <sp> <atom> <[-]selector> [extra data]"
 	  stop
 	end if
 	call getarg(1,hisfile)

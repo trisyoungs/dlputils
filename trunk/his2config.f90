@@ -11,7 +11,7 @@
 	logical :: altheader = .false.
 
 	nargs = iargc()
-	if (nargs.lt.2) stop "Usage: his2config <HIStory file> <frame no. | -1 for all or every> [altheader]"
+	if (nargs.lt.2) stop "Usage: his2config <HISTORYfile> <frame no. | -1 for all or every> [altheader]"
 	call getarg(1,hisfile)
 	call getarg(2,temp)
 	read(temp,"(I7)") targetframe

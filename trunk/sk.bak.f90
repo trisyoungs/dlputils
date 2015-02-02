@@ -21,7 +21,7 @@
 	kcut = 5.0    ! Reciprocal space cutoff (box integers)
 
 	nargs = iargc()
-	if (nargs.LT.2) stop "Usage : staticsk <DLP HISTORYfile> <DLP OUTPUTfile> [-bin binwidth] [-frames nframes] [-npt] [-kcut cutoff]"
+	if (nargs.LT.2) stop "Usage : staticsk <HISTORYfile> <OUTPUTfile> [-bin binwidth] [-frames nframes] [-npt] [-kcut cutoff]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	if (nargs.GE.3) then

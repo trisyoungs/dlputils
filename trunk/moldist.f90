@@ -15,7 +15,7 @@
 
 	nargs = iargc()
 	if (nargs.LT.7) then
-	  write(0,"(A)") "Usage : moldist <DLP HISTORYfile> <DLP OUTPUTfile> <sp1> <at1> <sp2> <mol2> <framestodo> [cutoff]"
+	  write(0,"(A)") "Usage : moldist <HISTORYfile> <OUTPUTfile> <sp1> <at1> <sp2> <mol2> <framestodo> [cutoff]"
 	  write(0,"(A)") "        <sp1> <at1>      Central target - atom 'at1' in species 'sp1'"
 	  write(0,"(A)") "        <sp2> <mol2>     Second species <sp2>. Specify specific molecule with <mol2>."
 	  write(0,"(A)") "                            Otherwise, set <mol2> to 0 for all molecules of <sp2>."

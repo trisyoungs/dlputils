@@ -14,7 +14,7 @@
 	real*8 :: celldata(7), mindata(7), maxdata(7), avgdata(7)
 
 	nargs = iargc()
-	if (nargs.lt.1) stop "Usage : getcell <HISTORY file> [HISTORY altheader]"
+	if (nargs.lt.1) stop "Usage : getcell <HISTORYfile> [HISTORY altheader]"
         call getarg(1, hisfile)
 	if (nargs.eq.2) then
 	  altheader = .true.

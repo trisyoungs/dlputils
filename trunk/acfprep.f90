@@ -19,7 +19,7 @@
 
 	nargs = iargc()
 	if (nargs.ne.5) then
-	  write(0,"(a)") "Usage : acfprep <HISfile <DLP OUTPUTfile> <headerfile [0 for none]> <functype=velocity,dipole> <outputfile>"
+	  write(0,"(a)") "Usage : acfprep <HISTORYfile> <OUTPUTfile> <headerfile [0 for none]> <functype=velocity,dipole> <outputfile>"
 	  stop
 	end if
 	call getarg(1,hisfile1)

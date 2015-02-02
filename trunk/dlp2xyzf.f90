@@ -12,7 +12,7 @@
 	real*8, allocatable :: sx(:) ,sy(:) ,sz(:)
 
 	nargs = iargc()
-	if (nargs.NE.2) stop "Syntax : dlp2xyzf <HISTORY file> <nframes or 'all'>"
+	if (nargs.NE.2) stop "Syntax : dlp2xyzf <HISTORYfile> <nframes or 'all'>"
 	call getarg(1,infile)
 	write(0,"(A,A)") "Infile  : ",infile
 	call getarg(2,temp)
