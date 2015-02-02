@@ -13,7 +13,7 @@
 	logical :: failed_header
 
 	nargs = iargc()
-	if (nargs.ne.4) stop " Usage: dlp2dlpshift <HIStory file> <format (0=unformatted, 1=formatted)> <axis (xyz)> <delta 0-1.0>"
+	if (nargs.ne.4) stop " Usage: dlp2dlpshift <HISTORYfile> <format (0=unformatted, 1=formatted)> <axis (xyz)> <delta 0-1.0>"
 	call getarg(1,hisfile)
 	call getarg(2,temp)
 	read(temp,"(I2)") destfmt

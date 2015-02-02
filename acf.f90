@@ -25,7 +25,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.7) then
-	  write(0,"(a)") "Usage : acf <HISfile|quantityfile> <DLP OUTPUTfile> <headerfile [0 for none]> <functype=velocity,dipole,file> <delta t> <length> <framestodo> [skip]"
+	  write(0,"(a)") "Usage : acf <HISTORYfile|quantityfile> <OUTPUTfile> <headerfile [0 for none]> <functype=velocity,dipole,file> <delta t> <length> <framestodo> [skip]"
 	  stop
 	end if
 	call getarg(1,hisfile1)

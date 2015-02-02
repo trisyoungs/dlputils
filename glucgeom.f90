@@ -23,7 +23,7 @@
 	real*8, allocatable :: site_ohpairs_inter(:,:), site_ohpairs_intra(:,:)
 
 	nargs = iargc()
-	if (nargs.LT.3) stop "Usage : glucgeom <HISfile> <OUTfile> <cutoff> [-mapfile file] [-start frame] [-frames n] [-writeggmap n m 1|2]"
+	if (nargs.LT.3) stop "Usage : glucgeom <HISTORYfile> <OUTfile> <cutoff> [-mapfile file] [-start frame] [-frames n] [-writeggmap n m 1|2]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temparg); read(temparg,"(f10.5)") cutoff

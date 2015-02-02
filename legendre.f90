@@ -21,7 +21,7 @@
 
 	nargs = iargc()
 	if (nargs.LT.2) then
-	  write(*,"(a)") "Usage: legendre <HIStory file> <OUTput file> [-options]"
+	  write(*,"(a)") "Usage: legendre <HISTORYfile> <OUTPUTfile> [-options]"
 	  write(*,"(a)") "        [-target sp]            Set species sp to be the target"
 	  write(*,"(a)") "        [-vector i1 i2 j]       Atoms to use for vector calculation in target species: v = | (i1/i2)->j | = +1"
 	  write(*,"(a)") "        [-normal x y z]         Define surface normal (default = {0,0,1})"

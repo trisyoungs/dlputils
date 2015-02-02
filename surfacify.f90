@@ -19,7 +19,7 @@
 
 	nargs = iargc()
 	if (nargs.LT.2) then
-	  write(*,"(a)") "Usage: surfacify <HIStory file> <OUTput file> [options...]"
+	  write(*,"(a)") "Usage: surfacify <HISTORYfile> <OUTPUTfile> [options...]"
 	  write(*,"(a)") "        [-atom sp i]            Include atom i of species sp in the surface"
 	  write(*,"(a)") "        [-grid x y z]           Grid to use in each direction"
 	  write(*,"(a)") "        [-start frameno]        Trajectory frame to start calculations (default = 1)"

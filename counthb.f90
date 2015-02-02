@@ -16,7 +16,7 @@
 
 	nargs = iargc()
 	if (nargs.LT.6) then
-	  write(0,"(a)") "Usage : counthb <DLP HISTORYfile> <DLP OUTPUTfile> <sp1 (XH)> <sp2 (Y)> <rXY max> <aXHY min>"
+	  write(0,"(a)") "Usage : counthb <HISTORYfile> <OUTPUTfile> <sp1 (XH)> <sp2 (Y)> <rXY max> <aXHY min>"
 	  write(0,"(10x,a)") "[-xh i j ...]     Specify donor site on species 1"
 	  write(0,"(10x,a)") "[-y k ...]        Specify acceptor site on species 2"
 	  write(0,"(10x,a)") "[-frames n]       Set number of frames to calculate (default = all)"

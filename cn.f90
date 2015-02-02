@@ -15,7 +15,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.5) then
-	  write(0,"(A)") "Usage : cn <DLP HISTORYfile> <DLP OUTPUTfile> <sp1> <sp2> <cutoff> [-header file] [-frames n] [-discard n] [-compair sp i j] [-maxcn max]"
+	  write(0,"(A)") "Usage : cn <HISTORYfile> <OUTPUTfile> <sp1> <sp2> <cutoff> [-header file] [-frames n] [-discard n] [-compair sp i j] [-maxcn max]"
 	  stop
 	end if
 	call getarg(1,hisfile)

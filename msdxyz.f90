@@ -20,7 +20,7 @@
 
 	nargs = iargc()
 	if (nargs.LT.4) then
-	  write(0,"(A)") "Usage : msdxyz <DLP HISTORYfile> <DLP OUTPUTfile> <delta t> <framestodo> [-axis sp x x y y]"
+	  write(0,"(A)") "Usage : msdxyz <HISTORYfile> <OUTPUTfile> <delta t> <framestodo> [-axis sp x x y y]"
 	  stop
 	end if
 	call getarg(1,hisfile)

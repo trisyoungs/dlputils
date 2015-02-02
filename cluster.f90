@@ -15,7 +15,7 @@
 
 	compairs = 0
 	nargs = iargc()
-	if (nargs.lt.4) stop "Usage : cluster <DLP HISTORYfile> <DLP OUTPUTfile> <sp> <maxcomdist> [-header hisfile] [-frames n] [-discard n] [-compair sp i j]"
+	if (nargs.lt.4) stop "Usage : cluster <HISTORYfile> <OUTPUTfile> <sp> <maxcomdist> [-header hisfile] [-frames n] [-discard n] [-compair sp i j]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temp)

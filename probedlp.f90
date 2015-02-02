@@ -14,7 +14,7 @@
 
 	! Get target filename
 	nargs = iargc()
-	if (nargs.ne.1) stop "Usage: probedlp <HIStory file>"
+	if (nargs.ne.1) stop "Usage: probedlp <HISTORYfile>"
 	call getarg(1,hisfile)
 
 	write(0,"(A,A)") "History file : ",hisfile

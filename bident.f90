@@ -15,7 +15,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.7) then
-	  write(0,"(a120)") "Usage : bident <HISfile> <OUTfile> <sp1 (central)> <sp2 (outer)> <sp2 atom i> <sp2 atom j> <maxdist>"
+	  write(0,"(a120)") "Usage : bident <HISTORYfile> <OUTfile> <sp1 (central)> <sp2 (outer)> <sp2 atom i> <sp2 atom j> <maxdist>"
 	  write(0,"(a80)") "    [-nframes n] [-discard n] [-site a b (e.g. H-O)] [-dump]"
 	  stop
 	end if

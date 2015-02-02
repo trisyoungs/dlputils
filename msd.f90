@@ -17,7 +17,7 @@
 	real*8 :: tx,ty,tz,rij2,deltat
 
 	nargs = iargc()
-	if (nargs.lt.4) stop "Usage : msd <DLP HISTORYfile> <DLP OUTPUTfile> <delta t> <framestodo> [framestodiscard]"
+	if (nargs.lt.4) stop "Usage : msd <HISTORYfile> <OUTPUTfile> <delta t> <framestodo> [framestodiscard]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temp); read(temp,"(F10.6)") deltat

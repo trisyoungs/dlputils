@@ -11,7 +11,7 @@
 	logical :: failed_header
 
 	nargs = iargc()
-	if (nargs.LT.1) stop "Usage: dlpsize <HISTORY file>"
+	if (nargs.LT.1) stop "Usage: dlpsize <HISTORYfile>"
 	call getarg(1,hisfile)
 
 	write(6,*) "Counting..."

@@ -16,7 +16,7 @@
 
 	binwidth=0.1   ! In Angstroms
 	nargs = iargc()
-	if (nargs.lt.3) stop "Usage : zdens <DLP HISTORYfile> <DLP OUTPUTfile> <base z> [-bin width] [-header hisfile] [-comatom sp atom] [-discard n] [-frames n] [-symm cz]"
+	if (nargs.lt.3) stop "Usage : zdens <HISTORYfile> <OUTPUTfile> <base z> [-bin width] [-header hisfile] [-comatom sp atom] [-discard n] [-frames n] [-symm cz]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temp); read(temp,"(f15.4)") zbase

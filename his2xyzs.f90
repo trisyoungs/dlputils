@@ -12,7 +12,7 @@
 	logical :: failed_header
 
 	nargs = iargc()
-	if (nargs.NE.2) stop "Usage: his2xyzs <HIStory file> <interval>"
+	if (nargs.NE.2) stop "Usage: his2xyzs <HISTORYfile> <interval>"
 	call getarg(1,hisfile)
 	call getarg(2,frameid)
 	read (frameid,"(i4)") interval

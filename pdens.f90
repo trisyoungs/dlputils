@@ -35,7 +35,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.3) then
-	  write(*,"(a)") "Usage: pdens <HIStory file> <OUTput file> <centresp> [-options]"
+	  write(*,"(a)") "Usage: pdens <HISTORYfile> <OUTPUTfile> <centresp> [-options]"
 	  write(*,"(a)") "        [-axis sp x1 x2 y1 y2]     Atoms to use for axis calculation in species sp"
 	  write(*,"(a)") "        [-atom sp i]               Add atom i in species sp as a specific atom to use as other point"
 	  write(*,"(a)") "        [-delta spacing]           Spacing between grid points (default = 0.5 Angstrom)"

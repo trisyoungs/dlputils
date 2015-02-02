@@ -17,7 +17,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.6) then
-	  write(0,"(A)") "Usage : dist2 <DLP HISTORYfile> <DLP OUTPUTfile> <framestodo> <species> <comatom or 0> <[-]selector> [extra data]"
+	  write(0,"(A)") "Usage : dist2 <HISTORYfile> <OUTPUTfile> <framestodo> <sp> <comatom or 0> <[-]selector> [extra data]"
 	  stop
 	end if
 	call getarg(1,hisfile)

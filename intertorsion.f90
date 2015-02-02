@@ -24,7 +24,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.8) then
-	  write(0,*) "Usage : intertorsion <DLP HISTORYfile> <DLP OUTPUTfile> <species 1> <atom i> <atom j> <species 2> <atom k> <atom l> [jj cutoff]"
+	  write(0,*) "Usage : intertorsion <HISTORYfile> <OUTPUTfile> <species 1> <atom i> <atom j> <species 2> <atom k> <atom l> [jj cutoff]"
 	  write(0,*) "             --- Torsion angle is i1-j1-j2-i2 (i-j-k-l)"
 	  stop
 	end if

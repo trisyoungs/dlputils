@@ -41,7 +41,7 @@
 
 	nargs = iargc()
 	if (nargs.LT.2) then
-	  write(0,*) "Usage : totalgr <DLP HISTORYfile> <DLP OUTPUTfile> ...options"
+	  write(0,*) "Usage : totalgr <HISTORYfile> <OUTPUTfile> ...options"
 	  write(0,*) "                                [-bin binwidth] [-frames nframes] [-discard nframes]"
 	  write(0,*) "                                [-skip interval] [-partials] [-readmap <file>] [-cut cutoff]"
 	  stop

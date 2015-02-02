@@ -18,7 +18,7 @@
 	binwidth=0.1   ! In Angstroms
 	compairs = 0
 	nargs = iargc()
-	if (nargs.LT.8) stop "Usage : cdf <DLP HISTORYfile> <DLP OUTPUTfile> <ox> <oy> <oz> <vx> <vy> <vz> [-bin width] [-header hisfile] [-frames n] [-discard n] [-compair sp i j]"
+	if (nargs.LT.8) stop "Usage : cdf <HISTORYfile> <OUTPUTfile> <ox> <oy> <oz> <vx> <vy> <vz> [-bin width] [-header hisfile] [-frames n] [-discard n] [-compair sp i j]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	call getarg(3,temp); read(temp,"(f20.14)") origin(1)

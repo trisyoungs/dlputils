@@ -17,7 +17,7 @@
 
 	nargs = iargc()
 	if (nargs.LT.2) then
-	  write(*,"(a)") "Usage: avgconfig <HIStory file> <OUTput file> [-options]"
+	  write(*,"(a)") "Usage: avgconfig <HISTORYfile> <OUTPUTfile> [-options]"
 	  write(*,"(a)") "        [-nframes n]          Number of frames to do"
 	  stop
 	else

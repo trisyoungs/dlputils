@@ -20,7 +20,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.6) then
-	  write(0,"(A)") "Usage : msd <DLP HISTORYfile> <DLP OUTPUTfile> <delta t> <framestodo> <species> <[-]selector> [extra data]"
+	  write(0,"(A)") "Usage : msd <HISTORYfile> <OUTPUTfile> <delta t> <framestodo> <sp> <[-]selector> [extra data]"
 	  stop
 	end if
 	call getarg(1,hisfile)

@@ -20,7 +20,7 @@
 
 	nargs = iargc()
 	if (nargs.ne.8) then
-	  write(0,"(A)") "Usage : prepfm <HISfile> <OUTfile> <out> <meshcut> <eshift> <mixweight> <sysname> <frameskip>"
+	  write(0,"(A)") "Usage : prepfm <HISTORYfile> <OUTfile> <out> <meshcut> <eshift> <mixweight> <sysname> <frameskip>"
 	  write(0,"(A)") "	 <out> is 'cell' for original config, 'cations' or 'anions'"
 	  stop
 	end if

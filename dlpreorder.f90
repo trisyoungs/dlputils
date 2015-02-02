@@ -14,7 +14,7 @@
 	logical :: failed_header
 
 	nargs = iargc()
-	if (nargs.le.2) stop " Usage: dlpreorder <HIStory file> <OUT file> <sp1> [sp2] [sp3]..."
+	if (nargs.le.2) stop " Usage: dlpreorder <HISTORYfile> <OUTPUTfile> <sp1> [sp2] [sp3]..."
 	call getarg(1,hisfile)
 	call getarg(2,outfile)
 	neworder = 0

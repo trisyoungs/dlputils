@@ -20,7 +20,7 @@
 
 	nargs = iargc()
 	if (nargs.lt.8) then
-	  write(*,"(a)") "Usage: gammadist <HIStory file> <OUTput file> <watersp> <O id> <H1 id> <H2 id> <surfsp> <surfid> [options]"
+	  write(*,"(a)") "Usage: gammadist <HISTORYfile> <OUTPUTfile> <watersp> <O id> <H1 id> <H2 id> <surfsp> <surfid> [options]"
 	  write(*,"(a)") "        [-zorigin z]            Use specified Z as first distance point"
 	  write(*,"(a)") "        [-minz r]               Minimum deviation from first distance point"
 	  write(*,"(a)") "        [-maxz r]               Maximum deviation from first distance point"

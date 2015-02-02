@@ -15,7 +15,7 @@
 
         nargs = iargc()
         if (nargs.lt.2) then
-	  write(0,"(a)") "Usage: cryscomp <HISfile> <OUTfile> <CONFIGfile> ..."
+	  write(0,"(a)") "Usage: cryscomp <HISTORYfile> <OUTfile> <CONFIGfile> ..."
 	  write(0,"(a)") "        [-axis sp x1 x2 y1 y2]  Atoms to use for axis calculation in species sp"
 	  write(*,"(a)") "        [-header file]          Use specified file to get header (for headerless HIS files)"
 	  write(*,"(a)") "        [-start frameno]        Trajectory frame to start calculations (default = 1)"
