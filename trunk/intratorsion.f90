@@ -13,7 +13,7 @@
 	integer :: iargc
 	real*8 :: i(3), j(3), k(3), l(3), v(3), vecji(3), vecjk(3), veckj(3), veckl(3), xp1(3), xp2(3)
 	real*8 :: norm, dp, torsion, rij, tx, ty, tz, ktx, kty, ktz, mag1, mag2
-	real*8, allocatable :: ijkl(:)
+	real*8 :: ijkl(-180:180)
 	real*8 :: dist, magnitude, dotproduct
 
 	nargs = iargc()
@@ -38,8 +38,6 @@
 	write(0,"(A,I5)") "Target species is ",sp
 	write(0,"(a,4(i3))") "Calculating torsion angle from atoms ",atom1,atom2,atom3,atom4
 	
-	allocate(ijkl(-180:180),stat=status); if (status.GT.0) stop "Allocation error for ijkl()"
-
 	! Initialise the arrays...
 	ijkl = 0.0
 
