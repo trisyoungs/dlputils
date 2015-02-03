@@ -164,7 +164,7 @@
 	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".tors"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=-180,180
-	  write(9,"(f7.3,2x,f12.8)") n-0.5,ijkl(n)
+	  write(9,"(f9.3,2x,f12.4)") n-0.5,ijkl(n)
 	end do
 	close(9)
 

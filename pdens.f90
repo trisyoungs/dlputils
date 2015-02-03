@@ -275,8 +275,11 @@
 	  end if
 	  npdenscentres = npdenscentres + 1	! Normalisation counter
 	  do sp2=1,nspecies
-	    p = s_start(sp2) - 1
+	    p = s_start(sp2) - s_natoms(sp2) - 1
 	    do m2=1,s_nmols(sp2)
+
+	      ! Increase atom offset
+	      p=p+s_natoms(sp2)
 
 	      ! Don't consider central molecule with itself
 	      if ((sp1.eq.sp2).and.(m1.eq.m2)) cycle
@@ -324,7 +327,6 @@
 		end do
 	      end if
 
-	      p=p+s_natoms(sp2)
 	    end do
 	  end do
 	end do
@@ -404,11 +406,11 @@
 	do sp1=1,nspecies
 
 	  ! Calculate expected species numbers
-	  spexp(sp1) = s_nmols(centresp) * s_nmols(sp1) * nframesused * max(1,atomSites(sp1,0))
-	  if (centresp.eq.sp1) spexp(sp1) = spexp(sp1) - s_nmols(sp1) * nframesused * max(1,atomSites(sp2,0))
+	  spexp(sp1) = s_nmols(centresp) * s_nmols(sp1) * nframesused
+	  if (centresp.eq.sp1) spexp(sp1) = spexp(sp1) - s_nmols(sp1) * nframesused
 
 	  ! Species density about central species
-	  pdens(sp1,:,:,:) = pdens(sp1,:,:,:)/npdenscentres/(delta**3)
+	  pdens(sp1,:,:,:) = pdens(sp1,:,:,:) / npdenscentres /(delta**3)
 	  !do nx=-grid,grid
 	  !  do ny=-grid,grid
 	  !    do nz=-grid,grid
