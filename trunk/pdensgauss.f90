@@ -10,7 +10,7 @@
 	integer :: ngrid(3), nargs, n, x, y, z, loop(3), point(3), extents(3), i, j, k
 	logical :: gnufile = .false., success
 	real*8 :: axes(9), origin(3), v(3), sigma, mag(3), xyz, twosigma2, g
-	real*8, allocatable :: grid(:,:,:), gaussgrid(:,:,:)
+	real*8, allocatable :: grid(:,:,:), gaussgrid(:,:,:), gaussvalues(:,:,:)
 	integer :: iargc
 
         nargs = iargc()
@@ -33,8 +33,9 @@
 	  end select
 	end do
 
-	! Open file
-	open(unit=11, file=infile, form='formatted', status='old')
+	! Open files
+	open(unit=11,file=infile, form='formatted', status='old')
+        open(unit=12,file=outfile,form='formatted',status='new')
 
 	! Format of data is :
 	! Line 1 : gridx,gridy,gridz
@@ -121,6 +122,17 @@
 	gaussgrid = 0.0
 	twosigma2 = 2.0 * sigma * sigma
 
+	! Work out list of surrounding points to consider at each gridpoint
+	allocate(gaussvalues(-extents(1):extents(1),-extents(2):extents(2),-extents(3):extents(3)))
+	do i=-extents(1),extents(1)
+	  do j=-extents(2),extents(2)
+	    do k=-extents(3),extents(3)
+	      xyz = (mag(1)*i)*(mag(1)*i) + (mag(2)*j)*(mag(2)*j) * (mag(3)*k)*(mag(3)*k)
+	      gaussvalues(i,j,k) = exp(-xyz/twosigma2)
+	    end do
+	  end do
+	end do
+	
 	! Loop over original data
 	do x=1,ngrid(1)
 	  write(0,"(a,i4,a,i4)") "At x = ", x, " of ", ngrid(1)
@@ -138,9 +150,9 @@
 		    point(3) = z+k
 		    if ((point(3).lt.1).or.(point(3).gt.ngrid(3))) cycle
 
-		    xyz = (mag(1)*i)*(mag(1)*i) + (mag(2)*j)*(mag(2)*j) * (mag(3)*k)*(mag(3)*k)
-		    g = grid(x,y,z) * exp(-xyz/twosigma2)
-		    gaussgrid(point(1),point(2),point(3)) = gaussgrid(point(1),point(2),point(3)) + g
+		    !xyz = (mag(1)*i)*(mag(1)*i) + (mag(2)*j)*(mag(2)*j) * (mag(3)*k)*(mag(3)*k)
+		    !g = grid(x,y,z) * exp(-xyz/twosigma2)
+		    gaussgrid(point(1),point(2),point(3)) = gaussgrid(point(1),point(2),point(3)) + grid(x,y,z)*gaussvalues(i,j,k)
 		  end do
 		end do
 	      end do
@@ -166,11 +178,10 @@
 	write(0,"(a,3f12.6)") "Grid origin : ",origin
 	write(0,"(a,3i5)") "Loop order  : ",loop
 
-        open(unit=11,file=outfile,form='formatted',status='new')
-	write(11,*) ngrid
-	write(11,"(9f6.2)") axes
-	write(11,"(3f10.4)") origin
-	write(11,*) looporder
+	write(12,*) ngrid
+	write(12,"(9f6.2)") axes
+	write(12,"(3f10.4)") origin
+	write(12,*) looporder
 	
 	do x=1,ngrid(1)
 	  do y=1,ngrid(2)
@@ -179,11 +190,10 @@
 	      point(loop(2)) = y
 	      point(loop(1)) = z
 	  !write(55,*) "writing point",x,y,z
-	      write(11,"(f12.5)") gaussgrid(point(1),point(2),point(3))
+	      write(12,"(f12.5)") gaussgrid(point(1),point(2),point(3))
 	    end do
 	  end do
 	end do
-
-	close(11)
+	close(12)
 
 	end program pdensgauss
