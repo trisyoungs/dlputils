@@ -272,14 +272,14 @@
 	do sp=1,nspecies
 	  ! Calculate local axes if we can
 	  ! -- Axes A
-	  if (axesAdefined(sp).and.(s_natoms(sp).gt.2)) then
+	  if (axesAdefined(sp).and.(s_natoms(sp).gt.2).and.(axesAatoms(sp,1).ne.-1)) then
 	    i = s_start(sp) - 1
 	    do m=1,s_nmols(sp)
 	      call calculate_axes(axesAatoms(sp,:)+i, axesA(sp,m,:), axesAorigin(sp,m,:))
 	      i = i + s_natoms(sp)
 	    end do
 	  else
-	    ! No axis definition - Set the axes to be in standard orientation
+	    ! No axis definition (or cartesian requested) - Set the axes to be in standard orientation
 	    call calc_spcom(sp)
 	    do m=1,s_nmols(sp)
 	      axesA(sp,m,1:3) = (/ 1.0,0.0,0.0 /)

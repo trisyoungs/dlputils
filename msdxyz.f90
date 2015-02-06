@@ -44,6 +44,10 @@
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") aa(sp1,4)
 	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Molecular axis for species ",sp1," calculated from: X=",aa(sp1,1),"->", &
 		 & aa(sp1,2),", Y=0.5X->0.5(r(",aa(sp1,3),")->r(",aa(sp1,4),"))"
+	      do m=1,3
+		if ((axesAatoms(sp1,m).lt.1).or.(axesAatoms(sp1,m).gt.s_natoms(sp1))) stop "Atom id out of range for axes on this species!"
+	      end do
+	      axesAdefined(sp1) = .true.
 	  end select
 	end do
 

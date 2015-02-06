@@ -207,7 +207,7 @@
 	resfile=basename(1:baselen)//a1//"-"//a2//".ijj"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=1,nanglebins
-	  write(9,"(F10.3,3x,F12.8)") anglebin*(n-0.5),ijj(n)
+	  write(9,"(F10.3,3x,e12.8)") anglebin*(n-0.5),ijj(n)
 	end do
 	close(9)
 
@@ -215,7 +215,7 @@
 	resfile=basename(1:baselen)//a1//"-"//a2//".iji"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=1,nanglebins
-	  write(9,"(F10.3,3x,F12.8)") anglebin*(n-0.5),iji(n)
+	  write(9,"(F10.3,3x,e12.8)") anglebin*(n-0.5),iji(n)
 	end do
 	close(9)
 
@@ -223,7 +223,7 @@
 	resfile=basename(1:baselen)//a1//"-"//a2//".jij"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=1,nanglebins
-	  write(9,"(F10.3,3x,F12.8)") anglebin*(n-0.5),jij(n)
+	  write(9,"(F10.3,3x,e12.8)") anglebin*(n-0.5),jij(n)
 	end do
 	close(9)
 
@@ -232,7 +232,7 @@
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=1,nanglebins
 	  do m=1,ndistbins
-	    write(9,"(f10.3,2x,f6.3,2x,f12.8)") anglebin*(n-0.5),distbin*(m-0.5),ijj_jj(n,m)
+	    write(9,"(f10.3,2x,f6.3,2x,e12.8)") anglebin*(n-0.5),distbin*(m-0.5),ijj_jj(n,m)
 	  end do
 	  write(9,*) ""
 	end do

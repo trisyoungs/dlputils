@@ -70,6 +70,9 @@
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp,4)
 	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp," calculated from: X=",axesAatoms(sp,1),"->", &
 	        & axesAatoms(sp,2),", Y=0.5X->0.5(r(",axesAatoms(sp,3),")->r(",axesAatoms(sp,4),"))"
+              do m=1,3
+                if ((axesAatoms(sp,m).lt.1).or.(axesAatoms(sp,m).gt.s_natoms(sp))) stop "Atom id out of range for axes on this species!"
+              end do
 	      axesAdefined(sp) = .true.
 	    case ("-header")
               n = n + 1; call getarg(n,altheaderfile)
