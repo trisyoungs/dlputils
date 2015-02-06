@@ -12,7 +12,7 @@
 	integer :: nanglebins,ndistbins,aoff1,aoff2,n,m,s1,s2,bin,bin2,nframes,numadded,sp,atom1,atom2
 	integer :: iargc
 	real*8 :: i1(3), i2(3), j1(3), j2(3), ij1(3), ij2(3), v(3),dp, distbin, anglebin, norm, angle, dist
-	real*8, allocatable :: ijj(:), ijj_jj(:,:), iji(:)
+	real*8, allocatable :: ijj(:), ijj_jj(:,:), iji(:), jij(:)
 
 	anglebin=0.5	! In degrees
 	distbin=0.1	! In Angstroms
@@ -45,11 +45,13 @@
 	
 	allocate(ijj(nanglebins),stat=status); if (status.GT.0) stop "Allocation error for ijj()"
 	allocate(iji(nanglebins),stat=status); if (status.GT.0) stop "Allocation error for iji()"
+	allocate(jij(nanglebins),stat=status); if (status.GT.0) stop "Allocation error for jij()"
 	allocate(ijj_jj(nanglebins,ndistbins),stat=status); if (status.GT.0) stop "Allocation error for ijj_jj()"
 
 	! Initialise the arrays...
 	ijj = 0.0
 	iji = 0.0
+	jij = 0.0
 	ijj_jj = 0.0
 
 	! XXXX
@@ -139,7 +141,12 @@
 	    angle = acos(dp) * (180.0 / pi)
 	    bin = int(angle * (1.0 / anglebin)) + 1
 	    iji(bin) = iji(bin)+1
-	
+
+	    ! 4) Angle j1-i1/2-j2
+	    dp = ij1(1)*ij2(1) + ij1(2)*ij2(2) + ij1(3)*ij2(3)
+	    angle = acos(dp) * (180.0 / pi)
+	    bin = int(angle * (1.0 / anglebin)) + 1
+	    jij(bin) = jij(bin)+1
 
 	    ! Global counter
 	    numadded = numadded+1
@@ -190,6 +197,7 @@
 	norm = nframes * s_nmols(sp) * (s_nmols(sp) - 1)
 	ijj = ijj / nframes
 	iji = iji / nframes
+	jij = jij / nframes
 	ijj_jj = ijj_jj / nframes
 
 	a1 = char(48+atom1/10)//char(48+MOD(atom1,10))
@@ -199,7 +207,7 @@
 	resfile=basename(1:baselen)//a1//"-"//a2//".ijj"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=1,nanglebins
-	  write(9,"(F7.3,3x,F12.8)") anglebin*(n-0.5),ijj(n)
+	  write(9,"(F10.3,3x,F12.8)") anglebin*(n-0.5),ijj(n)
 	end do
 	close(9)
 
@@ -207,7 +215,15 @@
 	resfile=basename(1:baselen)//a1//"-"//a2//".iji"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=1,nanglebins
-	  write(9,"(F7.3,3x,F12.8)") anglebin*(n-0.5),iji(n)
+	  write(9,"(F10.3,3x,F12.8)") anglebin*(n-0.5),iji(n)
+	end do
+	close(9)
+
+	! Write histogram jij
+	resfile=basename(1:baselen)//a1//"-"//a2//".jij"
+	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
+	do n=1,nanglebins
+	  write(9,"(F10.3,3x,F12.8)") anglebin*(n-0.5),jij(n)
 	end do
 	close(9)
 
@@ -216,7 +232,7 @@
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	do n=1,nanglebins
 	  do m=1,ndistbins
-	    write(9,"(f7.3,2x,f6.3,2x,f12.8)") anglebin*(n-0.5),distbin*(m-0.5),ijj_jj(n,m)
+	    write(9,"(f10.3,2x,f6.3,2x,f12.8)") anglebin*(n-0.5),distbin*(m-0.5),ijj_jj(n,m)
 	  end do
 	  write(9,*) ""
 	end do
