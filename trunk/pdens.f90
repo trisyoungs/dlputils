@@ -38,6 +38,7 @@
 	  write(*,"(a)") "Usage: pdens <HISTORYfile> <OUTPUTfile> <centresp> [-options]"
 	  write(*,"(a)") "        [-axis sp x1 x2 y1 y2]     Atoms to use for axis calculation in species sp"
 	  write(*,"(a)") "        [-atom sp i]               Add atom i in species sp as a specific atom to use as other point"
+	  write(*,"(a)") "        [-cartesian sp]            Use Cartesian axes for species sp"
 	  write(*,"(a)") "        [-delta spacing]           Spacing between grid points (default = 0.5 Angstrom)"
 	  write(*,"(a)") "        [-end frameno]             Trajectory frame to end calculations on (default = last)"
 	  write(*,"(a)") "        [-grid npoints]            Grid points in each direction for prob. densities (default = 20)"
@@ -108,6 +109,9 @@
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp1,4)
 	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp1," calculated from: X=",axesAatoms(sp1,1),"->", &
 	        & axesAatoms(sp1,2),", Y=0.5X->0.5(r(",axesAatoms(sp1,3),")->r(",axesAatoms(sp1,4),"))"
+	      do m=1,3
+		if ((axesAatoms(sp1,m).lt.1).or.(axesAatoms(sp1,m).gt.s_natoms(sp1))) stop "Atom id out of range for axes on this species!"
+	      end do
 	      axesAdefined(sp1) = .true.
 	    case ("-atom")
 	      n = n + 1; call getarg(n,temp); read(temp,"(I4)") sp1
@@ -115,6 +119,11 @@
 	      atomSites(sp1,0) = atomSites(sp1,0) + 1
 	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") atomSites(sp1, atomSites(sp1,0))
 	      write(0,"(A,I3,a,i2)") "Atom ", atomSites(sp1, atomSites(sp1,0)), " added as other site for species ", sp1
+	    case ("-cartesian")
+	      n = n + 1; call getarg(n,temp); read(temp,"(I4)") sp1
+	      axesAatoms(sp1,:) = -1
+	      axesAdefined(sp1) = .true.
+	      write(0,"(A,i3)") "Cartesian axes will be used for species ", sp1
 	    case ("-grid")
 	      n = n + 1; call getarg(n,temp); read(temp,"(I4)") grid
 	      write(0,"(A,I4)") "Grid points in each XYZ = ",grid

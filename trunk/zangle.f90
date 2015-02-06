@@ -69,14 +69,17 @@
 	  call getarg(n,temp)
 	  select case (temp)
 	    case ("-axis") 
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") m
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(m,1)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(m,2)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(m,3)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(m,4)
-	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",m," calculated from: X=",axesAatoms(m,1),"->", &
-	        & axesAatoms(m,2),", Y=0.5X->0.5(r(",axesAatoms(m,3),")->r(",axesAatoms(m,4),"))"
-	      axesAdefined(m) = .true.
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp1
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp1,1)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp1,2)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp1,3)
+	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") axesAatoms(sp1,4)
+	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp1," calculated from: X=",axesAatoms(sp1,1),"->", &
+	        & axesAatoms(sp1,2),", Y=0.5X->0.5(r(",axesAatoms(sp1,3),")->r(",axesAatoms(sp1,4),"))"
+	      do m=1,3
+		if ((axesAatoms(sp1,m).lt.1).or.(axesAatoms(sp1,m).gt.s_natoms(sp1))) stop "Atom id out of range for axes on this species!"
+	      end do
+	      axesAdefined(sp1) = .true.
 	    case ("-start")
 	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") startf
 	      write(0,"(A,I5)") "Starting frame = ",startf
