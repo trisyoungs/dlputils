@@ -9,10 +9,13 @@
 	character*20 :: temp
 	integer :: status,  nargs, success, baselen
 	integer :: aoff1,n,m,s1,s2,bin1,bin2,nframes,numadded,sp,t1(4),t2(4)
-	integer :: iargc
-	real*8 :: torsion
+	integer :: iargc, ntorsionbins
+	real*8 :: torsion, torsionbin
 	real*8 :: psi1, psi2
 	real*8, allocatable :: ijkl(:,:)
+
+	torsionbin = 1.0
+	ntorsionbins = 180 / torsionbin
 
 	nargs = iargc()
 	if (nargs.ne.11) then
@@ -40,7 +43,7 @@
 	write(0,"(A,I5)") "Target species is ",sp
 	write(0,"(a,4(i3),a,4(i3))") "Calculating torsion angle map between ",t1(1),t1(2),t1(3),t1(4), " and ", t2(1),t2(2),t2(3),t2(4)
 	
-	allocate(ijkl(-180:180,-180:180),stat=status); if (status.GT.0) stop "Allocation error for ijkl()"
+	allocate(ijkl(-ntorsionbins:ntorsionbins,-ntorsionbins:ntorsionbins),stat=status); if (status.GT.0) stop "Allocation error for ijkl()"
 
 	! Initialise the arrays...
 	ijkl = 0.0
@@ -62,8 +65,20 @@
 	  psi1 = torsion(aoff1+t1(1),aoff1+t1(2),aoff1+t1(3),aoff1+t1(4))
 	  psi2 = torsion(aoff1+t2(1),aoff1+t2(2),aoff1+t2(3),aoff1+t2(4))
 
-	  bin1 = int(psi1)
-	  bin2 = int(psi2)
+	  if (psi1.lt.0.0) then
+	    bin1 = int(psi1/torsionbin) - 1
+	    if (bin1.lt.-ntorsionbins) bin1 = -ntorsionbins
+	  else
+	    bin1 = int(psi1/torsionbin)
+	    if (bin1.ge.ntorsionbins) bin1 = ntorsionbins-1
+	  end if
+	  if (psi2.lt.0.0) then
+	    bin2 = int(psi2/torsionbin) - 1
+	    if (bin2.lt.-ntorsionbins) bin2 = -ntorsionbins
+	  else
+	    bin2 = int(psi2/torsionbin)
+	    if (bin2.ge.ntorsionbins) bin2 = ntorsionbins-1
+	  end if
 	  ijkl(bin1,bin2) = ijkl(bin1,bin2) + 1
 
 	  ! Global counter
@@ -124,8 +139,8 @@
 	! Write torsion histogram ijkl
 	resfile=basename(1:baselen)//a(1)//"-"//a(2)//"-"//a(3)//"-"//a(4)//"_"//a(5)//"-"//a(6)//"-"//a(7)//"-"//a(8)//".tors2"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	do n=-180,180
-	  write(9,"(f9.3,2x,f12.8)") (n+0.5,ijkl(n,m),m=-180,180)
+	do n=-ntorsionbins,ntorsionbins-1
+	  write(9,"(f9.3,2x,f12.8)") ((n+0.5)*torsionbin,ijkl(n,m),m=-ntorsionbins,ntorsionbins-1)
 	  write(9,*) ""
 	end do
 	close(9)
