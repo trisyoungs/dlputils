@@ -10,11 +10,14 @@
 	character*20 :: temp
 	integer :: status,  nargs, success, baselen
 	integer :: aoff1,n,m,s1,s2,bin,nframes,numadded,sp,atom1,atom2,atom3,atom4
-	integer :: iargc
+	integer :: iargc, ntorsionbins
 	real*8 :: i(3), j(3), k(3), l(3), v(3), vecji(3), vecjk(3), veckj(3), veckl(3), xp1(3), xp2(3)
-	real*8 :: norm, dp, torsion, rij, tx, ty, tz, ktx, kty, ktz, mag1, mag2
-	real*8 :: ijkl(-180:180)
+	real*8 :: norm, dp, torsion, rij, tx, ty, tz, ktx, kty, ktz, mag1, mag2, torsionbin
+	real*8, allocatable :: ijkl(:)
 	real*8 :: dist, magnitude, dotproduct
+
+	torsionbin = 1.0
+	ntorsionbins = 180.0 / torsionbin
 
 	nargs = iargc()
 	if (nargs.ne.7) then
@@ -37,6 +40,7 @@
 
 	write(0,"(A,I5)") "Target species is ",sp
 	write(0,"(a,4(i3))") "Calculating torsion angle from atoms ",atom1,atom2,atom3,atom4
+	allocate(ijkl(-ntorsionbins:ntorsionbins),stat=status); if (status.GT.0) stop "Allocation error for ijkl()"
 	
 	! Initialise the arrays...
 	ijkl = 0.0
@@ -102,8 +106,14 @@
 	  torsion = acos(dp)*radcon
 	  ! Calculate sign
 	  dp = dotproduct(xp1, veckl)
-	  if (dp.lt.0) torsion = -torsion
-	  bin = int(torsion)
+	    if (dp.lt.0) then
+	      torsion = -(torsion+1.0)
+	      bin = int(torsion / torsionbin)
+	      if (bin.lt.-ntorsionbins) bin = -ntorsionbins
+	    else
+	      bin = int(torsion / torsionbin)
+	      if (bin.ge.ntorsionbins) bin = ntorsionbins-1
+	    end if
 	  ijkl(bin) = ijkl(bin) + 1
 
 	  ! Global counter
@@ -161,8 +171,8 @@
 	! Write torsion histogram ijkl
 	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".tors"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	do n=-180,180
-	  write(9,"(f9.3,2x,f12.4)") n-0.5,ijkl(n)
+	do n=-ntorsionbins,ntorsionbins-1
+	  write(9,"(f9.3,2x,f12.4)") (n+0.5)*torsionbin,ijkl(n)
 	end do
 	close(9)
 

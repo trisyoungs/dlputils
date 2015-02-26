@@ -10,12 +10,11 @@
 	character*2 :: a1, a2, a3, a4
 	character*20 :: temp
 	integer :: status,  nargs, success, baselen
-	integer :: nanglebins,ndistbins,aoff1,aoff2,n,m,s1,s2,bin,bin2,nframes,numadded,sp1,sp2,atom_i,atom_j,atom_k,atom_l
+	integer :: ntorsionbins,nanglebins,ndistbins,aoff1,aoff2,n,m,s1,s2,bin,bin2,nframes,numadded,sp1,sp2,atom_i,atom_j,atom_k,atom_l
 	integer :: iargc
 	real*8 :: i(3), j(3), k(3), l(3), v(3), vecji(3), vecjk(3), veckj(3), veckl(3), xp1(3), xp2(3)
 	real*8 :: dp, distbin, anglebin, torsionbin, torsion, angle, rij, tx, ty, tz, ktx, kty, ktz, mag1, mag2, cutoff
-	real*8, allocatable :: ijk(:), jkl(:), ijkl_jk(:,:)
-	real*8 :: ijkl(-180:180)
+	real*8, allocatable :: ijk(:), jkl(:), ijkl(:), ijkl_jk(:,:), ijkl_ijk(:,:)
 	real*8 :: dist, magnitude, dotproduct
 
 	torsionbin=0.5	! In degrees
@@ -47,6 +46,7 @@
         ! Now, read in the history header so that we have cell()
         if (readheader().EQ.-1) goto 799
 
+	ntorsionbins = 180.0 / torsionbin
 	nanglebins = 180.0 / anglebin
 	ndistbins = cell(1) / distbin
 	write(0,"(A,F6.3,F6.3,F6.3)") "Distance, angle, torsion binwidths are ",distbin,anglebin,torsionbin
@@ -58,13 +58,16 @@
 	
 	allocate(ijk(nanglebins),stat=status); if (status.GT.0) stop "Allocation error for ijk()"
 	allocate(jkl(nanglebins),stat=status); if (status.GT.0) stop "Allocation error for jkl()"
-	allocate(ijkl_jk(-180:180,ndistbins),stat=status); if (status.GT.0) stop "Allocation error for ijkl_jk()"
+	allocate(ijkl(-ntorsionbins:ntorsionbins),stat=status); if (status.GT.0) stop "Allocation error for ijkl()"
+	allocate(ijkl_jk(-ntorsionbins:ntorsionbins,ndistbins),stat=status); if (status.GT.0) stop "Allocation error for ijkl_jk()"
+	allocate(ijkl_ijk(-ntorsionbins:ntorsionbins,nanglebins),stat=status); if (status.GT.0) stop "Allocation error for ijkl_ijk()"
 
 	! Initialise the arrays...
 	ijk = 0.0
 	jkl = 0.0
 	ijkl = 0.0
 	ijkl_jk = 0.0
+	ijkl_ijk = 0.0
 
 	! XXXX
 	! XXXX Main routine....
@@ -141,10 +144,16 @@
 	    ! Calculate dot product and angle...
 	    dp = dotproduct(xp1, xp2) / (mag1 * mag2)
 	    torsion = acos(dp)*radcon
-	    ! Calculate sign
+	    ! Calculate sign and bin
 	    dp = dotproduct(xp1, veckl)
-	    if (dp.lt.0) torsion = -torsion
-	    bin = int(torsion * (1.0 / torsionbin)) + 1
+	    if (dp.lt.0) then
+	      torsion = -(torsion+torsionbin)
+	      bin = int(torsion / torsionbin)
+	      if (bin.lt.-ntorsionbins) bin = -ntorsionbins
+	    else
+	      bin = int(torsion / torsionbin)
+	      if (bin.ge.ntorsionbins) bin = ntorsionbins-1
+	    end if
 	    ijkl(bin) = ijkl(bin) + 1
 	    ! write(0,*) dp,angle,dist
 
@@ -161,8 +170,9 @@
 	    ! i-j-k
 	    dp = dotproduct(vecji,vecjk) / (magnitude(vecji) * magnitude(vecjk))
 	    angle = acos(dp) * radcon
-	    bin = int(angle * (1.0/anglebin)) + 1
-	    ijk(bin) = ijk(bin) + 1
+	    bin2 = int(angle * (1.0/anglebin)) + 1
+	    ijk(bin2) = ijk(bin2) + 1
+	    ijkl_ijk(bin,bin2) = ijkl_ijk(bin,bin2) + 1
 	    ! j-k-l
 	    dp = dotproduct(veckj,veckl) / (magnitude(veckj) * magnitude(veckl))
 	    angle = acos(dp) * radcon
@@ -216,6 +226,7 @@
 	jkl = jkl / nframes
 	ijkl = ijkl / nframes
 	ijkl_jk = ijkl_jk / nframes
+	ijkl_ijk = ijkl_ijk / nframes
 
 	a1 = char(48+atom_i/10)//char(48+MOD(atom_i,10))
 	a2 = char(48+atom_j/10)//char(48+MOD(atom_j,10))
@@ -249,16 +260,39 @@
 	! Write torsion histogram ijkl
 	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".ijkl"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	do n=-180,180
-	  write(9,"(f10.3,2x,f12.8)") n+0.5,ijkl(n)
+	do n=-ntorsionbins,ntorsionbins-1
+	  write(9,"(f10.3,2x,f12.8)") (n+0.5)*torsionbin,ijkl(n)
 	end do
+	close(9)
 
 	! Write torsion/distance histogram ijkl_jk
 	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".ijkl_jk"
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	do n=-180,180
+	do n=-ntorsionbins,ntorsionbins-1
 	  do m=1,ndistbins
-	    write(9,"(f10.3,2x,f6.3,2x,f12.8)") n+0.5,distbin*(m-0.5),ijkl_jk(n,m)
+	    write(9,"(f10.3,2x,f6.3,2x,f12.8)") (n+0.5)*torsionbin,distbin*(m-0.5),ijkl_jk(n,m)
+	  end do
+	  write(9,*) ""
+	end do
+	close(9)
+
+	! Write torsion/angle histogram ijkl_ijk
+	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".ijkl_ijk"
+	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
+	do n=-ntorsionbins,ntorsionbins-1
+	  do m=1,nanglebins
+	    write(9,"(f10.3,2x,f6.3,2(3x,f12.8))") (n+0.5)*torsionbin,anglebin*(m-0.5), ijkl_ijk(n,m)/sin(anglebin*(n-0.5)/radcon)
+	  end do
+	  write(9,*) ""
+	end do
+	close(9)
+
+	! Write torsion/angle histogram ijkl_ijk_norm
+	resfile=basename(1:baselen)//a1//"-"//a2//"-"//a3//"-"//a4//".ijkl_ijk_norm"
+	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
+	do n=-ntorsionbins,ntorsionbins-1
+	  do m=1,nanglebins
+	    write(9,"(f10.3,2x,f10.3,2(3x,f12.8))") (n+0.5)*torsionbin,anglebin*(m-0.5), ijkl_ijk(n,m)
 	  end do
 	  write(9,*) ""
 	end do
