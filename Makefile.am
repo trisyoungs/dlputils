@@ -13,10 +13,23 @@ DLPRW=dlprw.f90
 UTILITY=utility.f90
 FIELDREAD=fieldread.f90
 
-# In order to compile the last few programs, MPI is required.
-# Set the following two lines to reflect the locations of the includes and libraries on your system
-MPIFC="-I/usr/lib64/mpi/gcc/openmpi/include"
-MPILD="-L/usr/lib64/mpi/gcc/openmpi/lib64 -lmpi_f90"
+.f90.o: 
+	$(FC) ${FCFLAGS} -c $<
+
+acf$(EXEEXT):
+	mpif90 ${FCFLAGS} ${PARSE} ${DLPRW} ${UTILITY} acf.f90 -o acf
+
+dacf$(EXEEXT):
+	mpif90 ${FCFLAGS} ${PARSE} ${DLPRW} ${UTILITY} dacf.f90 -o dacf
+
+sq$(EXEEXT):
+	mpif90 ${FCFLAGS} ${PARSE} ${DLPRW} ${UTILITY} sq.f90 -o sq
+
+totalgr$(EXEEXT):
+	mpif90 ${FCFLAGS} ${PARSE} ${DLPRW} ${UTILITY} totalgr.f90 -o totalgr
+
+clean-local:
+	-rm -f *.o *.mod
 
 # Converters
 addheader_SOURCES = ${PARSE} ${DLPRW} addheader.f90
@@ -44,15 +57,11 @@ rdfss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdfss.f90
 zdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} zdens.f90
 
 # SQ
-sq_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} sq.f90
-sq_FCFLAGS = ${MPIFC}
-sq_LDFLAGS = ${MPILD}
-totalgr_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} totalgr.f90
+#sq_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} sq.f90
+#totalgr_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} totalgr.f90
 
 # Analyse 1
-acf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} acf.f90
-acf_FCFLAGS = ${MPIFC}
-acf_LDFLAGS = ${MPILD}
+#acf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} acf.f90
 acfcat_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} acfcat.f90
 acfprep_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} acfprep.f90
 acfsum_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} acfsum.f90
@@ -60,9 +69,7 @@ angle_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} angle.f90
 cagecor2_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} cagecor2.f90
 cn_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} cn.f90
 counthb_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} counthb.f90
-dacf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} dacf.f90
-dacf_FCFLAGS = ${MPIFC}
-dacf_LDFLAGS = ${MPILD}
+#dacf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} dacf.f90
 geom_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} geom.f90
 getcell_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} getcell.f90
 intertorsion_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} intertorsion.f90
