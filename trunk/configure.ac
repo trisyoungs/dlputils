@@ -3,8 +3,8 @@
 AC_PREREQ(2.60)
 
 # Set program name, version, bug-address and source directory
-m4_define([DLPUTILS_VERSION],[r117])
-AC_INIT(aten,DLPUTILS_VERSION,tris@projectaten.net)
+m4_define([DLPUTILS_VERSION],[r118])
+AC_INIT(dlputils,DLPUTILS_VERSION,tris@projectaten.net)
 AC_CONFIG_SRCDIR([dlprw.f90])
 
 # Check system type and set defines
@@ -49,6 +49,7 @@ VERSION=DLPUTILS_VERSION
 AC_SUBST(BUILDDIR)
 AC_SUBST(INSTALLDIR)
 AC_SUBST(VERSION)
+AC_SUBST(FCFLAGS)
 
 
 # Checks for typedefs, structures, and compiler characteristics.

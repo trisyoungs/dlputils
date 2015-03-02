@@ -29,11 +29,10 @@
 	integer :: n, m, o, nbins, found, kx, ky, kz, newkx, newky, newkz, nvec, newnvec, frameskip, sumfac, framestodiscard, framesdone
 	integer :: nproc_mpi, id_mpi, err_mpi, mpistat(MPI_STATUS_SIZE)
 	integer :: kpernode, kremain, kstart, kend
-	integer :: mix_sp1, mix_sp2, mix_nswap, mix_n, mix_iter, seed = -728463221
 	integer :: iargc
 	real*8 :: binwidth,factor,weight,x1,x2,x3, selfscatter, fac1, fac2
 	logical :: MASTER, SLAVE, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE., npt = .FALSE.
-	logical :: mix = .FALSE., success
+	logical :: success
 	integer, allocatable :: frameadded(:), kvectors(:,:), slaveadded(:), totaladded(:)
 	real*8 :: kcut,kmin,magx,magy,magz,mag, numdensity, rposx, rposy, rposz
 	real*8, allocatable :: framesq(:,:,:), sq(:), slavesq(:,:,:), partialsq(:,:,:), sanitysq(:), framesanitysq(:)
@@ -41,7 +40,6 @@
 	complex*16, allocatable :: rxxx(:,:),ryyy(:,:),rzzz(:,:),pdensity(:)
 	complex*16 :: sanitydensity, tempcomp
 	character :: c
-	real*8 :: ran2
 
 	! Scattering lengths for XX,H,D,C,N,O,F,P,S,Cl,Si
 	isoscatter = (/ 0.0, -3.706, 6.671, 6.646, 9.36, 5.803, 5.654, 5.13, 2.847, 9.577, 4.1491, 7.718 /)
@@ -70,7 +68,6 @@
 	  write(0,*) "            [-altheader <file>] Use specified DL_POLY history <file> for header"
 	  write(0,*) "            [-npt]              Recalculate kvectors for each frame"
 	  write(0,*) "            [-lengths <file>]   Use specified file instead of 'lengths.dat'"
-	  write(0,*) "            [-mix sp1 sp2 m n]  Calculate frame n times, after swapping m mols H/D from sp1 and sp2"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -91,11 +88,6 @@
 	      case ("-lengths"); n = n + 1; call getarg(n,lengthsfile)
 	      case ("-readmap"); readmap = .TRUE.; n = n + 1; call getarg(n,namemap)
 	      case ("-altheader"); altheader = .TRUE.; n = n + 1; call getarg(n,headerfile)
-	      case ("-mix"); mix = .TRUE.
-		 n = n + 1; call getarg(n,temp); read(temp,"(I6)") mix_sp1
-		 n = n + 1; call getarg(n,temp); read(temp,"(I6)") mix_sp2
-		 n = n + 1; call getarg(n,temp); read(temp,"(I6)") mix_nswap
-		 n = n + 1; call getarg(n,temp); read(temp,"(I6)") mix_n
 	      case ("-p4amslave")
 		write(6,*) "Discarded option:",temp
 	      case ("-p4wd","-p4pg","-execer_id","-master_host","-my_hostname","-my_nodenum","-my_numprocs","-total_numnodes","-master_port")
@@ -293,37 +285,6 @@
 	    isontypes(uniqueiso(n)) = isontypes(uniqueiso(n)) + 1
 	  end do
 	  write(12,"(A,I2,A)") "Atoms are to be partitioned into ",ntypes," unique groups:"
-
-	  ! If mix is activated, check target species atoms are the same elements (except H==D)
-	  if (mix) then
-	    write(12,*) ""
-	    write(12,*) "Checking species selected for H/D mixing..."
-	    ! First, check number of atoms
-	    if (s_natoms(mix_sp1).ne.s_natoms(mix_sp2)) then
-	      write(12,*) "Error - Target mixing species must have the same number of atoms."
-	      call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	      goto 999
-	    end if
-	    ! Now check types in the typemap
-	    do n=0,s_natoms(mix_sp1)-1
-	      alpha = typemap(s_start(mix_sp1)+n)
-	      beta = typemap(s_start(mix_sp2)+n)
-	      if (alpha.ne.beta) then
-		success = .true.
-		! Unique type name IDs are not the same - BUT we accept H/D mismatches
-		if ((isonames(uniqueiso(alpha)).ne."H").and.(isonames(uniqueiso(alpha)).ne."D")) success = .false.
-		if ((isonames(uniqueiso(beta)).ne."H").and.(isonames(uniqueiso(beta)).ne."D")) success = .false.
-		if (success) then
-		  write(12,*) "Error - Mismatch in atom elements for mixing pair (at least one is not H or D)."
-		  call MPI_BCast(0,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-		  goto 999
-		end if
-		write(12,"(a,i3,a)") "  -> Atom ", n+1, " is H/D in both species"
-	      else
-		write(12,"(a,i3,a,a)") "  -> Atom ", n+1, " is same element in both species : ", isonames(uniqueiso(alpha))
-	      end if
-	    end do
-	  end if
 
 	  ! Send out proceed flag to slaves
 	  call MPI_BCast(1,1,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
@@ -566,31 +527,6 @@
 	  end do
 	end do
 
-	! Loop point for iterations of species mixing
-	mix_iter = 0
-110	mix_iter = mix_iter+1
-	if (mix) then
-	  if (MASTER) then
-	    do n=1,mix_nswap
-	      write(12,"(a,i3,a,i3)") "Mixing pass ", mix_iter, " of ", mix_n
-	      ! Perform mixing of molecule 
-	      i = s_start(mix_sp1) + int((s_nmols(mix_sp1)-1)*ran2(seed))*s_natoms(mix_sp1)
-	      j = s_start(mix_sp2) + int((s_nmols(mix_sp2)-1)*ran2(seed))*s_natoms(mix_sp2)
-	      ! Swap over unique types in these two molecules
-	!write(0,*) i, j
-	      do m=0,s_natoms(mix_sp1)-1
-		write(0,*) "Before", isonames(uniqueiso(typemap(i+m))), isonames(uniqueiso(typemap(j+m)))
-	        k = typemap(i+m)
-	        typemap(i+m) = typemap(j+m)
-	        typemap(j+m) = k
-		write(0,*) "After", isonames(uniqueiso(typemap(i+m))), isonames(uniqueiso(typemap(j+m)))
-	      end do
-	    end do
-	  end if
-	  ! Broadcast new typemap
-	  call MPI_BCast(typemap,natms,MPI_INTEGER,0,MPI_COMM_WORLD,err_mpi)
-	end if
-
 	! Sum over reciprocal space vectors
 	framesq = 0.0
 	framesanitysq = 0.0
@@ -622,9 +558,6 @@
 	  end do
 	  framesanitysq(bin) = framesanitysq(bin) + real(sumfac) * (sanitydensity*dconjg(sanitydensity))
 	end do
-
-	! Check mix iteration (if necessary)
-	if (mix.and.(mix_iter.lt.mix_n)) goto 110
 
 	! Gather slave S(Q) data for this frame
 	if (MASTER) then
@@ -814,41 +747,3 @@
 
 999	call MPI_Finalize(err_mpi)
 	end program sofq
-
-	real*8 function ran2(idum)
-	implicit none
-	integer :: idum,IM1,IM2,IMM1,IA1,IA2,IQ1,IQ2,IR1,IR2,NTAB,NDIV
-	real*8 :: AM,EPS,RNMX
-	parameter (IM1=2147483563,IM2=2147483399,AM=1.d0/IM1,IMM1=IM1-1, &
-	& IA1=40014,IA2=40692,IQ1=53668,IQ2=52774,IR1=12211,IR2=3791, &
-	& NTAB=32,NDIV=1+IMM1/NTAB,EPS=1.2d-7,RNMX=1.d0-EPS)
-	! 'ran2' random number generator.
-	!  (C) Copr. 1986-92 Numerical Recipes Software 63$&.
-	integer :: idum2,j,k,iv(NTAB),iy
-	save iv,iy,idum2
-	data idum2/123456789/, iv/NTAB*0/, iy/0/
-	if (idum.le.0) then
-	  idum=max(-idum,1)
-	  idum2=idum
-	  do 11 j=NTAB+8,1,-1
-	    k=idum/IQ1
-	    idum=IA1*(idum-k*IQ1)-k*IR1
-	    if (idum.lt.0) idum=idum+IM1
-	    if (j.le.NTAB) iv(j)=idum
-11	continue
-	  iy=iv(1)
-	endif
-	k=idum/IQ1
-	idum=IA1*(idum-k*IQ1)-k*IR1
-	if (idum.lt.0) idum=idum+IM1
-	k=idum2/IQ2
-	idum2=IA2*(idum2-k*IQ2)-k*IR2
-	if (idum2.lt.0) idum2=idum2+IM2
-	j=1+iy/NDIV
-	iy=iv(j)-idum2
-	iv(j)=idum
-	if(iy.lt.1)iy=iy+IMM1
-	ran2=min(AM*iy,RNMX)
-	return
-	end function ran2
-
