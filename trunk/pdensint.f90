@@ -1,14 +1,15 @@
 	! Integrate pdens file for various cutoffs
 
 	program pdensint
-	use parse
+	use parse; use pdensrw ; use utility
 	implicit none
 	character*80 :: infile, outfile
 	character*20 :: looporder, temp
 	character :: c
-	integer :: ngrid(3), nargs, n, m, x, y, z, loop(3), point(3), nsteps = 10000
-	real*8 :: axes(9), origin(3), v(3), maximum, nmols, delta, cutoff, volume, total, tgt, tgtdelta
-	real*8, allocatable :: dat(:,:,:), ints(:,:)
+	integer :: nargs, n, m, x, y, z, point(3), nsteps = 10000
+	real*8 :: v(3), maximum, nmols, delta, cutoff, vol, total, tgt, tgtdelta
+	real*8, allocatable :: ints(:,:)
+	type(PDens) :: grid
 	integer :: iargc
 	logical :: success, inflect
 
@@ -32,89 +33,19 @@
 
 	write(0,*) "There will be ", nsteps, "points calculated."
 	allocate(ints(nsteps,3))
+
 	! Open file
-	open(unit=11, file=infile, form='formatted', status='old')
+	if (.not.loadPDens(infile,grid)) stop "Couldn't load specified pdens file."
 
-	! Format of data is :
-	! Line 1 : gridx,gridy,gridz
-	! Line 2 : ax,ay,az,bx,by,bz,cx,cy,cz
-	! Line 3 : originx, originy, originz
-	! Line 4 : loop order (e.g. 'zyx')
-	! Line 5+: data (N = gridx*gridy*gridz)
-
-	! Get file data
-	write(0,*) "Reading file..."
-	success = readline(11)
-	if (nargsparsed.ne.3) stop "Error reading gridpoint specification."
-	ngrid(1) = argi(1)
-	ngrid(2) = argi(2)
-	ngrid(3) = argi(3)
-	success = readline(11)
-	if (nargsparsed.ne.9) stop "Error reading grid axes specification."
-	do n=1,9
-	  axes(n) = argr(n)
-	end do
-	success = readline(11)
-	if (nargsparsed.ne.3) stop "Error reading grid origin specification."
-	origin(1) = argr(1)
-	origin(2) = argr(2)
-	origin(3) = argr(3)
-	success = readline(11)
-	if (nargsparsed.ne.1) stop "Error reading loop order specification."
-	looporder = arg(1)
-	do n=1,3
-	  ! Grab character and convert to lowercase
-	  x = ichar(looporder(n:n))
-	  if (x.lt.120) x = x + 32
-	  if ((x.lt.120).or.(x.gt.122)) stop "Illegal character found in loop specification."
-	  loop(n) = x-119
-	end do
-
-	! Read in data
-	maximum = -10000.0
-	total = 0.0
-	allocate(dat(ngrid(1),ngrid(2),ngrid(3)))
-	x = 1
-	y = 1
-	z = 1
-	do n=1,ngrid(1)*ngrid(2)*ngrid(3)
-	  point(loop(1)) = x
-	  point(loop(2)) = y
-	  point(loop(3)) = z
-	  read(11,"(f20.12)") dat(point(1),point(2),point(3))
-	  total = total + dat(point(1),point(2),point(3))
-	  if (dat(point(1),point(2),point(3)).gt.maximum) maximum = dat(point(1),point(2),point(3))
-	  ! Increase counters
-	  x = x + 1
-	  if (x.gt.ngrid(loop(1))) then
-	    x = 1
-	    y = y + 1
-	    if (y.gt.ngrid(loop(2))) then
-	      y = 1
-	      z = z + 1
-	      if (z.gt.ngrid(loop(3))) write(0,*) "Array is full."
-	    end if
-	  end if
-	end do
-	close(11)
-
-	! Print summary of input information
-	write(0,"(a)") "-------------"
-	write(0,"(a)") "Original Data"
-	write(0,"(a)") "-------------"
-	write(0,"(a,3i5)") "Gridpoints  : ",ngrid
-	write(0,"(a,3f12.6)") "Grid x-axis : ",(axes(n),n=1,3)
-	write(0,"(a,3f12.6)") "     y-axis : ",(axes(n),n=4,6)
-	write(0,"(a,3f12.6)") "     z-axis : ",(axes(n),n=7,9)
-	write(0,"(a,3f12.6)") "Grid origin : ",origin
-	write(0,"(a,3i5)") "Loop order  : ",loop
+	maximum = maxval(grid%grid)
+	total = sum(grid%grid)
 
 	! Calculate volume integrations for various cutoffs
-	volume = axes(1)*axes(5)*axes(9)
+	vol = volume(grid%axes)
 	delta = maximum / nsteps
-	total = total * volume
+	total = total * vol
 	write(0,"(a,e12.5)") "Maximum value found in data is : ", maximum
-	write(0,"(a,f10.6)") "Cubic volume of grid voxel : ", volume
+	write(0,"(a,f10.6)") "Cubic volume of grid voxel : ", vol
 	write(0,"(a,f10.6)") "Total integral of grid : ", total
 	write(0,"(a,f10.6)") "Delta is : ", delta
 	cutoff = 0.0
@@ -126,14 +57,14 @@
 	  if (cutoff.gt.maximum) exit
 	  ! Calculate
 	  nmols = 0.0
-	  do x=1,ngrid(1)
-	    do y=1,ngrid(2)
-	      do z=1,ngrid(3)
-	        if (dat(x,y,z) > cutoff) nmols = nmols + dat(x,y,z)
+	  do x=1,-grid%ngrid,grid%ngrid
+	    do y= -grid%ngrid,grid%ngrid
+	      do z= -grid%ngrid,grid%ngrid
+	        if (grid%grid(x,y,z) > cutoff) nmols = nmols + grid%grid(x,y,z)
 	      end do
 	    end do
 	  end do
-	  nmols = nmols * volume
+	  nmols = nmols * vol
 	  ints(n,1:3) = (/ cutoff, nmols, nmols / total * 100.0 /)
 	  write(6,"(f12.6,4x,f12.6,4x,f12.6)") (ints(n,m),m=1,3)
 	  cutoff = cutoff + delta

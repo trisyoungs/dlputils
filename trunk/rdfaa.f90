@@ -19,9 +19,11 @@
 	framestodo=-1
 	sp = 1
 	npairs = 0
+	atom1 = 0
+	atom2 = 0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : rdf_aa <HISTORYfile> <OUTPUTfile> [-sp n] [-intra] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-discard n]"
+	if (nargs.lt.5) stop "Usage : rdfaa <HISTORYfile> <OUTPUTfile> [-sp n] [-intra] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-discard n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	n = 2
@@ -168,7 +170,8 @@
 
 	! Normalise data
 	do n=1,nbins
-	  norm(n) = (4.0 * pi / 3.0) * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * (s_nmols(sp) / (cell(1)*cell(5)*cell(9)))
+	  norm(n) = (4.0 * pi / 3.0) * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * (s_nmols(sp) / volume(cell))
+	  norm(n) = (4.0 * pi / 3.0) * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * (1.0 / volume(cell))
 	  do p=1,npairs
 	    rdf(p,n) = sumhist(p,n) / norm(n) / nframes / s_nmols(sp)
 	  end do
@@ -194,8 +197,6 @@
 	  resfile=basename(1:baselen)//"aardf"//CHAR(48+sp)//"_"//CHAR(48+(atom1(p)/10))//CHAR(48+MOD(atom1(p),10))// &
 		& "_"//CHAR(48+(atom2(p)/10))//CHAR(48+MOD(atom2(p),10))
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	  !write(9,*) "Bin     Raw     G(r)"
-	  ! Normalise the RDFs with respect to the number of frames.
 	  do n=1,nbins
 	    integral = integral + sumhist(p,n) / nframes / s_nmols(sp)
 	    write(9,"(f10.4,3x,f12.8,4x,e12.6)") (n*binwidth)-binwidth/2.0,rdf(p,n),integral

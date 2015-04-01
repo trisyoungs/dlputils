@@ -18,12 +18,12 @@
 	real*8, allocatable :: typepops(:), typefrac(:)
 
 	! General variables
-	character*80 :: dlpoutfile,basename,resfile,namemap,hisfile,headerfile
+	character*80 :: dlpoutfile,basename,resfile,namemap,hisfile,headerfile,lengthsfile
 	character*20 :: temp
-	integer :: i,j,k,baselen,bin,success,nargs,nfftypes,alpha,beta
+	integer :: i,j,k,baselen,bin,nargs,nfftypes,alpha,beta
 	integer :: n, m, o, nbins, found
 	integer :: iargc
-	logical :: MASTER, SLAVE, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE.
+	logical :: success, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE.
 	real*8 :: weight, kcut, binwidth, factor, totalweight
 	real*8, allocatable :: partialsq(:,:,:),sq(:)
 
@@ -34,12 +34,17 @@
 
 	binwidth=0.1   ! In Angstroms
 	kcut = 5.0    ! Reciprocal space cutoff (box integers)
+        lengthsfile="lengths.dat"
 
 	nargs = iargc()
 	if (nargs.LT.2) then
-	  write(0,*) "Usage : raw2sq <DLP HISfile> <DLP OUTPUTfile> ...options"
-	  write(0,*) "       [-bin binwidth] [-kcut cutoff] [-partials]"
-	  write(0,*) "       [-readmap <file>] [-altheader <file>]"
+	  write(0,*) "Usage : raw2sq <HISTORYfile> <OUTPUTfile> ...options"
+	  write(0,*) "            [-bin width]        Set x binwidth to use in S(Q) output"
+	  write(0,*) "            [-kcut cutoff]      Set maximum k magnitude to bin"
+	  write(0,*) "            [-partials]         Write partial S(Q) info"
+	  write(0,*) "            [-readmap <file>]   Read alternative atom names map from <file>"
+	  write(0,*) "            [-altheader <file>] Use specified DL_POLY history <file> for header"
+	  write(0,*) "            [-lengths <file>]   Use specified file instead of 'lengths.dat'"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -54,6 +59,7 @@
 	      case ("-readmap"); readmap = .TRUE.; n = n + 1; call getarg(n,namemap)
 	      case ("-altheader"); altheader = .TRUE.; n = n + 1; call getarg(n,headerfile)
 	      case ("-partials"); writepartials = .TRUE.
+	      case ("-lengths"); n = n + 1; call getarg(n,lengthsfile)
 	      case default
 		write(0,*) "Unrecognised command line argument:", temp
 		stop
@@ -107,7 +113,7 @@
 	end if
 
 	! Read in forcefield names, the related internal types, and the corresponding isotope/element symbols
-	open(unit=15,file="lengths.dat",form="formatted",status="old")
+	open(unit=15,file=lengthsfile,form="formatted",status="old")
 	read(15,"(I4)") nfftypes
 	allocate(origtype(nfftypes))
 	allocate(newtype(nfftypes))
@@ -238,8 +244,12 @@
 	  do beta=1,ntypes
 
 	    ! Load raw data from file and weight by scattering length and new atomic composition
-	    resfile=basename(1:baselen)//"rawsq"//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))
+	    resfile=basename(1:baselen)//"partsq"//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))
 	    open(unit=15,form="formatted",status="old",file=resfile,ERR=999)
+	    ! Skip comments at start of file
+	    do n=1,3
+	      if (.not.readline(15)) goto 999
+	    end do
 	    do n=1,nbins
 	      if (.not.readline(15)) goto 999
 	      partialsq(alpha,beta,n) = argr(2)
@@ -249,35 +259,17 @@
 	    close(15)
 
 	    ! Weight according to fractional populations
-	    weight = typefrac(alpha)*typefrac(beta)
+	    !weight = typefrac(alpha)*typefrac(beta)
 	    ! Additional weighting from partitioning of elements into 'sub-types'
-	    weight = weight / dsqrt((typefrac(alpha)/isofrac(uniqueiso(alpha)))*(typefrac(beta)/isofrac(uniqueiso(beta))))
-	    totalweight = totalweight + weight
-	    write(6,"(a,f9.6,a,f9.6,a,f12.6)") "Partial "//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))//" has fractional pops ",typefrac(alpha)," and ",typefrac(beta), "for a total atomic weighting of ", weight
-	    ! Apply weighting to individual S_ab(Q)
-	    do n=1,nbins
-	      partialsq(alpha,beta,n) = weight * partialsq(alpha,beta,n)
-	    end do
-
-	    ! Weight according to scattering cross sections
-	    weight = isoscatter(uniqueiso(alpha))*isoscatter(uniqueiso(beta))
-	    do n=1,nbins
-	      partialsq(alpha,beta,n) = weight * partialsq(alpha,beta,n)
-	    end do
+	    !weight = weight / dsqrt((typefrac(alpha)/isofrac(uniqueiso(alpha)))*(typefrac(beta)/isofrac(uniqueiso(beta))))
+	    !totalweight = totalweight + weight
 
 	    ! Perform summation into total S(Q)
+	    weight = isoscatter(uniqueiso(alpha))*isoscatter(uniqueiso(beta)) / 100.0
+	    write(6,"(a,f9.6,a,f9.6,a,f12.6)") "Partial "//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))//" has fractional pops ",typefrac(alpha)," and ",typefrac(beta), "for a total atomic weighting of ", weight
 	    do n=1,nbins
-	      sq(n) = sq(n) + partialsq(alpha,beta,n)
+	      sq(n) = sq(n) + partialsq(alpha,beta,n) * weight
 	    end do
-	    ! Write partials if required
-	    if (writepartials) then
-	      resfile=basename(1:baselen)//"partsq"//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))
-	      OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	      do n=1,nbins
-	        write(9,"(F6.3,3x,E14.5,I8)") (n*binwidth)-binwidth*0.5, partialsq(alpha,beta,n)
-	      end do
-	      close(9)
-	    end if
 	  end do
 	end do
 	write(0,*) "Finished sum"
