@@ -5,6 +5,7 @@ bin_PROGRAMS += bident bident2 bident2anal bident3 bident4 cluster cryscomp dahi
 bin_PROGRAMS += glucanal glucgeom gluchb gluchbeach glucsphere
 bin_PROGRAMS += pdens pdensint pdensmirror pdenstrim pdensgauss
 bin_PROGRAMS += avgconfig dlpsize genlb gengg pairs probedlp
+bin_PROGRAMS += partials2sq
 bin_PROGRAMS += acf dacf sq totalgr
 
 # Define some module variables
@@ -12,6 +13,7 @@ PARSE=parse.f90
 DLPRW=dlprw.f90 
 UTILITY=utility.f90
 FIELDREAD=fieldread.f90
+PDENSRW=pdensrw.f90
 
 .f90.o: 
 	$(FC) ${FCFLAGS} -c $<
@@ -57,6 +59,7 @@ rdfss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdfss.f90
 zdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} zdens.f90
 
 # SQ
+partials2sq_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} partials2sq.f90
 #sq_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} sq.f90
 #totalgr_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} totalgr.f90
 
@@ -102,11 +105,11 @@ gluchbeach_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} gluchbeach.f90
 glucsphere_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} glucsphere.f90
 
 # Probability Densities
-pdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} pdens.f90
-pdensint_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} pdensint.f90
-pdensmirror_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} pdensmirror.f90
-pdenstrim_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} pdenstrim.f90
-pdensgauss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} pdensgauss.f90
+pdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdens.f90
+pdensint_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensint.f90
+pdensmirror_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensmirror.f90
+pdenstrim_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdenstrim.f90
+pdensgauss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensgauss.f90
 
 # Misc
 avgconfig_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} avgconfig.f90
