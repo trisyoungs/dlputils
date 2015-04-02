@@ -202,7 +202,7 @@
 	      point(p%loop(3)) = x
 	      point(p%loop(2)) = y
 	      point(p%loop(1)) = z
-	      write(12,"(f12.5)") p%grid(point(1),point(2),point(3))
+	      write(12,*) p%grid(point(1),point(2),point(3))
 	    end do
 	  end do
 	end do

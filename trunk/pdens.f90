@@ -260,8 +260,8 @@
 	write(0,*) "Setting up initial arrays..."
 	do n=1,othersp%n
 	  sp1 = othersp%items(n)
-	  pdensinter(sp1)%axes = (/ pdelta,0.0d0,0.0d0,0.0d0,pdelta,0.0d0,0.0d0,0.0d0,pdelta /)
-	  pdensinter(sp1)%origin = (/ -pgrid*pdelta,-pgrid*pdelta,-pgrid*pdelta /)
+	  pdensinter(sp1)%axes = (/ delta,0.0d0,0.0d0,0.0d0,delta,0.0d0,0.0d0,0.0d0,delta /)
+	  pdensinter(sp1)%origin = (/ -grid*delta,-grid*delta,-grid*delta /)
 	  if (.not.allocPDens(pdensinter(sp1),grid)) stop
 	end do
 	ncaught = 0
