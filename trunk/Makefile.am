@@ -14,6 +14,7 @@ DLPRW=dlprw.f90
 UTILITY=utility.f90
 FIELDREAD=fieldread.f90
 PDENSRW=pdensrw.f90
+ILIST=integerlist.f90
 
 .f90.o: 
 	$(FC) ${FCFLAGS} -c $<
@@ -105,11 +106,11 @@ gluchbeach_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} gluchbeach.f90
 glucsphere_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} glucsphere.f90
 
 # Probability Densities
-pdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdens.f90
+pdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} ${ILIST} pdens.f90
 pdensint_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensint.f90
 pdensmirror_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensmirror.f90
 pdenstrim_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdenstrim.f90
-pdensgauss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensgauss.f90
+pdensgauss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} ${ILIST} pdensgauss.f90
 
 # Misc
 avgconfig_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} avgconfig.f90
