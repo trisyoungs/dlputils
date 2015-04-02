@@ -350,24 +350,25 @@
 	volume = volume + cell(3) * (cell(4)*cell(8) - cell(7)*cell(5));
 	end function volume
 
-	! IntegerList routines start here
-	subroutine averagePosition(list, offset, v)
-	use parse; use dlprw
+	! Calculate average, mim'd coordinates from array of atom indices provided
+	subroutine averagePosition(array, nItems, offset, v)
+	use dlprw
 	implicit none
-	type(IntegerList), intent(in) :: list
+	integer, intent(in) :: nItems, array(nItems)
 	integer, intent(in) :: offset
 	integer :: n, i
 	real*8, intent(out) :: v(3)
 	real*8 :: t(3)
 
 	v = 0.0
-	if (list%n.eq.0) return
+	if (nItems.eq.0) return
+
 	! Calculate COG relative to first atom in molecule
-	v(1) = xpos(list%items(1)+offset)
-	v(2) = ypos(list%items(1)+offset)
-	v(3) = zpos(list%items(1)+offset)
-	do n=2,list%n
-	  i = offset + list%items(n)
+	v(1) = xpos(array(1)+offset)
+	v(2) = ypos(array(1)+offset)
+	v(3) = zpos(array(1)+offset)
+	do n=2,nItems
+	  i = offset + array(n)
 	  call PBC(xpos(i),ypos(i),zpos(i),v(1),v(2),v(3),t(1),t(2),t(3))
 	  v = v + t
 	end do

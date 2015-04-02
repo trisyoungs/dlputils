@@ -5,7 +5,7 @@
 !	image before binning
 
 	program calcpdens
-	use dlprw; use utility; use parse; use PDensRW
+	use dlprw; use utility; use parse; use PDensRW; use IList
 	implicit none
 	integer, parameter :: MAXSITES = 20, MAXSP = 5
 	real*8, parameter :: radcon = 57.29577951d0
@@ -370,7 +370,7 @@
 	      ! Filter based on position/density of site in reference pdens?
 	      if (selectsp(sp2)) then
 		! Get target bin from atom list supplied
-		call averagePosition(selectsites(sp2),p,v)
+		call averagePosition(selectsites(sp2)%items,selectsites(sp2)%n,p,v)
 		if (getbin(sp1,m1,0.0d0,maxdistsq*2.0,v(1),v(2),v(3),refnx,refny,refnz,grid,delta)) then
 		  if (selectpdens(sp2)%grid(refnx,refny,refnz).lt.selectmin(sp2)) cycle
 		end if
