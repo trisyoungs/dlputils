@@ -8,7 +8,7 @@
 	character :: c
 	real*8, parameter :: pi = 3.14159265358979
 	integer :: nargs, n, x, y, z, point(3), extents(3), i, j, k
-	logical :: gnufile = .false., success
+	logical :: success
 	real*8 :: v(3), sigma, mag(3), xyz, twosigma2, g
 	real*8, allocatable :: gaussvalues(:,:,:)
 	type(PDens) :: original, gauss
@@ -18,7 +18,7 @@
         if (nargs.lt.3) stop "Usage: pdensgauss <pdensfile> <outputfile> <sigma>"
         call getarg(1,infile)
         call getarg(2,outfile)
-	call getarg(3,temp); read(temp,"(f20.14)") sigma
+	sigma = getargr(3)
 
 	! Set defaults
 	n = 3
@@ -26,8 +26,6 @@
           n = n + 1; if (n.gt.nargs) exit
           call getarg(n,temp)
           select case (temp)
-            case ("-gnuplot")
-	      gnufile = .true.
 	    case default
 	      write(0,*) "Unrecognised argument :",temp
 	      stop
