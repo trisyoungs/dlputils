@@ -1,9 +1,8 @@
-!	** rdf_ss **
-!	( was rdf_v5 in rdf_siteall.f90 )
+!	** rdfss **
 !	RDF program to calculate pair-pair distribution functions between pairs of atoms
 !	or a single atom and the gemetric / mass centre of a second species.
 !	Calculates the density at each frame of the simulation (for NPT simulations)
-!	Default is that all site-site g(r)'s between the species1 atoms and the COM of the
+!	Default is that all site-site g(r)'s between the sp1 atoms and the COM of the
 !	second species is required.
 
 	module rdfssdat
@@ -12,39 +11,39 @@
 	  real*8, allocatable :: rdf(:,:),purerdf(:),nrdf(:,:)
 	end module rdfssdat
 
-	program rdf_ss
-	use dlprw; use rdfssdat; use utility
+	program rdfss
+	use parse; use dlprw; use rdfssdat; use utility
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,resfile
 	character*20 :: temp
-	integer :: n,a1,s1,m1,m2,baselen,bin,nframes,success,o,nargs,numadded,species1,species2,compair(2)
+	integer :: n,a1,s1,m1,m2,baselen,bin,nframes,success,o,nargs,numadded,sp1,sp2,compair(2)
 	integer :: framestodiscard = 0, framesdone = 0
 	integer :: iargc
 	real*8 :: dist,c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz,numdens,const,norm
 
 	binwidth=0.1   ! In Angstroms
-	species1 = 1
-	species2 = 2
+	sp1 = 1
+	sp2 = 2
 	compair = 0
 
 	nargs = iargc()
-	if (nargs.LT.2) stop "Usage : rdf_ss <HISTORYfile> <OUTPUTfile> [-bin binwidth] [-sp1 species] [-sp2 species] [-compair i j] [-discard n]"
+	if (nargs.LT.2) stop "Usage : rdfss <HISTORYfile> <OUTPUTfile> <sp1> <sp2> [-bin binwidth] [-compair i j] [-discard n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
-	if (nargs.GE.3) then
-	  n = 3
+	sp1 = getargi(3)
+	sp2 = getargi(4)
+	if (nargs.GE.5) then
+	  n = 5
 	  do
 	    call getarg(n,temp)
 	    select case (temp)
-	      case ("-bin"); n = n + 1; call getarg(n,temp); read(temp,"(F20.10)") binwidth
-	      case ("-sp1"); n = n + 1; call getarg(n,temp); read(temp,"(I4)") species1
-	      case ("-sp2"); n = n + 1; call getarg(n,temp); read(temp,"(I4)") species2
+	      case ("-bin"); n = n + 1; binwidth = getargr(n)
               case ("-compair")
-                n = n + 1; call getarg(n,temp); read(temp,"(I6)") compair(1)
-                n = n + 1; call getarg(n,temp); read(temp,"(I6)") compair(2)
+                n = n + 1; compair(1) = getargi(n)
+                n = n + 1; compair(2) = getargi(n)
                 write(0,"(A,3I4)") "Using COMpair for species 2 ",compair(:)
               case ("-discard")
-                n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodiscard
+                n = n + 1; framestodiscard = getargi(n)
                 write(0,"(a,i6)") "Frames to discard at start of trajectory:", framestodiscard
 	      case default
 		write(0,*) "Unrecognised argument: ", temp
@@ -64,7 +63,7 @@
 	nbins = cell(1) / binwidth
 	write(0,"(A,F6.3,A)") "Using binwidth of ",binwidth," Angstroms"
 	write(0,"(A,I5,A)") "There will be ",nbins," histogram bins."
-	write(0,"(A,I1,A,I1)") "Calculating PRDFs between atoms of species ",species1," and centre-of-mass of species ",species2
+	write(0,"(A,I1,A,I1)") "Calculating PRDFs between atoms of species ",sp1," and centre-of-mass of species ",sp2
 	
 	call alloc_data(maxval(s_natoms),nbins)
 
@@ -96,21 +95,21 @@
 	  end do
 	end if
 
-	do a1=1,s_natoms(species1)     ! Loop over all atoms of species 1....
+	do a1=1,s_natoms(sp1)     ! Loop over all atoms of species 1....
 	  rdf(a1,1:nbins) = (/ (0,n=1,nbins) /)
-	  o=s_start(species1)	 ! Set the start atom of the species
-	  do m1=1,s_nmols(species1)     ! Loop over all molecules of species 1...
+	  o=s_start(sp1)	 ! Set the start atom of the species
+	  do m1=1,s_nmols(sp1)     ! Loop over all molecules of species 1...
 	    c1x=xpos(o+a1-1)
 	    c1y=ypos(o+a1-1)
 	    c1z=zpos(o+a1-1)
 	    numadded=0
 	    ! Now loop over all molecules of second species....
-	    do m2=1,s_nmols(species2)
+	    do m2=1,s_nmols(sp2)
 	      ! Set the coordinates for the second point....
 	      ! Grab the GC value grom the GCxyz arrays....
-	      c2x=comx(species2,m2)
-	      c2y=comy(species2,m2)
-	      c2z=comz(species2,m2)
+	      c2x=comx(sp2,m2)
+	      c2y=comy(sp2,m2)
+	      c2z=comz(sp2,m2)
 	      ! Get the shortest (MIM) distance between the atom pair...
 	      call pbc(c2x,c2y,c2z,c1x,c1y,c1z,tx,ty,tz)
 	      dist=sqrt( (tx-c1x)**2 + (ty-c1y)**2 + (tz-c1z)**2 )
@@ -121,24 +120,24 @@
 	      numadded=numadded+1
 	    end do
             ! Consistency check - we should *always* add s_nmols() unless s1 = s2.
-            if (species1.eq.species2) then
-!              if (numadded.NE.s_nmols(species1)-1) write(0,*) &
- !               & "WARNING: Did not bin all molecules...",nframes,species1,species2,numadded
+            if (sp1.eq.sp2) then
+!              if (numadded.NE.s_nmols(sp1)-1) write(0,*) &
+ !               & "WARNING: Did not bin all molecules...",nframes,sp1,sp2,numadded
             else
-              if (numadded.NE.s_nmols(species2)) write(0,*) &
-                & "WARNING: Did not bin all molecules...",nframes,species1,species2,numadded
+              if (numadded.NE.s_nmols(sp2)) write(0,*) &
+                & "WARNING: Did not bin all molecules...",nframes,sp1,sp2,numadded
             end if
-	    o=o+s_natoms(species1)
+	    o=o+s_natoms(sp1)
 	  end do
-	end do   ! End main loop over all atoms of species1.
+	end do   ! End main loop over all atoms of sp1.
 
 	if (framesdone.EQ.1) write(0,*) "numadded:=",numadded
 	if (framesdone.EQ.1) then
-	  if (species1.EQ.species2) write(0,"(A,I2,A,I4,A)") "PRDF of atoms about ",species2," : averaged over ",s_nmols(species2)-1," molecules."
-	  if (species1.NE.species2) write(0,"(A,I2,A,I4,A)") "PRDF of atoms about ",species2," : averaged over ",s_nmols(species2)," molecules."
+	  if (sp1.EQ.sp2) write(0,"(A,I2,A,I4,A)") "PRDF of atoms about ",sp2," : averaged over ",s_nmols(sp2)-1," molecules."
+	  if (sp1.NE.sp2) write(0,"(A,I2,A,I4,A)") "PRDF of atoms about ",sp2," : averaged over ",s_nmols(sp2)," molecules."
 	end if
-	if (species1.EQ.species2) rdf = rdf / (s_nmols(species2)-1)
-	if (species1.NE.species2) rdf = rdf / s_nmols(species2)
+	if (sp1.EQ.sp2) rdf = rdf / (s_nmols(sp2)-1)
+	if (sp1.NE.sp2) rdf = rdf / s_nmols(sp2)
 	nrdf = nrdf + rdf
 
 	! Next frame
@@ -170,10 +169,10 @@
 	  basename=hisfile(1:baselen)
 	endif
 
-	numdens = s_nmols(species1) / volume(cell)
+	numdens = s_nmols(sp1) / volume(cell)
 	const = (4.0*3.141592654) / 3.0
-	do a1=1,s_natoms(species1)
-	  resfile=basename(1:baselen)//"ssrdf"//CHAR(48+(a1/10))//CHAR(48+MOD(a1,10))//atmname(s_start(species1)+a1-1)(1:2)
+	do a1=1,s_natoms(sp1)
+	  resfile=basename(1:baselen)//"ssrdf"//CHAR(48+sp2)//"_"//CHAR(48+sp1)//"_"//CHAR(48+(a1/10))//CHAR(48+MOD(a1,10))//atmname(s_start(sp1)+a1-1)(1:2)
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	  !write(9,*) "Bin     Raw     G(r)"
 	  ! Normalise the RDFs with respect to the number of frames and number density of species
@@ -190,7 +189,7 @@
 	write(0,*) "Finished!"
 999	CLOSE(10)
 	CLOSE(13)
-	end
+	end program rdfss
 
 	subroutine alloc_data(i,j)
 	use rdfssdat; implicit none; integer :: n,i,j,status

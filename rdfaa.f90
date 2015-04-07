@@ -1,8 +1,8 @@
-!	** rdf_aa **
+!	** rdfaa **
 !	Calculate RDFs between specific atoms of a single species
 
-	program rdf_aa
-	use dlprw; use utility
+	program rdfaa
+	use parse; use dlprw; use utility
 	implicit none
 	integer, parameter :: maxpairs = 50
 	real*8, parameter :: pi = 3.14159265358979d0
@@ -23,26 +23,25 @@
 	atom2 = 0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : rdfaa <HISTORYfile> <OUTPUTfile> [-sp n] [-intra] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-discard n]"
+	if (nargs.lt.5) stop "Usage : rdfaa <HISTORYfile> <OUTPUTfile> <sp> [-intra] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-discard n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
-	n = 2
+	sp = getargi(3)
+	n = 3
 	do
 	  n = n + 1; if (n.GT.nargs) exit
 	  call getarg(n,temp)
 	  select case (temp)
-	    case ("-sp") 
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp
-	    case ("-frames") 
-	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
 	    case ("-discard") 
-	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodiscard
+	      n = n + 1; framestodiscard = getargi(n)
+	    case ("-frames") 
+	      n = n + 1; framestodo = getargi(n)
 	    case ("-intra")
 	      intra = .true.
 	    case ("-pair")
 	      npairs = npairs + 1
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") atom1(npairs)
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") atom2(npairs)
+	      n = n + 1; atom1(npairs) = getargi(n)
+	      n = n + 1; atom2(npairs) = getargi(n)
 	    case default
 	      write(0,*) "Unrecognised CLI option:", temp
 	      stop
@@ -207,5 +206,5 @@
 	write(0,*) "Finished!"
 999	CLOSE(10)
 	CLOSE(13)
-	end program rdf_aa
+	end program rdfaa
 
