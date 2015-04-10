@@ -363,7 +363,7 @@
 	v = 0.0
 	if (nItems.eq.0) return
 
-	! Calculate COG relative to first atom in molecule
+	! Calculate COG relative to first atom in list
 	v(1) = xpos(array(1)+offset)
 	v(2) = ypos(array(1)+offset)
 	v(3) = zpos(array(1)+offset)

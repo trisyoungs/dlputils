@@ -26,19 +26,21 @@
 	real*8, allocatable :: avggeom(:,:)		! Average species coordinates
 	! Counters
 	integer :: npdenscentres, nintracentres
-	integer, allocatable :: nfound(:), ncaught(:)	! Total and 'binned' mols
-	integer, allocatable :: molflags(:)		! Per-frame map of sp1 mols to include in averaging
-	integer, allocatable :: spexp(:)		! Expected species numbers
+	integer :: nfound(MAXSP), ncaught(MAXSP)	! Total and 'binned' mols
+	integer :: spexp(MAXSP)				! Expected species numbers
+	! Map file for selecting central species
 	logical :: molmap = .FALSE.			! Whether we're using a file of mol flags
+	integer, allocatable :: molflags(:)		! Per-frame map of sp1 mols to include in averaging
 	! Atomic sites for surrounding species position
 	type(IntegerList) :: atomSites(MAXSP)		! Atoms for surrounding species centres (if any)
+	logical :: atomSitesAreCog(MAXSP) = .false.
 	! Orientation checking
 	logical :: orientcheck(MAXSP,3)			! Whether orientation check is enabled
 	real*8 :: orientangle(20,3), orientdelta(20,3)	! Required orientations of molecules (if specified)
 	! Selection, based on existing pdens
 	logical :: selectsp(MAXSP)			! Whether selection based on old pdens is enabled
 	real*8 :: selectmin(MAXSP)			! Minimum density value for a selection to succeed
-	type(IntegerList) :: selectsites(MAXSP)		! Atom sites used to select positions in existing grid
+	type(IntegerList) :: selectSites(MAXSP)		! Atom sites used to select positions in existing grid
 	type(PDens) :: selectpdens(MAXSP)		! Reference pdens for 'select' mode
 	character*80 :: selectfile(MAXSP)		! Filenames for old pdens
 	! Frame control
@@ -63,8 +65,9 @@
 	if (nargs.lt.3) then
 	  write(*,"(a)") "Usage: pdens <HISTORYfile> <OUTPUTfile> <centresp> <othersp> [-options]"
 	  write(*,"(a)") "        [-axis sp x1 x2 y1 y2]     Atoms to use for axis calculation in species sp"
-	  write(*,"(a)") "        [-atoms sp <list>]         Add list of atoms in species sp to use as other point (centre of geometry)"
+	  write(*,"(a)") "        [-atoms sp <list>]         Add list of atoms in species sp to use as other points"
 	  write(*,"(a)") "        [-cartesian sp]            Use Cartesian axes for species sp"
+	  write(*,"(a)") "        [-cog sp <list>]           Add list of atoms in species sp to use as other point (centre of geometry)"
 	  write(*,"(a)") "        [-delta spacing]           Spacing between grid points (default = 0.5 Angstrom)"
 	  write(*,"(a)") "        [-end frameno]             Trajectory frame to end calculations on (default = last)"
 	  write(*,"(a)") "        [-grid npoints]            Grid points in each direction for prob. densities (default = 20)"
@@ -145,14 +148,19 @@
 	      axesAdefined(sp1) = .true.
 	    case ("-atoms")
 	      n = n + 1; sp1 = getargi(n)
-	      if (axesBAtoms(sp1,1).ne.0) stop "Definition of sites and otheraxis cannot be used together."
+	      if (atomSites(sp1)%n.gt.0) stop "Definition of sites (-atoms or -cog) specified twice for species"
 	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, atomSites(sp1))) stop "Failed to parse atom list."
-	      write(0,"(i2,a,i2,a,20i4)") atomSites(sp1)%n, " atoms added as other site for species ", sp1, ": ", atomSites(sp1)%items(1:atomSites(sp1)%n)
+	      write(0,"(i2,a,i2,a,20i4)") atomSites(sp1)%n, " atoms added as other sites for species ", sp1, ": ", atomSites(sp1)%items(1:atomSites(sp1)%n)
 	    case ("-cartesian")
 	      n = n + 1; sp1 = getargi(n)
 	      axesAatoms(sp1,:) = -1
 	      axesAdefined(sp1) = .true.
 	      write(0,"(A,i3)") "Cartesian axes will be used for species ", sp1
+	    case ("-cog")
+	      n = n + 1; sp1 = getargi(n)
+	      if (atomSites(sp1)%n.gt.0) stop "Definition of sites (-atoms or -cog) specified twice for species"
+	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, atomSites(sp1))) stop "Failed to parse atom list."
+	      write(0,"(i2,a,i2,a,20i4)") atomSites(sp1)%n, " atoms added as other sites for species ", sp1, ": ", atomSites(sp1)%items(1:atomSites(sp1)%n)
 	    case ("-grid")
 	      n = n + 1; grid = getargi(n)
 	      write(0,"(A,I4)") "Grid points in each XYZ = ",grid
@@ -216,9 +224,9 @@
 	      n = n + 1; sp1 = getargi(n)
 	      selectsp(sp1) = .true.
 	      n = n + 1; call getarg(n,selectfile(sp1))
-	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, selectsites(sp1))) stop "Failed to parse atom list for selection site."
+	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, selectSites(sp1))) stop "Failed to parse atom list for selection site."
 	      n = n + 1; selectmin(sp1) = getargr(n)
-	      write(0,"(a,i2,a,f6.2,a,20i4)") "Species ", sp1, "set for selection, cutoff = ", selectmin(sp1), "and based on COG of atoms ", selectsites(sp1)%items(1:selectsites(sp1)%n)
+	      write(0,"(a,i2,a,f6.2,a,20i4)") "Species ", sp1, "set for selection, cutoff = ", selectmin(sp1), "and based on COG of atoms ", selectSites(sp1)%items(1:selectSites(sp1)%n)
 	    case default
 	      write(0,*) "Unrecognised command line option : ",temp
 	      stop
@@ -248,10 +256,7 @@
 	if (nointra.and.nopdens) stop "Nothing to do (both -nointra and -nopdens given)."
 
 	! Probability density arrays
-	allocate(ncaught(nspecies))
-	allocate(nfound(nspecies))
 	allocate(pdensintra(-pgrid:pgrid,-pgrid:pgrid,-pgrid:pgrid))
-	allocate(spexp(nspecies))
 	! Average species etc.
 	allocate(avggeom(maxatoms,3))
 	if (molmap) allocate(molflags(s_nmols(centresp)))
@@ -370,26 +375,24 @@
 	      ! Filter based on position/density of site in reference pdens?
 	      if (selectsp(sp2)) then
 		! Get target bin from atom list supplied
-		call averagePosition(selectsites(sp2)%items,selectsites(sp2)%n,p,v)
+		call averagePosition(selectSites(sp2)%items,selectSites(sp2)%n,p,v)
 		if (getbin(sp1,m1,0.0d0,maxdistsq*2.0,v(1),v(2),v(3),refnx,refny,refnz,grid,delta)) then
 		  if (selectpdens(sp2)%grid(refnx,refny,refnz).lt.selectmin(sp2)) cycle
 		end if
 	      end if
 
-	      ! Pass position of axesAorigin, or axesBorogin, or individual atomSites, depending on what has been defined
-	      if (axesBdefined(sp2)) then
-		if (getbin(sp1,m1,mindistsq,maxdistsq,axesBorigin(sp2,m2,1),axesBorigin(sp2,m2,2),axesBorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
+	      ! Pass position of axesAorigin, or axesBorogin, or (cog of) individual atomSites, depending on what has been defined
+	      ! If atomSites() have been defined, these override everything else
+	      if ((atomSites(sp2)%n.gt.0).and.atomSitesAreCog(sp2)) then
+		! Use list of supplied atoms, forming a COG with them
+		call averagePosition(atomSites(sp2)%items, atomSites(sp2)%n, p, v)
+		if (getbin(sp1,m1,mindistsq,maxdistsq,v(1),v(2),v(3),nx,ny,nz,grid,delta)) then
 		  pdensinter(sp2)%grid(nx,ny,nz) = pdensinter(sp2)%grid(nx,ny,nz) + 1
 		  ncaught(sp2) = ncaught(sp2) + 1
 		end if
 		nfound(sp2) = nfound(sp2) + 1
-	      else if (atomSites(sp2)%n.eq.0) then
-		if (getbin(sp1,m1,mindistsq,maxdistsq,axesAorigin(sp2,m2,1),axesAorigin(sp2,m2,2),axesAorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
-		  pdensinter(sp2)%grid(nx,ny,nz) = pdensinter(sp2)%grid(nx,ny,nz) + 1
-		  ncaught(sp2) = ncaught(sp2) + 1
-		end if
-		nfound(sp2) = nfound(sp2) + 1
-	      else
+	      else if (atomSites(sp2)%n.gt.0) then
+		! Use list of supplied atoms, with each contributing a point to the pdens
 		do n=1,atomSites(sp2)%n
 		  i = p+atomSites(sp2)%n
 		  if (getbin(sp1,m1,mindistsq,maxdistsq,xpos(i),ypos(i),zpos(i),nx,ny,nz,grid,delta)) then
@@ -398,6 +401,20 @@
 		  end if
 		  nfound(sp2) = nfound(sp2) + 1
 		end do
+	      else if (axesBdefined(sp2)) then
+		! Use origin of alteriative axes
+		if (getbin(sp1,m1,mindistsq,maxdistsq,axesBorigin(sp2,m2,1),axesBorigin(sp2,m2,2),axesBorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
+		  pdensinter(sp2)%grid(nx,ny,nz) = pdensinter(sp2)%grid(nx,ny,nz) + 1
+		  ncaught(sp2) = ncaught(sp2) + 1
+		end if
+		nfound(sp2) = nfound(sp2) + 1
+	      else
+		! Use origin of axes
+		if (getbin(sp1,m1,mindistsq,maxdistsq,axesAorigin(sp2,m2,1),axesAorigin(sp2,m2,2),axesAorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
+		  pdensinter(sp2)%grid(nx,ny,nz) = pdensinter(sp2)%grid(nx,ny,nz) + 1
+		  ncaught(sp2) = ncaught(sp2) + 1
+		end if
+		nfound(sp2) = nfound(sp2) + 1
 	      end if
 
 	    end do
