@@ -2,6 +2,8 @@
 	! Also, routine to probe a DL_POLY OUTPUT file for molecule/species information.
 
 	module dlprw
+	  ! Limits
+	  integer, parameter :: MAXSP = 10
 	  ! History file
 	  character*80 :: dlpfn_out, dlpfn_his
 	  integer :: his_in_format = -1, dlpun_out, dlpun_his, dlpun_cfg, dlpun_newhis, his_out_format = -1
