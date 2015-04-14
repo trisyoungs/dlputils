@@ -2,47 +2,43 @@
 !	Calculate cluster analysis between COMS of molecules
 
 	program cluster
-	use dlprw; use utility
+	use parse; use dlprw; use utility; use IList
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
 	character*20 :: temp
 	logical :: altheader = .FALSE.
-	integer :: n,sp1,m1,m2,baselen,nframes,success,nargs,framestodo = -1,frameskip = 0,framesdone,compairs(10,2)
+	integer :: n,sp1,m1,m2,baselen,nframes,success,nargs,framestodo = -1,frameskip = 0,framesdone, offset
+	type(IntegerList) :: comAtoms
 	integer, allocatable :: marked(:)
 	integer :: iargc, nmarked, oldnmarked, newsize
-	real*8 :: c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz,maxdist
+	real*8 :: c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz,maxdist,v(3)
 	real*8, allocatable :: dist(:,:), clusters(:)
 
-	compairs = 0
 	nargs = iargc()
-	if (nargs.lt.4) stop "Usage : cluster <HISTORYfile> <OUTPUTfile> <sp> <maxcomdist> [-header hisfile] [-frames n] [-discard n] [-compair sp i j]"
+	if (nargs.lt.4) stop "Usage : cluster <HISTORYfile> <OUTPUTfile> <sp> <maxdist> [-header hisfile] [-frames n] [-discard n] [-com i[,j,...]]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
-	call getarg(3,temp)
-        read(temp,"(i10)") sp1
-	call getarg(4,temp)
-        read(temp,"(f10.4)") maxdist
+        sp1 = getargi(3)
+        maxdist = getargr(4)
 	
 	n = 4
         do
           n = n + 1; if (n.GT.nargs) exit
           call getarg(n,temp)
           select case (temp)
+            case ("-com")
+	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, comAtoms)) stop "Failed to parse com atom list."
+	      write(0,"(i2,a,i2,a,20i4)") comAtoms%n, " atoms added as COM sites for species ", sp1, ": ", comAtoms%items(1:comAtoms%n)
+            case ("-discard")
+              n = n + 1; frameskip = getargi(n)
+              write(0,"(A,I4)") "Frames to discard at start: ",frameskip
+            case ("-frames")
+              n = n + 1; framestodo = getargi(n)
+              write(0,"(A,I4)") "Frames to process: ",framestodo
             case ("-header")
               n = n + 1; call getarg(n,altheaderfile)
               write(0,"(A,I4)") "Alternative header file supplied."
 	      altheader = .TRUE.
-            case ("-frames")
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
-              write(0,"(A,I4)") "Frames to process: ",framestodo
-            case ("-discard")
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
-              write(0,"(A,I4)") "Frames to discard at start: ",frameskip
-            case ("-compair")
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") sp1
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(sp1,1)
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(sp1,2)
-              write(0,"(A,3I4)") "Using COMpair for species ",sp1, compairs(sp1,:)
 	    case default
 	      write(0,"(a,a)") "Unrecognised command line option:",temp
 	      stop
@@ -93,18 +89,14 @@
 	call calc_com
 
 	! If compairs were specified, use that instead of COM
-	if (compairs(sp1,1).ne.0) then
+	if (comAtoms%n.ne.0) then
+	  offset = s_start(sp1) - 1
 	  do m1=1,s_nmols(sp1)
-	    c1x = xpos(s_start(sp1)+(m1-1)*s_natoms(sp1)+compairs(sp1,1)-1)
-	    c1y = ypos(s_start(sp1)+(m1-1)*s_natoms(sp1)+compairs(sp1,1)-1)
-	    c1z = zpos(s_start(sp1)+(m1-1)*s_natoms(sp1)+compairs(sp1,1)-1)
-	    c2x = xpos(s_start(sp1)+(m1-1)*s_natoms(sp1)+compairs(sp1,2)-1)
-	    c2y = ypos(s_start(sp1)+(m1-1)*s_natoms(sp1)+compairs(sp1,2)-1)
-	    c2z = zpos(s_start(sp1)+(m1-1)*s_natoms(sp1)+compairs(sp1,2)-1)
-	    call pbc(c2x,c2y,c2z,c1x,c1y,c1z,tx,ty,tz)
-	    comx(sp1,m1) = (c1x+tx)*0.5
-	    comy(sp1,m1) = (c1y+ty)*0.5
-	    comz(sp1,m1) = (c1z+tz)*0.5
+	    call averagePosition(comAtoms%items,comAtoms%n,offset,v)
+	    comx(sp1,m1) = v(1)
+	    comy(sp1,m1) = v(2)
+	    comz(sp1,m1) = v(3)
+	    offset = offset + s_natoms(sp1)
 	  end do
 	end if
 
@@ -175,16 +167,20 @@
 	resfile=basename(1:baselen)//"cluster"//CHAR(48+sp1)
 	open(unit=9,file=resfile,form="formatted")
 	write(9,"(a,i2,a,f10.4)") "# Species ",sp1," clusters with COM distance < ", maxdist
-	if (compairs(sp1,1).eq.0) then
-	  write(9,"(a,i2,a)") "# Species ",sp1," calculated using all atoms for COM."
+	if (comAtoms%n.eq.0) then
+	  write(9,"(a,i2,a)") "# Cluster sizes for ",sp1," calculated using COM."
 	else
-	  write(9,"(a,i2,a,i3,i3)") "# Species ",sp1," calculated using two atoms for COM: ", compairs(sp1,1), compairs(sp1,2)
+	  write(9,"(a,i2,a,i3,i3)") "# Cluster sizes for ",sp1," calculated using atoms: "
+	  write(9,"(a,20(i3,x))") "# ", (comAtoms%items(n),n=1,comAtoms%n)
 	end if
-	! Normalise the RDFs with respect to the number of frames.
+
+	! Normalise w.r.t. number of frames
 	clusters = clusters / framesdone
+
+	! Write data
+	write(9,"(a6,4(3x,a12))") "# Size", "NClusters", "NMolecules", "%Clusters", "%Molecules"
 	do n=1,s_nmols(sp1)
-	  ! write(9,"(F6.3,3x,F12.8)") (n*binwidth)-binwidth/2.0,nrdf(a1,n)
-	  write(9,"(i6,2(3x,F12.8))") n, clusters(n)
+	  write(9,"(i6,4(3x,F12.8))") n, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1)
 	end do
 	close(9)
 	write(0,*) "Finished."
