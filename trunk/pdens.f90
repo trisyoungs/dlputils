@@ -7,7 +7,6 @@
 	program calcpdens
 	use dlprw; use utility; use parse; use PDensRW; use IList
 	implicit none
-	integer, parameter :: MAXSITES = 20, MAXSP = 5
 	real*8, parameter :: radcon = 57.29577951d0
 	! Target central and surrounding species
 	integer :: centresp
