@@ -6,17 +6,17 @@
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,headerfile, strtmp
 	character*20 :: temparg
-	integer, parameter :: MAXSITES = 20, MAXSPECIES = 5
+	integer, parameter :: MAXSITES = 20
 	integer :: MAXATOMCONTACTS = 10, MAXPATTERNS = 30000, MAXMOLCONTACTS = 6
 	integer :: nframes,success,nargs,n,m1,m2,i,j,k,baselen,aoff1,aoff2,m
-	integer :: framestodo = -1, framestodiscard = 0, sp1, sp2, nsp2sites(MAXSPECIES), sp2sites(MAXSPECIES,MAXSITES,2), sp1sites(2)
+	integer :: framestodo = -1, framestodiscard = 0, sp1, sp2, nsp2sites(MAXSP), sp2sites(MAXSP,MAXSITES,2), sp1sites(2)
 	integer :: iargc, site, site2, closebit, bit, npatterns = 0, ncontacts, found, t1, t2, t3
 	integer :: tth,th,hun,ten,units,natoms, grid = 40, binx, biny, binz, mtemp(3)
 	integer, allocatable :: centralbits(:), nsp1molcontacts(:), sp1molcontacts(:,:,:), nsp1atomcontacts(:), sp2molcontacts(:,:), nsp2molcontacts(:)
-	integer :: nsp2atomcontacts(MAXSPECIES,MAXSITES,2), writecontact = -1
+	integer :: nsp2atomcontacts(MAXSP,MAXSITES,2), writecontact = -1
 	logical :: done, calc3d = .FALSE., writeone = .FALSE., siteequiv = .FALSE.
 	real*8 :: a(3),b(3),c(3),mima(3),mimb(3),dac,dbc,total,avgmol,avgatom,tx,ty,tz,px,py,pz
-	real*8 :: delta = 0.25, sp2sitemaxdist(MAXSPECIES,MAXSITES), cp
+	real*8 :: delta = 0.25, sp2sitemaxdist(MAXSP,MAXSITES), cp
 	integer, allocatable :: pattern(:,:,:), nmolcontacts(:), natomcontacts(:), pfreq(:), ptemp(:,:)
 	real*8, allocatable :: geom(:,:,:), gtemp(:,:), pdens(:,:,:,:), pdenstemp(:,:,:)
 
