@@ -6,7 +6,9 @@ bin_PROGRAMS += glucanal glucgeom gluchb gluchbeach glucsphere
 bin_PROGRAMS += pdens pdensint pdensmirror pdenstrim pdensgauss
 bin_PROGRAMS += avgconfig dlpsize genlb gengg pairs probedlp
 bin_PROGRAMS += partials2sq
-bin_PROGRAMS += acf dacf sq totalgr
+#bin_PROGRAMS += acf dacf sq totalgr
+
+EXTRA_DIST = acf.f90 dacf.f90 sq.f90 totalgr.f90
 
 # Define some module variables
 PARSE=parse.f90
@@ -16,8 +18,13 @@ FIELDREAD=fieldread.f90
 PDENSRW=pdensrw.f90
 ILIST=integerlist.f90
 
+SUFFIXES: .oo
+
 .f90.o: 
 	$(FC) ${FCFLAGS} -c $<
+
+.oo:
+	mpif90 ${FCFLAGS} -c $<
 
 acf$(EXEEXT):
 	mpif90 ${FCFLAGS} ${PARSE} ${DLPRW} ${UTILITY} acf.f90 -o acf
@@ -33,6 +40,7 @@ totalgr$(EXEEXT):
 
 clean-local:
 	-rm -f *.o *.mod
+
 
 # Converters
 addheader_SOURCES = ${PARSE} ${DLPRW} addheader.f90
