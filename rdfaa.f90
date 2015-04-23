@@ -170,7 +170,7 @@
 	! Normalise data
 	do n=1,nbins
 	  norm(n) = (4.0 * pi / 3.0) * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * (s_nmols(sp) / volume(cell))
-	  norm(n) = (4.0 * pi / 3.0) * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * (1.0 / volume(cell))
+	  !norm(n) = (4.0 * pi / 3.0) * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * (1.0 / volume(cell))
 	  do p=1,npairs
 	    rdf(p,n) = sumhist(p,n) / norm(n) / nframes / s_nmols(sp)
 	  end do
@@ -198,7 +198,7 @@
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	  do n=1,nbins
 	    integral = integral + sumhist(p,n) / nframes / s_nmols(sp)
-	    write(9,"(f10.4,3x,f12.8,4x,e12.6)") (n*binwidth)-binwidth/2.0,rdf(p,n),integral
+	    write(9,"(f10.4,3x,f12.8,4x,e12.6)") (n-0.5)*binwidth,rdf(p,n),integral
 	  end do
 	  close(9)
 	end do
