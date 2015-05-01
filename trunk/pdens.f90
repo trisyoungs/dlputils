@@ -24,9 +24,9 @@
 	! Average geometry
 	real*8, allocatable :: avggeom(:,:)		! Average species coordinates
 	! Counters
-	integer :: npdenscentres, nintracentres
-	integer :: nfound(MAXSP), ncaught(MAXSP)	! Total and 'binned' mols
-	integer :: spexp(MAXSP)				! Expected species numbers
+	integer*8 :: npdenscentres, nintracentres
+	integer*8 :: nfound(MAXSP), ncaught(MAXSP)	! Total and 'binned' mols
+	integer*8 :: spexp(MAXSP)			! Expected species numbers
 	! Map file for selecting central species
 	logical :: molmap = .FALSE.			! Whether we're using a file of mol flags
 	integer, allocatable :: molflags(:)		! Per-frame map of sp1 mols to include in averaging
@@ -158,8 +158,9 @@
 	    case ("-cog")
 	      n = n + 1; sp1 = getargi(n)
 	      if (atomSites(sp1)%n.gt.0) stop "Definition of sites (-atoms or -cog) specified twice for species"
+	      atomSitesAreCog(sp1) = .true.
 	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, atomSites(sp1))) stop "Failed to parse atom list."
-	      write(0,"(i2,a,i2,a,20i4)") atomSites(sp1)%n, " atoms added as other sites for species ", sp1, ": ", atomSites(sp1)%items(1:atomSites(sp1)%n)
+	      write(0,"(i2,a,i2,a,20i4)") atomSites(sp1)%n, " atoms added as COG site for species ", sp1, ": ", atomSites(sp1)%items(1:atomSites(sp1)%n)
 	    case ("-grid")
 	      n = n + 1; grid = getargi(n)
 	      write(0,"(A,I4)") "Grid points in each XYZ = ",grid
@@ -393,15 +394,15 @@
 	      else if (atomSites(sp2)%n.gt.0) then
 		! Use list of supplied atoms, with each contributing a point to the pdens
 		do n=1,atomSites(sp2)%n
-		  i = p+atomSites(sp2)%n
+		  i = p+atomSites(sp2)%items(n)
 		  if (getbin(sp1,m1,mindistsq,maxdistsq,xpos(i),ypos(i),zpos(i),nx,ny,nz,grid,delta)) then
 		    pdensinter(sp2)%grid(nx,ny,nz) = pdensinter(sp2)%grid(nx,ny,nz) + 1
 		    ncaught(sp2) = ncaught(sp2) + 1
 		  end if
-		  nfound(sp2) = nfound(sp2) + 1
+		  nfound(sp2) = nfound(sp2) + atomSites(sp2)%n
 		end do
 	      else if (axesBdefined(sp2)) then
-		! Use origin of alteriative axes
+		! Use origin of alternative axes
 		if (getbin(sp1,m1,mindistsq,maxdistsq,axesBorigin(sp2,m2,1),axesBorigin(sp2,m2,2),axesBorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
 		  pdensinter(sp2)%grid(nx,ny,nz) = pdensinter(sp2)%grid(nx,ny,nz) + 1
 		  ncaught(sp2) = ncaught(sp2) + 1
@@ -500,6 +501,8 @@
 	  spexp(sp2) = s_nmols(centresp) * s_nmols(sp2) * nframesused
 	  if (centresp.eq.sp2) spexp(sp2) = spexp(sp2) - s_nmols(sp2) * nframesused
 
+	  if ((atomSites(sp2)%n.gt.0).and..not.atomSitesAreCog(sp2)) spexp(sp2) = spexp(sp2) * atomSites(sp2)%n
+
 	  ! Species density about central species
 	  pdensinter(sp2)%grid(:,:,:) = pdensinter(sp2)%grid(:,:,:) / npdenscentres / (delta**3)
 
@@ -523,10 +526,11 @@
 	write(6,"(A)") "End of unformatted HISTORY file found."
 801	write(6,"(A,I1)") " Central species = ",centresp
 	do sp1=1,nspecies
-	  write(6,"(A,I1,A,A)") " Species ",sp1,", ",s_name(sp1)
-	  write(6,"(A12,I12,A,I9,A)") "Expected : ",spexp(sp1)," over ",nframesused," frames."
-	  write(6,"(A12,I12)") "Found : ",nfound(sp1)
-	  write(6,"(A12,I12,A)") "Caught : ",ncaught(sp1)," (in grid)"
+	  write(6,"(A,I1,A,A)") " Species ",sp1,", ", s_name(sp1)
+	  write(6,"(A12,I12,A,I9,A)") "Expected : ", spexp(sp1)," over ",nframesused," frames."
+	  write(6,"(A12,I12)") " Points tested : ", nfound(sp1)
+	  write(6,"(A12,f10.6)") " Points number density : ", nfound(sp1) / volume(cell)
+	  write(6,"(A12,I12,A)") "Caught : ", ncaught(sp1), " (in grid)"
 	  if (sp1.eq.centresp) write(6,"(A12,I9)") "Selected (inter) : ",npdenscentres
 	  if (sp1.eq.centresp) write(6,"(A12,I9)") "Selected (intra) : ",nintracentres
 	end do
