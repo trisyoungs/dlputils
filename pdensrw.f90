@@ -194,7 +194,6 @@
 	write(12,"(9f6.2)") p%axes
 	write(12,"(3f10.4)") p%origin
 	write(12,"(3a1)") (char(p%loop(n)+119),n=1,3)
-	write(0,*) p%loop
 	
 	do x=-p%ngrid,p%ngrid
 	  do y=-p%ngrid,p%ngrid
