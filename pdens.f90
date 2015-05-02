@@ -527,12 +527,12 @@
 801	write(6,"(A,I1)") " Central species = ",centresp
 	do sp1=1,nspecies
 	  write(6,"(A,I1,A,A)") " Species ",sp1,", ", s_name(sp1)
-	  write(6,"(A12,I12,A,I9,A)") "Expected : ", spexp(sp1)," over ",nframesused," frames."
-	  write(6,"(A12,I12)") " Points tested : ", nfound(sp1)
-	  write(6,"(A12,f10.6)") " Points number density : ", nfound(sp1) / volume(cell)
-	  write(6,"(A12,I12,A)") "Caught : ", ncaught(sp1), " (in grid)"
-	  if (sp1.eq.centresp) write(6,"(A12,I9)") "Selected (inter) : ",npdenscentres
-	  if (sp1.eq.centresp) write(6,"(A12,I9)") "Selected (intra) : ",nintracentres
+	  write(6,"(A,I12,A,I9,A)") "Expected : ", spexp(sp1)," over ",nframesused," frames."
+	  write(6,"(A,I12)") " Points tested : ", nfound(sp1)
+	  write(6,"(A,f10.6)") " Points number density : ", nfound(sp1) / volume(cell)
+	  write(6,"(A,I12,A)") "Caught : ", ncaught(sp1), " (in grid)"
+	  if (sp1.eq.centresp) write(6,"(A,I9)") "Selected (inter) : ",npdenscentres
+	  if (sp1.eq.centresp) write(6,"(A,I9)") "Selected (intra) : ",nintracentres
 	end do
 	write(6,"(3(A,I3),A,F4.1,A)") "Grid = ",(grid*2+1),"x",(grid*2+1),"x", &
 	  & (grid*2+1)," ( x ",delta," Angstrom )"
