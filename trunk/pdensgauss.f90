@@ -42,13 +42,15 @@
 	if (.not.allocPDens(gauss, original%ngrid)) stop "Failed to allocate new PDens."
 
 	! Determine number of gridpoints to step in each direction, based on gaussian width
-	extents = 1
+	extents = 0
 	do n=1,3
 	  mag(n) = sqrt(original%axes((n-1)*3+1)*original%axes((n-1)*3+1) + original%axes((n-1)*3+2)*original%axes((n-1)*3+2) + original%axes((n-1)*3+3)*original%axes((n-1)*3+3))
 	  do while ( exp(  (-((mag(n)*extents(n))*(mag(n)*extents(n))))  /  (2*sigma*sigma)) .gt.1.0e-2 )
+	    write(0,"(a,i1,a,i2,a,f10.4)") "Axis ", n, " extent of ", extents(n), " gives Gaussian value of ", exp(  (-((mag(n)*extents(n))*(mag(n)*extents(n))))  /  (2*sigma*sigma))
 	    extents(n) = extents(n) + 1
 	  end do
 	end do
+	extents = extents - 1
 	write(0,*) "Extents for gaussian filtering (in gridpoints): ", extents
 
 	! Work out list of surrounding points to consider at each gridpoint
@@ -93,9 +95,11 @@
 
 	! Normalise
 	!gaussgrid = gaussgrid / (4.0*pi*pi*sigma*sigma*sigma*sigma)
-	!gaussgrid = gaussgrid * (sum(grid) / sum(gaussgrid))
-	gauss%grid = gauss%grid * (maxval(original%grid) / maxval(gauss%grid))
+	gauss%grid = gauss%grid * (sum(original%grid) / sum(gauss%grid))
+	!gauss%grid = gauss%grid * (maxval(original%grid) / maxval(gauss%grid))
+	write(0,"(a,2e12.5)") "Sanity sums are ", sum(original%grid) , sum(gauss%grid)
 	
+	write(0,"(e12.4)") gauss%grid(-100,-100,-100), original%grid(-100,-100,-100)
 	! Save data
 	if (.not.savePDens(outfile, gauss)) stop "Failed to save smoothed data."
 

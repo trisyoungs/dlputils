@@ -144,7 +144,7 @@
 	  point(p%loop(1)) = x
 	  point(p%loop(2)) = y
 	  point(p%loop(3)) = z
-	  read(11,"(f20.12)") p%grid(point(1),point(2),point(3))
+	  read(11,*) p%grid(point(1),point(2),point(3))
 	  ! Increase counters
 	  x = x + 1
 	  if (x.gt.p%ngrid) then
