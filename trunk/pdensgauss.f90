@@ -99,7 +99,6 @@
 	!gauss%grid = gauss%grid * (maxval(original%grid) / maxval(gauss%grid))
 	write(0,"(a,2e12.5)") "Sanity sums are ", sum(original%grid) , sum(gauss%grid)
 	
-	write(0,"(e12.4)") gauss%grid(-100,-100,-100), original%grid(-100,-100,-100)
 	! Save data
 	if (.not.savePDens(outfile, gauss)) stop "Failed to save smoothed data."
 
