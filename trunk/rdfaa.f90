@@ -49,6 +49,9 @@
 	end do
 	     
 	if (npairs.eq.0) stop "No atom pairs specified!"
+	do n=1,npairs
+	  write(0,"(a,i2,a,2i4)") "Pair ", n, " : ", atom1(n), atom2(n)
+	end do
 
 	! Open and check the files...
 	call openhis(hisfile,10)
@@ -56,8 +59,6 @@
         ! Now, read in the history header so that we have cell()
         if (readheader().EQ.-1) goto 799
 
-	write(0,*) atom1
-	write(0,*) atom2
 	nbins = maxval(cell) / binwidth
 	write(0,"(A,I5)") "Target species is ",sp
 	write(0,"(A,F6.3,A)") "Using binwidth of ",binwidth," Angstroms"

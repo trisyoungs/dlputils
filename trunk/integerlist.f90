@@ -17,7 +17,7 @@
 	character*(*) :: string
 	type(IntegerList), intent(inout) :: list
 	integer :: n, arglen, slen
-	character :: i(20)
+	character*20 :: i
 
 	! Now get length of supplied string argument
 	slen = len(string)
