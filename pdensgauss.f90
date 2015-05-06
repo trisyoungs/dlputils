@@ -8,8 +8,8 @@
 	character :: c
 	real*8, parameter :: pi = 3.14159265358979
 	integer :: nargs, n, x, y, z, point(3), extents(3), i, j, k
-	logical :: success
-	real*8 :: v(3), sigma, mag(3), xyz, twosigma2, g
+	logical :: success, minLimit = .false., maxLimit = .false.
+	real*8 :: v(3), sigma, mag(3), xyz, twosigma2, minValue, maxValue
 	real*8, allocatable :: gaussvalues(:,:,:)
 	type(PDens) :: original, gauss
 	integer :: iargc
@@ -26,6 +26,14 @@
           n = n + 1; if (n.gt.nargs) exit
           call getarg(n,temp)
           select case (temp)
+	    case ("-min")
+	      n = n + 1; minValue = getargr(n)
+	      minLimit = .true.
+	      write(0,*) "Input grid will be pruned, removing values below ", minValue
+	    case ("-max")
+	      n = n + 1; maxValue = getargr(n)
+	      maxLimit = .true.
+	      write(0,*) "Input grid will be pruned, removing values above ", maxValue
 	    case default
 	      write(0,*) "Unrecognised argument :",temp
 	      stop
@@ -40,6 +48,27 @@
 	gauss%origin = original%origin
 	gauss%axes = original%axes
 	if (.not.allocPDens(gauss, original%ngrid)) stop "Failed to allocate new PDens."
+
+	! Prune input grid
+	if (minLimit.or.maxLimit) then
+	  write(0,*) "Pruning input grid..."
+	  ! Loop over original data
+	  do x=-original%ngrid,original%ngrid
+	    write(0,"(a,i4,a,i4)") "At x = ", x+original%ngrid+1, " of ", 2*original%ngrid+1
+	    do y=-original%ngrid,original%ngrid
+	      do z=-original%ngrid,original%ngrid
+		if (minLimit.and.(gauss%grid(x,y,z).lt.minValue)) then
+		  gauss%grid(point(1),point(2),point(3)) = 0.0
+		  cycle
+		end if
+		if (maxLimit.and.(gauss%grid(x,y,z).gt.maxValue)) then
+		  gauss%grid(point(1),point(2),point(3)) = 0.0
+		  cycle
+		end if
+	      end do
+	    end do
+	  end do
+	end if
 
 	! Determine number of gridpoints to step in each direction, based on gaussian width
 	extents = 0
