@@ -19,6 +19,7 @@
           character*20, allocatable :: s_name(:)
           integer :: nspecies,maxmols,maxatoms
 	  integer, allocatable :: s_natoms(:),s_nmols(:),s_start(:)
+	  integer :: s_totalMols
 	  ! Config file data
 	  real*8, allocatable,dimension(:,:) :: cfgxyz,cfgvel,cfgfrc
 	  real*8 :: cfgcell(9)
@@ -431,11 +432,13 @@
 	  s_natoms(n)=discardn
 	end do
 	close(dlpun_out)
+
 	! Set the startatoms for each species.....
 75	s_start(1)=1
 	do n=2,nspecies
 	  s_start(n)=s_start(n-1)+(s_nmols(n-1)*s_natoms(n-1))
 	end do
+
 	! Set natoms, maxmols and maxatoms
 	natms = 0
 	do n=1,nspecies
@@ -443,6 +446,8 @@
 	  if (s_natoms(n).GT.maxatoms) maxatoms = s_natoms(n)
 	  natms = natms + s_nmols(n)*s_natoms(n)
 	end do
+	s_totalMols = sum(s_nmols)
+
 	! Allocate other arrays...
 	call alloc_xyz
 	! Return conditions:
