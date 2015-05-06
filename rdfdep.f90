@@ -4,15 +4,20 @@
 	program rdfdep
 	use parse; use dlprw; use utility; use IList
 	implicit none
+	integer, parameter :: MAXDEPS = 20
 	real*8, parameter :: pi = 3.14159265358979d0
 	character*80 :: hisfile,dlpoutfile,basename,resfile
 	character*20 :: temp
 	integer :: status,  nargs, success, baselen
-	integer :: nbins,aoff1,aoff2,n,m1,m2,bin,nframes,sp1,sp2,depSp
-	type(IntegerList) :: sp1Site, sp2Site, depSite
-	integer :: iargc, framestodo, framestodiscard = 0, nsp1used, nfound, ndeprequired = 1
-	logical :: intra = .false., samemol = .false.
-	real*8 :: i(3), j(3), jtemp(3), dist, distsq, binwidth, integral, mindist, maxdist, mindistsq, maxdistsq
+	integer :: nbins,aoff1,aoff2,n,m,m1,m2,bin,nframes,sp1,sp2,depSp
+	type(IntegerList) :: sp1Site, sp2Site
+	integer :: iargc, framestodo, framestodiscard = 0, nsp1used
+	logical :: intra = .false., samemol = .false., logicOr = .false.
+	real*8 :: i(3), j(3), jtemp(3), k(3), dist, distsq, binwidth, integral
+	real*8 :: mindist(MAXDEPS), maxdist(MAXDEPS), mindistsq(MAXDEPS), maxdistsq(MAXDEPS)
+	integer :: ndeps = 0, sitesOK
+	type(IntegerList) :: depSite(MAXDEPS), sp1DepSite(MAXDEPS)
+	integer :: nRequired(MAXDEPS), nFound(MAXDEPS)
 	real*8, allocatable :: histogram(:), rdf(:), norm(:)
 
 	binwidth=0.01   ! In Angstroms
@@ -20,7 +25,7 @@
 	nsp1used = 0
 
 	nargs = iargc()
-	if (nargs.lt.10) stop "Usage : rdfdep <HISTORYfile> <OUTPUTfile> <sp1> <atoms1> <sp2> <atoms2> <depSp> <depAtoms> <mindist> <maxdist> [-intra] [-ndep n] [-frames n] [-discard n]"
+	if (nargs.lt.10) stop "Usage : rdfdep <HISTORYfile> <OUTPUTfile> <sp1> <atoms1> <sp2> <atoms2> <depSp> [-dep <depAtoms> <sp1atoms> <mindist> <maxdist> <n>] [-or] [-intra] [-frames n] [-discard n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	sp1 = getargi(3)
@@ -30,14 +35,9 @@
 	call getarg(6,temp)
 	if (.not.parseIntegerList(temp, sp2Site)) stop "Failed to parse atom list for species 2 site."
 	depSp = getargi(7)
-	call getarg(8,temp)
-	if (.not.parseIntegerList(temp, depSite)) stop "Failed to parse atom list for dependent site."
-	mindist = getargr(9)
-	mindistsq = mindist*mindist
-	maxdist = getargr(10)
-	maxdistsq = maxdist*maxdist
 
-	n = 10
+
+	n = 7
 	do
 	  n = n + 1; if (n.GT.nargs) exit
 	  call getarg(n,temp)
@@ -48,8 +48,15 @@
 	      n = n + 1; framestodo = getargi(n)
 	    case ("-intra")
 	      intra = .true.
-	    case ("-ndep") 
-	      n = n + 1; ndeprequired = getargi(n)
+	    case ("-dep") 
+	      ndeps = ndeps + 1
+	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, depSite(ndeps))) stop "Failed to parse atom list for dependent site."
+	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, sp1DepSite(ndeps))) stop "Failed to parse atom list for sp1 dependent site."
+	      n = n + 1; mindist(ndeps) = getargr(n)
+	      mindistsq = mindist(ndeps)*mindist(ndeps)
+	      n = n + 1; maxdist(ndeps) = getargr(n)
+	      maxdistsq = maxdist(ndeps)*maxdist(ndeps)
+	      n = n + 1; nRequired(ndeps) = getargi(n)
 	    case default
 	      write(0,*) "Unrecognised CLI option:", temp
 	      stop
@@ -68,9 +75,13 @@
 	write(0,"(A,I5)") "Species 2 is ",sp2
 	write(0,*) "Species 2 site is (average of) : ", (sp2Site%items(n),n=1,sp2Site%n)
 	write(0,"(A,I5)") "Dependent species is ",depSp
-	write(0,*) "Dependent site is (average of) : ", (depSite%items(n),n=1,depSite%n)
-	write(0,*) "Dependent site min/max distance : ", mindist, maxdist
-	write(0,*) "Number of dependent sites required : ", ndeprequired
+	write(0,*) "Required dependent sites are:"
+	do m=1,ndeps
+	  write(0,*) " ",m,". Dependent site is (average of) : ", (depSite(m)%items(n),n=1,depSite(m)%n)
+	  write(0,*) " ",m,". Dependent sp1 site is (average of) : ", (sp1DepSite(m)%items(n),n=1,sp1DepSite(m)%n)
+	  write(0,*) "     Dependent site min/max distance : ", mindist(m), maxdist(m)
+	  write(0,*) "     Number of dependent sites required : ", nRequired(m)
+	end do
 	write(0,"(A,F6.3,A)") "Using binwidth of ",binwidth," Angstroms"
 	write(0,"(A,I5,A)") "There will be ",nbins," histogram bins."
 	if (framestodo.gt.0) write(0,"(a,i6)") "Number of frames to use in average = ",framestodo
@@ -105,33 +116,53 @@
 	  ! Grab coordinates of the species 1 site (== i)
 	  call averagePosition(sp1Site%items,sp1Site%n,aoff1,i)
   
-	  ! Check for presence of dependent site...
-	  nfound = 0
-	  aoff2 = s_start(depSp)-1
-	  do m2 = 1,s_nmols(depSp)
+	  ! Check for presence of dependent site(s)...
+	  nFound = 0
+	  sitesOK = 0
+	  do m=1,ndeps
+	    aoff2 = s_start(depSp)-1
+	    do m2 = 1,s_nmols(depSp)
 
-	    ! Grab coordinates of the dependent site (== jtemp)
-	    call averagePosition(depSite%items,depSite%n,aoff2,jtemp)
+	      ! Grab coordinates of the sp1 dependent site (== k)
+	      call averagePosition(sp1DepSite(m)%items,sp1DepSite(m)%n,aoff2,k)
+
+	      ! Grab coordinates of the dependent site (== jtemp)
+	      call averagePosition(depSite(m)%items,depSite(m)%n,aoff2,jtemp)
 	    
-	    ! Get minimum image coordinates of jtemp (== j)
-	    call pbc(jtemp(1),jtemp(2),jtemp(3),i(1),i(2),i(3),j(1),j(2),j(3))
+	      ! Get minimum image coordinates of jtemp with k (== j)
+	      call pbc(jtemp(1),jtemp(2),jtemp(3),k(1),k(2),k(3),j(1),j(2),j(3))
 
-	    ! Get squared distance i-j
-	    distsq = (i(1)-j(1))*(i(1)-j(1)) + (i(2)-j(2))*(i(2)-j(2)) + (i(3)-j(3))*(i(3)-j(3))
+	      ! Get squared distance k-j
+	      distsq = (k(1)-j(1))*(k(1)-j(1)) + (k(2)-j(2))*(k(2)-j(2)) + (k(3)-j(3))*(k(3)-j(3))
 
-	    ! Is this within the specified limits
-	    if ((distsq.ge.mindistsq).and.(distsq.le.maxdistsq)) then
-	      nfound = nfound + 1
-	      if (nfound.ge.ndeprequired) exit
+	      ! Is this within the specified limits
+	      if ((distsq.ge.mindistsq(m)).and.(distsq.le.maxdistsq(m))) then
+	        nFound(m) = nFound(m) + 1
+	        if (nFound(m).ge.nRequired(m)) exit
+	      end if
+
+	      ! Increase offset counter (depSp)
+	      aoff2 = aoff2 + s_natoms(depSp)
+
+	    end do
+
+	    ! Check here that we found all the dependent sites that were specified
+	    if (nFound(m).ge.nRequired(m)) sitesOK = sitesOK + 1
+
+	    ! Break from loop if we're done
+	    if (logicOr) then
+	      if (sitesOK.ge.0) exit
+	    else
+	      if (sitesOK.lt.m) then
+	        sitesOK = 0
+		exit
+	      end if
 	    end if
-
-	    ! Increase offset counter (depSp)
-	    aoff2 = aoff2 + s_natoms(depSp)
 
 	  end do
 
-	  ! Did we find a dependent species site within range?
-	  if (nfound.lt.ndeprequired) then
+	  ! Did we find the necessary dependent site(s) within range?
+	  if (sitesOK.eq.0) then
 	    aoff1 = aoff1 + s_natoms(sp1)
 	    cycle
 	  end if
@@ -198,7 +229,7 @@
 	do n=1,nbins
 	  norm(n) = (4.0 * pi / 3.0) * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * (s_nmols(sp2) / volume(cell))
 	  !norm(n) = (4.0 * pi / 3.0) * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * (1.0 / volume(cell))
-	  rdf(n) = histogram(n) / norm(n) / nframes / s_nmols(sp2)
+	  rdf(n) = histogram(n) / norm(n) / nframes / nsp1used
 	end do
 
 	! Ascertain length of basename....

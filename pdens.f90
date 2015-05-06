@@ -15,7 +15,7 @@
 	type(PDens) :: pdensinter(MAXSP)		! Probability densities
 	integer :: grid = 20				! Grid in each direction for intermolecular pdens
 	real*8 :: delta = 0.5				! Default grid spacing for intermolecular pdens
-	logical :: nopdens = .FALSE.			! Whether intermolecular pdens calculation is enabled
+	logical :: nointer = .FALSE.			! Whether intermolecular pdens calculation is enabled
 	! Intramolecular probability density
 	real*8, allocatable :: pdensintra(:,:,:)	! Intramolecular species distributions
 	integer :: pgrid = 50				! Grid in each direction for intramolecular pdens
@@ -184,12 +184,12 @@
 	      write(0,"(A,A)") "Using flags for species 1 molecules from : ",flagfile
 	      open(unit=20,file=flagfile,form="formatted",status="old")
 	      molmap = .TRUE.
-	    case ("-nopdens")
-	      nopdens = .TRUE.
+	    case ("-nointer")
+	      nointer = .TRUE.
 	      write(0,"(A,I4)") "Intermolecular probability distributions will not be computed."
-	    case ("-nointra")
-	      nointra = .TRUE.
-	      write(0,"(A,I4)") "Intramolecular probability distributions will not be computed."
+	    case ("-intra")
+	      nointra = .false.
+	      write(0,"(A,I4)") "Intramolecular probability distributions will be computed."
 	    case ("-mindist")
 	      n = n + 1; mindistsq = getargr(n)
 	      write(0,"(A,f8.4)") "Minimum separation between molecules = ",mindistsq
@@ -253,7 +253,7 @@
 	write(6,"(A,F6.3)") "PGrid spacing = ",pdelta
 	write(6,"(A,I4)") "Central species = ",centresp
 	write(6,"(A,I5,A,I5,A)") "Frame range = ",startf," to ",endf," (0=last)"
-	if (nointra.and.nopdens) stop "Nothing to do (both -nointra and -nopdens given)."
+	if (nointra.and.nointer) stop "Nothing to do (both -nointra and -nointer given)."
 
 	! Probability density arrays
 	allocate(pdensintra(-pgrid:pgrid,-pgrid:pgrid,-pgrid:pgrid))
@@ -332,7 +332,7 @@
 	!
 	! Calculate 3D distributions
 	!
-	if (nopdens) goto 105
+	if (nointer) goto 105
 	sp1 = centresp
 	do m1=1,s_nmols(sp1)      ! Loop over all molecules of species 1...
 	  ! If we're using a mapfile, decide whether to include this molecule
@@ -542,7 +542,7 @@
 
 	  sp2 = othersp%items(i)
 
-	  if (.not.nopdens) then
+	  if (.not.nointer) then
 	    ! -- Probability density of this molecule about the central species
 	    resfile=basename(1:baselen)//CHAR(48+centresp)//CHAR(48+sp2)//".pdens"
 	    if (.not.savePDens(resfile, pdensinter(sp2))) write(0,*) "ERROR: Failed to save data"
