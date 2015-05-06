@@ -57,12 +57,12 @@
 	    write(0,"(a,i4,a,i4)") "At x = ", x+original%ngrid+1, " of ", 2*original%ngrid+1
 	    do y=-original%ngrid,original%ngrid
 	      do z=-original%ngrid,original%ngrid
-		if (minLimit.and.(gauss%grid(x,y,z).lt.minValue)) then
-		  gauss%grid(point(1),point(2),point(3)) = 0.0
+		if (minLimit.and.(original%grid(x,y,z).lt.minValue)) then
+		  original%grid(x,y,z) = 0.0
 		  cycle
 		end if
-		if (maxLimit.and.(gauss%grid(x,y,z).gt.maxValue)) then
-		  gauss%grid(point(1),point(2),point(3)) = 0.0
+		if (maxLimit.and.(original%grid(x,y,z).gt.maxValue)) then
+		  original%grid(x,y,z) = 0.0
 		  cycle
 		end if
 	      end do
@@ -89,11 +89,12 @@
 	do i=-extents(1),extents(1)
 	  do j=-extents(2),extents(2)
 	    do k=-extents(3),extents(3)
-	      xyz = (mag(1)*i)*(mag(1)*i) + (mag(2)*j)*(mag(2)*j) * (mag(3)*k)*(mag(3)*k)
-	      gaussvalues(i,j,k) = exp(-xyz/twosigma2)
+	      xyz = (mag(1)*i)*(mag(1)*i) + (mag(2)*j)*(mag(2)*j) + (mag(3)*k)*(mag(3)*k)
+	      gaussvalues(i,j,k) =(1.0 / (4.0*pi*pi*sigma*sigma*sigma*sigma)) * exp(-xyz/twosigma2)
 	    end do
 	  end do
 	end do
+	write(0,*) gaussvalues
 	
 	! Loop over original data
 	do x=-original%ngrid,original%ngrid
@@ -124,8 +125,8 @@
 	end do
 
 	! Normalise
-	!gaussgrid = gaussgrid / (4.0*pi*pi*sigma*sigma*sigma*sigma)
-	gauss%grid = gauss%grid * (sum(original%grid) / sum(gauss%grid))
+	!gaussgrid = gauss%grid / (4.0*pi*pi*sigma*sigma*sigma*sigma)
+	!gauss%grid = gauss%grid * (sum(original%grid) / sum(gauss%grid))
 	!gauss%grid = gauss%grid * (maxval(original%grid) / maxval(gauss%grid))
 	write(0,"(a,2e12.5)") "Sanity sums are ", sum(original%grid) , sum(gauss%grid)
 	
