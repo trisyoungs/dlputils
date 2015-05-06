@@ -6,16 +6,16 @@
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
 	character*20 :: temp
-	logical :: altheader = .FALSE.
-	integer :: n,sp1,sp,m1,m2,baselen,nframes,success,nargs,framestodo = -1,frameskip = 0,framesdone, offset
+	logical :: altheader = .FALSE., individual = .false., notSelf = .true.
+	integer :: n,sp1,sp,m1,m2,baselen,nframes,success,nargs,framestodo = -1,frameskip = 0,framesdone
 	type(IntegerList) :: otherSp, oxygenAtoms(MAXSP), hydrogenAtoms(MAXSP)
 	integer, allocatable :: marked(:)
-	integer :: iargc, nmarked, oldnmarked, newsize
-	real*8 :: c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz,maxdist,v(3)
+	integer :: iargc, newsize, oldsize, maxpath = -1
+	real*8 :: maxdist, sumtotal
 	real*8, allocatable :: clusters(:)
 
 	nargs = iargc()
-	if (nargs.lt.4) stop "Usage : clusteroh <HISTORYfile> <OUTPUTfile> <sp> <othersp> <maxdist> [-oh sp Oatoms Hatoms] [-header hisfile] [-frames n] [-discard n]"
+	if (nargs.lt.5) stop "Usage : clusteroh <HISTORYfile> <OUTPUTfile> <sp> <othersp> <maxdist> [-oh sp Oatoms Hatoms] [-header hisfile] [-frames n] [-discard n] [-individual] [-maxpath n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
         sp1 = getargi(3)
@@ -43,6 +43,12 @@
               n = n + 1; call getarg(n,altheaderfile)
               write(0,"(A,I4)") "Alternative header file supplied."
 	      altheader = .TRUE.
+            case ("-individual")
+	      individual = .true.
+              write(0,"(A)") "Individual mode - marked list will be reset for each molecule of target species."
+	    case ("-maxpath")
+	      n = n + 1; maxpath = getargi(n)
+	      write(0,"(a,i3)") "Maximum path for selection from each molecule of target species set to ", maxpath
 	    case default
 	      write(0,"(a,a)") "Unrecognised command line option:",temp
 	      stop
@@ -72,9 +78,8 @@
 	! Allocate arrays
 	allocate(marked(s_totalMols))
 	allocate(clusters(s_totalMols))
-	marked = 0
 	clusters = 0.0
-	nmarked = 0
+	notSelf = .not.listContains(otherSp,sp1)
 
 	! Set up the vars...
 100	nframes=0
@@ -88,17 +93,23 @@
 
 	framesdone = framesdone + 1
 
-	! Calculate cluster sizes
+	! Loop over each molecule of sp1, marking from each
+	! Zero marked array each time if -individual was specified
 	marked = 0
-	nmarked = 0
+
 	do m1=1,s_nmols(sp1)
-	  if (marked(m1).eq.1) cycle
-	  oldnmarked = nmarked
+	  ! Cycle if this molecule is already marked
+	  if (marked(s_molstart(sp1)+m1-1).eq.1) cycle
+
 	  ! From this molecule, mark it and all neighbours within maxdist
-	  call mark(m1, s_nmols(sp1), nmarked, marked, maxdist)
-	  newsize = nmarked - oldnmarked
+	  oldsize = sum(marked)
+	  call mark(sp1, m1, marked, maxdist, otherSp, oxygenAtoms, hydrogenAtoms, 0, maxPath)
+	  newsize = sum(marked) - oldsize
 	  !write(0,*) "Cluster size is ", newsize
 	  clusters(newsize) = clusters(newsize) + 1
+
+	  ! Zero array?
+	  if (individual) marked = 0
 	end do
 
 	if (framesdone.eq.framestodo) goto 801
@@ -141,10 +152,19 @@
 	clusters = clusters / framesdone
 
 	! Write data
-	write(9,"(a6,4(3x,a12))") "# Size", "NClusters", "NMolecules", "%Clusters", "%Molecules"
-	do n=1,s_nmols(sp1)
-	  write(9,"(i6,4(3x,F12.8))") n, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1)
-	end do
+	write(9,"(a6,5(3x,a12))") "# Size", "NClusters", "NMolecules", "%Clusters", "%Molecules", "Sum(S*N)"
+	sumtotal = 0.0
+	if (notSelf) then
+	  do n=1,s_nmols(sp1)
+	    sumtotal = sumtotal + (n-1)*clusters(n)
+	    write(9,"(i6,5(3x,F12.8))") n-1, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1), sumtotal
+	  end do
+	else
+	  do n=1,s_nmols(sp1)
+	    sumtotal = sumtotal + n*clusters(n)
+	    write(9,"(i6,5(3x,F12.8))") n, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1), sumtotal
+	  end do
+	end if
 	close(9)
 	write(0,*) "Finished."
 999	close(10)
@@ -156,46 +176,57 @@
 
 	end program clusteroh
 
-	recursive subroutine mark(currentSp, currentMol, currentOffset, marked, maxdist, otherSp, oxygenAtoms, hydrogenAtoms)
-	use dlprw; use IList
+	recursive subroutine mark(currentSp, currentMol, marked, maxdist, otherSp, oxygenAtoms, hydrogenAtoms, pathSize, maxPath)
+	use dlprw; use utility; use IList
 	implicit none
 	integer, intent(inout) :: marked(s_totalMols)
-	integer, intent(in) :: currentSp, currentMol, currentOffset
-	integer :: moff, m, sp, mol, aoff, i, j
+	integer, intent(in) :: currentSp, currentMol, pathSize, maxPath
+	integer :: currentAtomOffset, currentMolOffset
+	integer :: moff, m, sp, mol, aoff, i, j, newPathSize
 	type(IntegerList), intent(in) :: otherSp, oxygenAtoms(MAXSP), hydrogenAtoms(MAXSP)
 	real*8, intent(in) :: maxdist
 	real*8 :: O(3), H(3), v(3), dist
 
+	! Calculate atom and molecule offsets for the current molecule / species
+	currentAtomOffset = (s_start(currentSp)-1) + (currentMol-1)*s_natoms(currentSp)
+	currentMoloffset = s_molstart(currentSp)-1
+
 	! Mark the 'mol' specified, if it has not been marked already
-	if (marked(currentMol).eq.0) then
-	  marked(currentMol) = 1
+	if (marked(currentMol+currentMolOffset).eq.0) then
+	  marked(currentMol+currentMolOffset) = 1
 	end if
 
+	! Increase pathsize
+	newPathSize = pathSize + 1
+
 	! Find close neighbours (over active species), and mark those as well
-	moff = 0
 	aoff = 0
 	do sp=1,nspecies
 	  ! Loop if this species is not in the otherSp list
-	  if (listContains(otherSp,sp)) then
-	    moff = moff + s_nmols(sp)
-	    cycle
-	  end if
+	  if (.not.listContains(otherSp,sp)) cycle
 
 	  ! Loop over all molecules of this species, checking for H...O and O...H contacts with the current molecule
 	  aoff = s_start(sp)-1
+	  moff = s_molstart(sp)-1
 	  do m=1,s_nmols(sp)
 
 	    ! Skip if this molecule/species are the same as the current, or if it is already selected
-	    if ((sp.eq.currentSp).and.(m.eq.currentMol)) cycle
-	    if (marked(m+moff).eq.1) cycle
+	    if ((sp.eq.currentSp).and.(m.eq.currentMol)) then
+	      aoff = aoff + s_natoms(sp)
+	      cycle
+	    end if
+	    if (marked(m+moff).eq.1) then
+	      aoff = aoff + s_natoms(sp)
+	      cycle
+	    end if
 
 	    ! Check O (on currentMol) to H (on our molecule)
-	    do i=1,oxygenAtoms(sp)%n
+	    do i=1,oxygenAtoms(currentSp)%n
 
 	      ! Grab coordinates of the oxygen
-	      O(1) = xpos(currentOffset + oxygenAtoms(currentSp)%items(i))
-	      O(2) = ypos(currentOffset + oxygenAtoms(currentSp)%items(i))
-	      O(3) = zpos(currentOffset + oxygenAtoms(currentSp)%items(i))
+	      O(1) = xpos(currentAtomOffset + oxygenAtoms(currentSp)%items(i))
+	      O(2) = ypos(currentAtomOffset + oxygenAtoms(currentSp)%items(i))
+	      O(3) = zpos(currentAtomOffset + oxygenAtoms(currentSp)%items(i))
 
 	      ! Loop over H sites on our molecule
 	      do j=1,hydrogenAtoms(sp)%n
@@ -213,20 +244,24 @@
 		dist = dsqrt(sum(v*v))
 		if (dist.gt.maxdist) cycle
 
-		! Within range, so mark it...
-		call mark(sp, m, aoff, marked, maxdist, otherSp, oxygenAtoms, hydrogenAtoms)
+		! Within range, so mark it (and possibly those nearby...)
+		if ((maxPath.gt.0).and.(newPathSize.eq.maxPath)) then
+		  marked(m+moff) = 1
+		else
+		  call mark(sp, m, marked, maxdist, otherSp, oxygenAtoms, hydrogenAtoms, newPathSize, maxPath)
+		end if
 
 	      end do !H
 
 	    end do !O
 
 	    ! Check H (on currentMol) to O (on our molecule)
-	    do i=1,hydrogenAtoms(sp)%n
+	    do i=1,hydrogenAtoms(currentSp)%n
 
 	      ! Grab coordinates of the hydrogen
-	      H(1) = xpos(currentOffset + hydrogenAtoms(currentSp)%items(i))
-	      H(2) = ypos(currentOffset + hydrogenAtoms(currentSp)%items(i))
-	      H(3) = zpos(currentOffset + hydrogenAtoms(currentSp)%items(i))
+	      H(1) = xpos(currentAtomOffset + hydrogenAtoms(currentSp)%items(i))
+	      H(2) = ypos(currentAtomOffset + hydrogenAtoms(currentSp)%items(i))
+	      H(3) = zpos(currentAtomOffset + hydrogenAtoms(currentSp)%items(i))
 
 	      ! Loop over O sites on our molecule
 	      do j=1,oxygenAtoms(sp)%n
@@ -244,14 +279,18 @@
 		dist = dsqrt(sum(v*v))
 		if (dist.gt.maxdist) cycle
 
-		! Within range, so mark it...
-		call mark(sp, m, aoff, marked, maxdist, otherSp, oxygenAtoms, hydrogenAtoms)
+		! Within range, so mark it (and possibly those nearby...)
+		if ((maxPath.gt.0).and.(newPathSize.eq.maxPath)) then
+		  marked(m+moff) = 1
+		else
+		  call mark(sp, m, marked, maxdist, otherSp, oxygenAtoms, hydrogenAtoms, newPathSize, maxPath)
+		end if
 
 	      end do !H
 
 	    end do !O
 
-	    ! Increase offset and continue
+	    ! Increase atom offset and continue
 	    aoff = aoff + s_natoms(sp)
 
 	  end do

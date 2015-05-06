@@ -18,7 +18,7 @@
 	  ! Outfile data (species composition, count etc)
           character*20, allocatable :: s_name(:)
           integer :: nspecies,maxmols,maxatoms
-	  integer, allocatable :: s_natoms(:),s_nmols(:),s_start(:)
+	  integer, allocatable :: s_natoms(:),s_nmols(:),s_start(:),s_molstart(:)
 	  integer :: s_totalMols
 	  ! Config file data
 	  real*8, allocatable,dimension(:,:) :: cfgxyz,cfgvel,cfgfrc
@@ -383,6 +383,7 @@
           allocate(s_nmols(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_nmols>"
           allocate(s_natoms(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_natoms>"
           allocate(s_start(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_start>"
+          allocate(s_molstart(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_molstart>"
 	  do n=1,nspecies
 	    write(*,*) "Number of molecules of type: ",n,"?"
 	    read(*,*) s_nmols(n)
@@ -415,6 +416,7 @@
 	allocate(s_nmols(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_nmols>"
 	allocate(s_natoms(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_natoms>"
 	allocate(s_start(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_start>"
+	allocate(s_molstart(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_molstart>"
 	do n=1,nspecies
 52	  read(dlpun_out,"(A30,A20)",end=91) discard, discard2
 	  if (discard(1:17).NE." name of species:") goto 52
@@ -433,10 +435,12 @@
 	end do
 	close(dlpun_out)
 
-	! Set the startatoms for each species.....
+	! Set the startatoms and startmols for each species.....
 75	s_start(1)=1
+	s_molstart(1)=1
 	do n=2,nspecies
 	  s_start(n)=s_start(n-1)+(s_nmols(n-1)*s_natoms(n-1))
+	  s_molstart(n)=s_molstart(n-1)+s_nmols(n-1)
 	end do
 
 	! Set natoms, maxmols and maxatoms

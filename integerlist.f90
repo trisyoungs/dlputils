@@ -71,6 +71,7 @@
 	integer, intent(in) :: item
 	integer :: n
 	
+	listContains = .false.
 	do n=1,list%n
 	  if (list%items(n).eq.item) then
 	    listContains = .true.
