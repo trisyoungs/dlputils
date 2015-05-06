@@ -52,6 +52,7 @@
 	end do
 	extents = extents - 1
 	write(0,*) "Extents for gaussian filtering (in gridpoints): ", extents
+	if (sum(extents).eq.0) stop "Extents are zero (nothing to do). Try increasing sigma."
 
 	! Work out list of surrounding points to consider at each gridpoint
 	twosigma2 = 2.0 * sigma * sigma

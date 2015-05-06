@@ -20,7 +20,7 @@
 	integer :: nRequired(MAXDEPS), nFound(MAXDEPS)
 	real*8, allocatable :: histogram(:), rdf(:), norm(:)
 
-	binwidth=0.01   ! In Angstroms
+	binwidth=0.1   ! In Angstroms
 	framestodo=-1
 	nsp1used = 0
 
@@ -35,7 +35,6 @@
 	call getarg(6,temp)
 	if (.not.parseIntegerList(temp, sp2Site)) stop "Failed to parse atom list for species 2 site."
 	depSp = getargi(7)
-
 
 	n = 7
 	do
@@ -57,6 +56,8 @@
 	      n = n + 1; maxdist(ndeps) = getargr(n)
 	      maxdistsq = maxdist(ndeps)*maxdist(ndeps)
 	      n = n + 1; nRequired(ndeps) = getargi(n)
+	    case ("-or")
+	      logicOr = .true.
 	    case default
 	      write(0,*) "Unrecognised CLI option:", temp
 	      stop
@@ -70,18 +71,19 @@
         if (readheader().EQ.-1) goto 799
 
 	nbins = maxval(cell) / binwidth
-	write(0,"(A,I5)") "Species 1 is ",sp1
+	write(0,"(A,I5,2x,a)") "Species 1 is ",sp1,s_name(sp1)
 	write(0,*) "Species 1 site is (average of) : ", (sp1Site%items(n),n=1,sp1Site%n)
-	write(0,"(A,I5)") "Species 2 is ",sp2
+	write(0,"(A,I5,2x,a)") "Species 2 is ",sp2,s_name(sp2)
 	write(0,*) "Species 2 site is (average of) : ", (sp2Site%items(n),n=1,sp2Site%n)
-	write(0,"(A,I5)") "Dependent species is ",depSp
+	write(0,"(A,I5,2x,a)") "Dependent species is ",depSp,s_name(depSp)
 	write(0,*) "Required dependent sites are:"
 	do m=1,ndeps
 	  write(0,*) " ",m,". Dependent site is (average of) : ", (depSite(m)%items(n),n=1,depSite(m)%n)
-	  write(0,*) " ",m,". Dependent sp1 site is (average of) : ", (sp1DepSite(m)%items(n),n=1,sp1DepSite(m)%n)
+	  write(0,*) "       Dependent sp1 site is (average of) : ", (sp1DepSite(m)%items(n),n=1,sp1DepSite(m)%n)
 	  write(0,*) "     Dependent site min/max distance : ", mindist(m), maxdist(m)
 	  write(0,*) "     Number of dependent sites required : ", nRequired(m)
 	end do
+	if (logicOr) write(0,*) "'Or' logic in force - any complete dependent match is enough."
 	write(0,"(A,F6.3,A)") "Using binwidth of ",binwidth," Angstroms"
 	write(0,"(A,I5,A)") "There will be ",nbins," histogram bins."
 	if (framestodo.gt.0) write(0,"(a,i6)") "Number of frames to use in average = ",framestodo
@@ -124,7 +126,7 @@
 	    do m2 = 1,s_nmols(depSp)
 
 	      ! Grab coordinates of the sp1 dependent site (== k)
-	      call averagePosition(sp1DepSite(m)%items,sp1DepSite(m)%n,aoff2,k)
+	      call averagePosition(sp1DepSite(m)%items,sp1DepSite(m)%n,aoff1,k)
 
 	      ! Grab coordinates of the dependent site (== jtemp)
 	      call averagePosition(depSite(m)%items,depSite(m)%n,aoff2,jtemp)
@@ -229,7 +231,7 @@
 	do n=1,nbins
 	  norm(n) = (4.0 * pi / 3.0) * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * (s_nmols(sp2) / volume(cell))
 	  !norm(n) = (4.0 * pi / 3.0) * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * (1.0 / volume(cell))
-	  rdf(n) = histogram(n) / norm(n) / nframes / nsp1used
+	  rdf(n) = histogram(n) / norm(n) / nsp1used
 	end do
 
 	! Ascertain length of basename....
@@ -250,9 +252,22 @@
 	integral = 0.0
 	resfile=basename(1:baselen)//"rdfdep"//CHAR(48+sp1)//"_"//CHAR(48+sp2)
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
+	write(9,"(A,I5,2x,a)") "# Species 1 is ",sp1,s_name(sp1)
+	write(9,*) "# Species 1 site is (average of) : ", (sp1Site%items(n),n=1,sp1Site%n)
+	write(9,"(A,I5,2x,a)") "# Species 2 is ",sp2,s_name(sp2)
+	write(9,*) "# Species 2 site is (average of) : ", (sp2Site%items(n),n=1,sp2Site%n)
+	write(9,"(A,I5,2x,a)") "# Dependent species is ",depSp,s_name(depSp)
+	write(9,*) "# Required dependent sites are:"
+	do m=1,ndeps
+	  write(9,*) "# ",m,". Dependent site is (average of) : ", (depSite(m)%items(n),n=1,depSite(m)%n)
+	  write(9,*) "#       Dependent sp1 site is (average of) : ", (sp1DepSite(m)%items(n),n=1,sp1DepSite(m)%n)
+	  write(9,*) "#     Dependent site min/max distance : ", mindist(m), maxdist(m)
+	  write(9,*) "#     Number of dependent sites required : ", nRequired(m)
+	end do
+	if (logicOr) write(9,*) "# 'Or' logic in force - any complete dependent match is enough."
 	do n=1,nbins
-	  integral = integral + histogram(n) / nframes / s_nmols(sp2)
-	  write(9,"(f10.4,3x,f12.8,4x,e12.6)") (n-0.5)*binwidth, rdf(n), integral
+	  integral = integral + histogram(n) / nsp1used
+	  write(9,"(f10.4,3x,f12.8,4x,e12.6,4x,e12.6)") (n-0.5)*binwidth, rdf(n), integral, histogram(n) / nsp1used
 	end do
 	close(9)
 
