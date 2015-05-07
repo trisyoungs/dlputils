@@ -22,7 +22,7 @@
 	npairs = 0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : rdf_aa_inter <HISTORYfile> <OUTPUTfile> [-sp1 n] [-sp2 n] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-nonorm] [-dump <dist>] [-includeintra] [-bin width]"
+	if (nargs.lt.5) stop "Usage : rdfaainter <HISTORYfile> <OUTPUTfile> [-sp1 n] [-sp2 n] -pair a1 a2 [-pair a1 a2 [...] ] [-frames n] [-nonorm] [-dump <dist>] [-includeintra] [-bin width]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	n = 2

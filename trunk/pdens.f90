@@ -133,6 +133,11 @@
 	  n = n + 1; if (n.GT.nargs) exit
 	  call getarg(n,temp)
 	  select case (temp)
+	    case ("-atoms")
+	      n = n + 1; sp1 = getargi(n)
+	      if (atomSites(sp1)%n.gt.0) stop "Definition of sites (-atoms or -cog) specified twice for species"
+	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, atomSites(sp1))) stop "Failed to parse atom list."
+	      write(0,"(i2,a,i2,a,20i4)") atomSites(sp1)%n, " atoms added as other sites for species ", sp1, ": ", atomSites(sp1)%items(1:atomSites(sp1)%n)
 	    case ("-axis") 
 	      n = n + 1; sp1 = getargi(n)
 	      n = n + 1; axesAatoms(sp1,1) = getargi(n)
@@ -145,11 +150,6 @@
 		if ((axesAatoms(sp1,m).lt.1).or.(axesAatoms(sp1,m).gt.s_natoms(sp1))) stop "Atom id out of range for axes on this species!"
 	      end do
 	      axesAdefined(sp1) = .true.
-	    case ("-atoms")
-	      n = n + 1; sp1 = getargi(n)
-	      if (atomSites(sp1)%n.gt.0) stop "Definition of sites (-atoms or -cog) specified twice for species"
-	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, atomSites(sp1))) stop "Failed to parse atom list."
-	      write(0,"(i2,a,i2,a,20i4)") atomSites(sp1)%n, " atoms added as other sites for species ", sp1, ": ", atomSites(sp1)%items(1:atomSites(sp1)%n)
 	    case ("-cartesian")
 	      n = n + 1; sp1 = getargi(n)
 	      axesAatoms(sp1,:) = -1
@@ -161,32 +161,19 @@
 	      atomSitesAreCog(sp1) = .true.
 	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, atomSites(sp1))) stop "Failed to parse atom list."
 	      write(0,"(i2,a,i2,a,20i4)") atomSites(sp1)%n, " atoms added as COG site for species ", sp1, ": ", atomSites(sp1)%items(1:atomSites(sp1)%n)
-	    case ("-grid")
-	      n = n + 1; grid = getargi(n)
-	      write(0,"(A,I4)") "Grid points in each XYZ = ",grid
-	    case ("-pgrid")
-	      n = n + 1; pgrid = getargi(n)
-	      write(0,"(A,I4)") "PGrid points in each XYZ = ",pgrid
 	    case ("-delta")
 	      n = n + 1; call getarg(n,temp); read(temp,"(F10.4)") delta
 	      write(0,"(A,F6.3)") "Grid spacing = ",delta
-	    case ("-pdelta")
-	      n = n + 1; call getarg(n,temp); read(temp,"(F10.4)") pdelta
-	      write(0,"(A,F6.3)") "PGrid spacing = ",pdelta
-	    case ("-start")
-	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") startf
-	      write(0,"(A,I5)") "Starting frame = ",startf
 	    case ("-end")
 	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") endf
 	      write(0,"(A,I5)") "End frame = ",endf
-	    case ("-molmap")
-	      n = n + 1; call getarg(n,flagfile)
-	      write(0,"(A,A)") "Using flags for species 1 molecules from : ",flagfile
-	      open(unit=20,file=flagfile,form="formatted",status="old")
-	      molmap = .TRUE.
-	    case ("-nointer")
-	      nointer = .TRUE.
-	      write(0,"(A,I4)") "Intermolecular probability distributions will not be computed."
+	    case ("-grid")
+	      n = n + 1; grid = getargi(n)
+	      write(0,"(A,I4)") "Grid points in each XYZ = ",grid
+	    case ("-header")
+              n = n + 1; call getarg(n,altheaderfile)
+              write(0,"(A)") "Alternative header file supplied."
+              altheader = .TRUE.
 	    case ("-intra")
 	      nointra = .false.
 	      write(0,"(A,I4)") "Intramolecular probability distributions will be computed."
@@ -198,10 +185,14 @@
 	      n = n + 1; maxdistsq = getargr(n)
 	      write(0,"(A,f8.4)") "Maximum separation between molecules = ",maxdistsq
 	      maxdistsq = maxdistsq * maxdistsq
-	    case ("-header")
-              n = n + 1; call getarg(n,altheaderfile)
-              write(0,"(A)") "Alternative header file supplied."
-              altheader = .TRUE.
+	    case ("-molmap")
+	      n = n + 1; call getarg(n,flagfile)
+	      write(0,"(A,A)") "Using flags for species 1 molecules from : ",flagfile
+	      open(unit=20,file=flagfile,form="formatted",status="old")
+	      molmap = .TRUE.
+	    case ("-nointer")
+	      nointer = .TRUE.
+	      write(0,"(A,I4)") "Intermolecular probability distributions will not be computed."
 	    case ("-orient")
 	      n = n + 1; sp1 = getargi(n)
 	      n = n + 1; i = getargi(n)
@@ -220,6 +211,12 @@
 	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Alternative axes for species ",sp1," calculated from: X=",axesBatoms(sp1,1),"->", &
 	        & axesBatoms(sp1,2),", Y=0.5X->0.5(r(",axesBatoms(sp1,3),")->r(",axesBatoms(sp1,4),"))"
 	      axesBdefined(sp1) = .true.
+	    case ("-pdelta")
+	      n = n + 1; call getarg(n,temp); read(temp,"(F10.4)") pdelta
+	      write(0,"(A,F6.3)") "PGrid spacing = ",pdelta
+	    case ("-pgrid")
+	      n = n + 1; pgrid = getargi(n)
+	      write(0,"(A,I4)") "PGrid points in each XYZ = ",pgrid
 	    case ("-select")
 	      n = n + 1; sp1 = getargi(n)
 	      selectsp(sp1) = .true.
@@ -227,6 +224,9 @@
 	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, selectSites(sp1))) stop "Failed to parse atom list for selection site."
 	      n = n + 1; selectmin(sp1) = getargr(n)
 	      write(0,"(a,i2,a,f6.2,a,20i4)") "Species ", sp1, "set for selection, cutoff = ", selectmin(sp1), "and based on COG of atoms ", selectSites(sp1)%items(1:selectSites(sp1)%n)
+	    case ("-start")
+	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") startf
+	      write(0,"(A,I5)") "Starting frame = ",startf
 	    case default
 	      write(0,*) "Unrecognised command line option : ",temp
 	      stop
