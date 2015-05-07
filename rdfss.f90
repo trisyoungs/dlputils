@@ -5,21 +5,18 @@
 !	Default is that all site-site g(r)'s between the sp1 atoms and the COM of the
 !	second species is required.
 
-	module rdfssdat
-	  integer :: nbins
-	  real*8 :: binwidth,boxvolume
-	  real*8, allocatable :: rdf(:,:),purerdf(:),nrdf(:,:)
-	end module rdfssdat
-
 	program rdfss
-	use parse; use dlprw; use rdfssdat; use utility
+	use parse; use dlprw; use utility
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,resfile
 	character*20 :: temp
 	integer :: n,a1,s1,m1,m2,baselen,bin,nframes,success,o,nargs,numadded,sp1,sp2,compair(2)
 	integer :: framestodiscard = 0, framesdone = 0
-	integer :: iargc
+	integer :: iargc, status
 	real*8 :: dist,c1x,c1y,c1z,c2x,c2y,c2z,tx,ty,tz,numdens,const,norm
+	integer :: nbins
+	real*8 :: binwidth,boxvolume
+	real*8, allocatable :: rdf(:,:),purerdf(:),nrdf(:,:)
 
 	binwidth=0.1   ! In Angstroms
 	sp1 = 1
@@ -65,7 +62,13 @@
 	write(0,"(A,I5,A)") "There will be ",nbins," histogram bins."
 	write(0,"(A,I1,A,I1)") "Calculating PRDFs between atoms of species ",sp1," and centre-of-mass of species ",sp2
 	
-	call alloc_data(maxval(s_natoms),nbins)
+	! Initialise the arrays...
+        allocate(rdf(maxval(s_natoms),nbins),stat=status); if (status.GT.0) stop "Allocation error for rdf()"
+        allocate(purerdf(nbins),stat=status); if (status.GT.0) stop "Allocation error for purerdf()"
+	allocate(nrdf(maxval(s_natoms),nbins),stat=status); if (status.GT.0) stop "Allocation error for nrdf()"
+	rdf = 0.0
+	purerdf = 0.0
+	nrdf = 0.0
 
 	! XXXX
 	! XXXX Main RDF routine....
@@ -191,14 +194,3 @@
 	CLOSE(13)
 	end program rdfss
 
-	subroutine alloc_data(i,j)
-	use rdfssdat; implicit none; integer :: n,i,j,status
-	! i = max(s_natoms), j = nbins
-        allocate(rdf(i,j),stat=status); if (status.GT.0) stop "Allocation error for rdf()"
-        allocate(purerdf(j),stat=status); if (status.GT.0) stop "Allocation error for purerdf()"
-	allocate(nrdf(i,j),stat=status); if (status.GT.0) stop "Allocation error for nrdf()"
-	! Initialise the arrays...
-	rdf = 0.0
-	purerdf = 0.0
-	nrdf = 0.0
-	end subroutine alloc_data
