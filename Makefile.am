@@ -1,7 +1,7 @@
 bin_PROGRAMS = dlp2xyzf catdlp dlp2dlp addheader editconfig filterdlp his2config his2xyzs dlp2dlpflipz dlp2dlpshift dlpreorder chunkdlp xyz2his
 bin_PROGRAMS += cdf dist2 rdf rdfsum rdfaa rdfaainter rdfss rdfdep zdens
 bin_PROGRAMS += acfcat acfprep acfsum angle cagecor2 cn counthb geom getcell intertorsion intratorsion intratorsion2 lifehb moldist msd msd2 vac vac2
-bin_PROGRAMS += bident bident2 bident2anal bident3 bident4 cluster clusteroh cryscomp dahist legendre zangle
+bin_PROGRAMS += bident bident2 bident2anal bident3 bident4 cluster clusterab cryscomp dahist legendre zangle
 bin_PROGRAMS += glucanal glucgeom gluchb gluchbeach glucsphere
 bin_PROGRAMS += pdens pdensint pdensmirror pdenstrim pdensgauss
 bin_PROGRAMS += avgconfig dlpsize genlb gengg pairs probedlp
@@ -102,7 +102,7 @@ bident2anal_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} bident2anal.f90
 bident3_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} bident3.f90
 bident4_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} bident4.f90
 cluster_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${ILIST} cluster.f90
-clusteroh_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${ILIST} clusteroh.f90
+clusterab_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${ILIST} clusterab.f90
 cryscomp_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} cryscomp.f90
 dahist_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} dahist.f90
 legendre_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} legendre.f90

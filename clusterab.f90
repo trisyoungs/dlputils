@@ -1,21 +1,21 @@
-!	** clusteroh **
-!	Calculate cluster analysis between COMS of molecules
+!	** clusterab **
+!	Calculate cluster / path analysis between AB sites of molecules
 
-	program clusteroh
+	program clusterab
 	use parse; use dlprw; use utility; use IList
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
 	character*20 :: temp
 	logical :: altheader = .FALSE., individual = .false., notSelf = .true.
 	integer :: n,sp1,sp,m1,m2,baselen,nframes,success,nargs,framestodo = -1,frameskip = 0,framesdone
-	type(IntegerList) :: otherSp, oxygenAtoms(MAXSP), hydrogenAtoms(MAXSP)
+	type(IntegerList) :: otherSp, aAtoms(MAXSP), bAtoms(MAXSP)
 	integer, allocatable :: marked(:)
 	integer :: iargc, newsize, oldsize, maxpath = -1
 	real*8 :: maxdist, sumtotal
 	real*8, allocatable :: clusters(:)
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : clusteroh <HISTORYfile> <OUTPUTfile> <sp> <othersp> <maxdist> [-oh sp Oatoms Hatoms] [-header hisfile] [-frames n] [-discard n] [-individual] [-maxpath n]"
+	if (nargs.lt.5) stop "Usage : clusterab <HISTORYfile> <OUTPUTfile> <sp> <othersp> <maxdist> [-ab sp Aatoms Batoms] [-header hisfile] [-frames n] [-discard n] [-individual] [-maxpath n]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
         sp1 = getargi(3)
@@ -27,12 +27,12 @@
           n = n + 1; if (n.GT.nargs) exit
           call getarg(n,temp)
           select case (temp)
-            case ("-oh")
+            case ("-ab")
 	      n = n + 1; sp = getargi(n)
-	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, oxygenAtoms(sp))) stop "Failed to parse oxygen atom list."
-	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, hydrogenAtoms(sp))) stop "Failed to parse hydrogen atom list."
-	      write(0,"(i2,a,i2,a,20i4)") oxygenAtoms(sp)%n, " oxygen atom sites added as for species ", sp, ": ", oxygenAtoms(sp)%items(1:oxygenAtoms(sp)%n)
-	      write(0,"(i2,a,i2,a,20i4)") hydrogenAtoms(sp)%n, " hydrogen atom sites added as for species ", sp, ": ", hydrogenAtoms(sp)%items(1:hydrogenAtoms(sp)%n)
+	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, aAtoms(sp))) stop "Failed to parse A atom list."
+	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, bAtoms(sp))) stop "Failed to parse B atom list."
+	      write(0,"(i2,a,i2,a,20i4)") aAtoms(sp)%n, " A atom sites added as for species ", sp, ": ", aAtoms(sp)%items(1:aAtoms(sp)%n)
+	      write(0,"(i2,a,i2,a,20i4)") bAtoms(sp)%n, " B atom sites added as for species ", sp, ": ", bAtoms(sp)%items(1:bAtoms(sp)%n)
             case ("-discard")
               n = n + 1; frameskip = getargi(n)
               write(0,"(A,I4)") "Frames to discard at start: ",frameskip
@@ -103,7 +103,7 @@
 
 	  ! From this molecule, mark it and all neighbours within maxdist
 	  oldsize = sum(marked)
-	  call mark(sp1, m1, marked, maxdist, otherSp, oxygenAtoms, hydrogenAtoms, 0, maxPath)
+	  call mark(sp1, m1, marked, maxdist, otherSp, aAtoms, bAtoms, 0, maxPath)
 	  newsize = sum(marked) - oldsize
 	  !write(0,*) "Cluster size is ", newsize
 	  clusters(newsize) = clusters(newsize) + 1
@@ -144,7 +144,7 @@
 	endif
 
 	! Write output
-	resfile=basename(1:baselen)//"cluster"//CHAR(48+sp1)
+	resfile=basename(1:baselen)//"clusterab"//CHAR(48+sp1)
 	open(unit=9,file=resfile,form="formatted")
 	!write(9,"(a,i2,a,f10.4)") "# Species ",sp1," clusters with COM distance < ", maxdist
 
@@ -174,18 +174,18 @@
 	deallocate(marked)
 	deallocate(clusters)
 
-	end program clusteroh
+	end program clusterab
 
-	recursive subroutine mark(currentSp, currentMol, marked, maxdist, otherSp, oxygenAtoms, hydrogenAtoms, pathSize, maxPath)
+	recursive subroutine mark(currentSp, currentMol, marked, maxdist, otherSp, aAtoms, bAtoms, pathSize, maxPath)
 	use dlprw; use utility; use IList
 	implicit none
 	integer, intent(inout) :: marked(s_totalMols)
 	integer, intent(in) :: currentSp, currentMol, pathSize, maxPath
 	integer :: currentAtomOffset, currentMolOffset
 	integer :: moff, m, sp, mol, aoff, i, j, newPathSize
-	type(IntegerList), intent(in) :: otherSp, oxygenAtoms(MAXSP), hydrogenAtoms(MAXSP)
+	type(IntegerList), intent(in) :: otherSp, aAtoms(MAXSP), bAtoms(MAXSP)
 	real*8, intent(in) :: maxdist
-	real*8 :: O(3), H(3), v(3), dist
+	real*8 :: A(3), B(3), v(3), dist
 
 	! Calculate atom and molecule offsets for the current molecule / species
 	currentAtomOffset = (s_start(currentSp)-1) + (currentMol-1)*s_natoms(currentSp)
@@ -220,27 +220,27 @@
 	      cycle
 	    end if
 
-	    ! Check O (on currentMol) to H (on our molecule)
-	    do i=1,oxygenAtoms(currentSp)%n
+	    ! Check A (on currentMol) to B (on our molecule)
+	    do i=1,aAtoms(currentSp)%n
 
-	      ! Grab coordinates of the oxygen
-	      O(1) = xpos(currentAtomOffset + oxygenAtoms(currentSp)%items(i))
-	      O(2) = ypos(currentAtomOffset + oxygenAtoms(currentSp)%items(i))
-	      O(3) = zpos(currentAtomOffset + oxygenAtoms(currentSp)%items(i))
+	      ! Grab coordinates of A
+	      A(1) = xpos(currentAtomOffset + aAtoms(currentSp)%items(i))
+	      A(2) = ypos(currentAtomOffset + aAtoms(currentSp)%items(i))
+	      A(3) = zpos(currentAtomOffset + aAtoms(currentSp)%items(i))
 
-	      ! Loop over H sites on our molecule
-	      do j=1,hydrogenAtoms(sp)%n
+	      ! Loop over B sites on our molecule
+	      do j=1,bAtoms(sp)%n
 
-	        ! Grab coordinates of the hydrogen
-		v(1) = xpos(aoff + hydrogenAtoms(sp)%items(j))
-		v(2) = ypos(aoff + hydrogenAtoms(sp)%items(j))
-		v(3) = zpos(aoff + hydrogenAtoms(sp)%items(j))
+	        ! Grab coordinates of B
+		v(1) = xpos(aoff + bAtoms(sp)%items(j))
+		v(2) = ypos(aoff + bAtoms(sp)%items(j))
+		v(3) = zpos(aoff + bAtoms(sp)%items(j))
 		
-		! Get mim coordinates of H w.r.t. O
-		call pbc(v(1),v(2),v(3),O(1),O(2),O(3),H(1),H(2),H(3))
+		! Get mim coordinates of B w.r.t. A
+		call pbc(v(1),v(2),v(3),A(1),A(2),A(3),B(1),B(2),B(3))
 
 		! Get and check distance
-		v = H - O
+		v = A - B
 		dist = dsqrt(sum(v*v))
 		if (dist.gt.maxdist) cycle
 
@@ -248,34 +248,34 @@
 		if ((maxPath.gt.0).and.(newPathSize.eq.maxPath)) then
 		  marked(m+moff) = 1
 		else
-		  call mark(sp, m, marked, maxdist, otherSp, oxygenAtoms, hydrogenAtoms, newPathSize, maxPath)
+		  call mark(sp, m, marked, maxdist, otherSp, aAtoms, bAtoms, newPathSize, maxPath)
 		end if
 
 	      end do !H
 
 	    end do !O
 
-	    ! Check H (on currentMol) to O (on our molecule)
-	    do i=1,hydrogenAtoms(currentSp)%n
+	    ! Check B (on currentMol) to A (on our molecule)
+	    do i=1,bAtoms(currentSp)%n
 
-	      ! Grab coordinates of the hydrogen
-	      H(1) = xpos(currentAtomOffset + hydrogenAtoms(currentSp)%items(i))
-	      H(2) = ypos(currentAtomOffset + hydrogenAtoms(currentSp)%items(i))
-	      H(3) = zpos(currentAtomOffset + hydrogenAtoms(currentSp)%items(i))
+	      ! Grab coordinates of B
+	      B(1) = xpos(currentAtomOffset + bAtoms(currentSp)%items(i))
+	      B(2) = ypos(currentAtomOffset + bAtoms(currentSp)%items(i))
+	      B(3) = zpos(currentAtomOffset + bAtoms(currentSp)%items(i))
 
-	      ! Loop over O sites on our molecule
-	      do j=1,oxygenAtoms(sp)%n
+	      ! Loop over A sites on our molecule
+	      do j=1,aAtoms(sp)%n
 
-	        ! Grab coordinates of the oxygen
-		v(1) = xpos(aoff + oxygenAtoms(sp)%items(j))
-		v(2) = ypos(aoff + oxygenAtoms(sp)%items(j))
-		v(3) = zpos(aoff + oxygenAtoms(sp)%items(j))
+	        ! Grab coordinates of A
+		v(1) = xpos(aoff + aAtoms(sp)%items(j))
+		v(2) = ypos(aoff + aAtoms(sp)%items(j))
+		v(3) = zpos(aoff + aAtoms(sp)%items(j))
 		
-		! Get mim coordinates of O w.r.t. H
-		call pbc(v(1),v(2),v(3),H(1),H(2),H(3),O(1),O(2),O(3))
+		! Get mim coordinates of A w.r.t. B
+		call pbc(v(1),v(2),v(3),B(1),B(2),B(3),A(1),A(2),A(3))
 
 		! Get and check distance
-		v = H - O
+		v = A - B
 		dist = dsqrt(sum(v*v))
 		if (dist.gt.maxdist) cycle
 
@@ -283,7 +283,7 @@
 		if ((maxPath.gt.0).and.(newPathSize.eq.maxPath)) then
 		  marked(m+moff) = 1
 		else
-		  call mark(sp, m, marked, maxdist, otherSp, oxygenAtoms, hydrogenAtoms, newPathSize, maxPath)
+		  call mark(sp, m, marked, maxdist, otherSp, aAtoms, bAtoms, newPathSize, maxPath)
 		end if
 
 	      end do !H

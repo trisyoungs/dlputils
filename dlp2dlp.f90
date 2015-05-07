@@ -2,7 +2,7 @@
 	! dlp converter
 	! ###############
 
-	program dlp2
+	program dlp2dlp
 	use dlprw
 	implicit none
 	character*80 :: hisfile,temp,outfile
@@ -11,7 +11,7 @@
 	logical :: failed_header
 
 	nargs = iargc()
-	if (nargs.lt.2) stop " Usage: dlp2 <HISTORYfile> <format (0=unformatted, 1=formatted)> [nframes]"
+	if (nargs.lt.2) stop " Usage: dlp2dlp <HISTORYfile> <format (0=unformatted, 1=formatted)> [nframes]"
 	call getarg(1,hisfile)
 	call getarg(2,temp)
 	read(temp,"(I2)") destfmt
@@ -50,4 +50,4 @@
 20      close(14)
 	stop "Finished conversion."
 
-	end program dlp2
+	end program dlp2dlp

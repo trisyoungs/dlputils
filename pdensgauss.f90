@@ -15,7 +15,7 @@
 	integer :: iargc
 
         nargs = iargc()
-        if (nargs.lt.3) stop "Usage: pdensgauss <pdensfile> <outputfile> <sigma>"
+        if (nargs.lt.3) stop "Usage: pdensgauss <pdensfile> <outputfile> <sigma> [-min value] [-max value]"
         call getarg(1,infile)
         call getarg(2,outfile)
 	sigma = getargr(3)
