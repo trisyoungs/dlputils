@@ -40,17 +40,31 @@ else (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 endif (Fortran_COMPILER_NAME MATCHES "gfortran.*")
 
-# Setup module build
-set (MODULES "parse" "dlprw" "utility" "pdensrw" "integerlist")
-foreach (p ${MODULES})
-  add_library(${p} "${p}.f90")
-endforeach (p)
+# Setup function library build
+add_library(external "parse.f90" "dlprw.f90" "utility.f90" "pdensrw.f90" "integerlist.f90")
 
-# setup binary builds
-set (PROGRAMS "dlp2xyzf" "catdlp" "dlp2dlp" "addheader" "editconfig" "filterdlp" "his2config" "his2xyzs" "dlp2dlpflipz" "dlp2dlpshift" "dlpreorder" "chunkdlp" "xyz2his" "cdf" "dist2" "rdf" "rdfsum" "rdfaa" "rdfaainter" "rdfss" "rdfdep" "zdens" "acfcat" "acfprep" "acfsum" "angle" "cagecor2" "cn" "counthb" "geom" "getcell" "intertorsion" "intratorsion" "intratorsion2" "lifehb" "moldist" "msd" "msd2" "vac" "vac2" "bident" "bident2" "bident2anal" "bident3" "bident4" "cluster" "clusteroh" "cryscomp" "dahist" "legendre" "zangle" "glucanal" "glucgeom" "gluchb" "gluchbeach" "glucsphere" "pdens" "pdensint" "pdensgauss" "pdensmirror" "pdenstrim" "avgconfig" "dlpsize" "genlb" "gengg" "pairs" "probedlp")
+# Setup binary builds
+set (PROGRAMS 
+  "acfcat" "acfprep" "acfsum" "addheader" "angle" "avgconfig"
+  "bident" "bident2" "bident2anal" "bident3" "bident4" 
+  "cagecor2" "catdlp" "cdf" "chunkdlp" "cluster" "clusteroh" "cn" "counthb" "cryscomp"
+  "dahist" "dist2" "dlp2dlp" "dlp2dlpflipz" "dlp2dlpshift" "dlp2xyzf" "dlpreorder"  "dlpsize"
+  "editconfig" 
+  "filterdlp"
+  "getcell" "genlb" "gengg" "geom" "glucanal" "glucgeom" "gluchb" "gluchbeach" "glucsphere"
+  "his2config" "his2xyzs"
+  "intertorsion" "intratorsion" "intratorsion2" 
+  "legendre" "lifehb"
+  "moldist" "msd" "msd2"
+  "pairs" "pdens" "pdensgauss" "pdensint" "pdensmirror" "pdenstrim" "probedlp"  
+  "rdf" "rdfaa" "rdfaainter" "rdfdep" "rdfss" "rdfsum"
+  "xyz2his"
+  "zangle" "zdens"
+  "vac" "vac2"
+)
 foreach (p ${PROGRAMS})
   add_executable (${p} "${p}.f90")
-  target_link_libraries(${p} "dlprw" "utility" "parse" "pdensrw" "integerlist")
+  target_link_libraries(${p} "external")
 endforeach (p)
 
 # install executables and scripts
