@@ -2,7 +2,7 @@
 !	Outputs XYZ coordinates of first-shell molecule pairs of two species that are within a supplied distance
 
 	program pairs2
-	use dlprw; use rdfssdat; use utility
+	use dlprw; use utility
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
 	character*20 :: temp,xyzfile
