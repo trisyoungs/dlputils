@@ -13,23 +13,35 @@ answers.
 COMPILATION
 -----------
 
-The provided 'make' script will compile all programs provided - you may need to edit
-the script to change the DEFAULTFC and DEFAULTFFLAGS to suit your compiler.
-Note that some files contain very long lines, which gfortran will choke on - if you
-use this compiler, add the option -ffree-line-length-none to DEFAULTFFLAGS.
+dlputils has both GNU Make and CMake build files available.
 
-Once setup, run the following command:
+** Configure/Make
+
+Configure the build by first running:
+
+./configure
+
+Assuming no errors occur, all the serial utilities can be made by simply running:
 
 ./make
 
-Alternatively, to compile a single program (e.g. counthb) run the following command:
+For specific MPI-dependent programs, these must be compiled individually. For instance:
 
-gfortran -ffree-line-length-none -O3 -o counthb parse.f90 dlprw.f90 utility.f90 counthb.f90
+./make sq
 
-Note that most of the supplied programs depend on at least one of the 'parse', 'dlprw', or
-'utility' modules, so they must usually be specified as well (and in that order).
+** CMake
+
+An out-of-tree build is recommended. From a build directory of your choice, run:
+
+cmake /path/to/dlputils-rNNN
+
+..where NNN is the revision number. On Windows you will need to specify the generator
+to use - for the MinGW toolchain, use:
+
+cmake -G "MinGW Makefiles" /path/to/dlputils-rNNN
 
 USAGE
 -----
 
-See the separate file 'USAGE' for general and code-specific usage instructions.
+Brief descriptions of individual program usage can be found by running the code in question
+with no arguments. See http://www.projectaten.net/dlputils for detailed instructions.

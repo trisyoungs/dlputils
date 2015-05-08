@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Script to change version information in build files
+
+COMMITFILE="none"
+COMMITMSG="none"
+COMMITTYPE="none"
+TEST="false"
+UPDATE="false"
+
+# Parse CLI arguments / options
+USAGE1="changeversion [-t] MAJOR MINOR SUB"
+
+while getopts "t" options; do
+  case $options in
+    t ) TEST="true"
+	echo "Test only - no file changes will be made.";;
+    \? ) echo -e $USAGE1
+         exit 1;;
+    * ) echo -e $USAGE1
+        exit 1;;
+  esac
+done
+
+MAJOR=$1
+MINOR=$2
+SUB=$3
+
+if [ "$TEST" = "false" ]
+then
+  if [ "$#" -ne "3" ]
+  then
+    echo $USAGE1
+    exit 1
+  fi
+  sed -i -e "s/m4_define(\[DLPUTILS_VERSION\],\[.\+\])/m4_define([DLPUTILS_VERSION],[${MAJOR}.${MINOR}.${SUB}])/g" configure.ac
+else
+  grep "DLPUTILS_VERSION" configure.ac
+fi
+
+exit 0
