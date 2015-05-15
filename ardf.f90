@@ -9,15 +9,16 @@
 	character*20 :: temp
 	logical :: altheader = .FALSE., nonorm = .FALSE., zplus = .FALSE., zminus = .FALSE.
 	integer :: n,m,sp,sp1,sp2,m1,m2,baselen,bin,nframes,success,nargs, framestodo = -1,frameskip = 0,framesdone
-	integer :: iargc, nbins, angbin, aoff1, aoff2, a
-	real*8 :: dist,i(3),j(3),jtemp(3), binwidth, angle, ax, norm
+	integer :: iargc, nbins, nangbins, angbin, aoff1, aoff2, a
+	real*8 :: dist,i(3),j(3),jtemp(3), binwidth, angbinwidth, angle, ax, norm
 	type(IntegerList) :: sp1Site, sp2Site
 	integer, allocatable :: rdfxyz(:,:,:)
 
 	binwidth=0.1   ! In Angstroms
+	angbinwidth = 5.0   ! In degrees
 	
 	nargs = iargc()
-	if (nargs.LT.4) stop "Usage : ardf <HISTORYfile> <OUTPUTfile> <sp1> <sp2> [-axis sp x1 x2 y1 y2] [-bin width] [-header hisfile] [-frames n] [-discard n] [-sp1site atoms] [-sp2site atoms]"
+	if (nargs.LT.4) stop "Usage : ardf <HISTORYfile> <OUTPUTfile> <sp1> <sp2> [-axis sp x1 x2 y1 y2] [-bin width] [-angbin width] [-header hisfile] [-frames n] [-discard n] [-sp1site atoms] [-sp2site atoms]"
 	call getarg(1,hisfile)
 	call getarg(2,outfile)
 	sp1 = getargi(3)
@@ -31,6 +32,9 @@
           n = n + 1; if (n.GT.nargs) exit
           call getarg(n,temp)
           select case (temp)
+            case ("-angbin")
+              n = n + 1; angbinwidth = getargr(n)
+              write(0,"(A,f6.2)") "Angle binwidth set to ", angbinwidth
 	    case ("-axis") 
 	      n = n + 1; sp = getargi(n)
 	      n = n + 1; axesAatoms(sp,1) = getargi(n)
@@ -44,7 +48,7 @@
 	      end do
 	      axesAdefined(sp) = .true.
             case ("-bin")
-              n = n + 1; call getarg(n,temp); read(temp,"(F10.4)") binwidth
+              n = n + 1; binwidth = getargr(n)
               write(0,"(A,f6.2)") "Binwidth set to ",binwidth
             case ("-discard")
               n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
@@ -90,8 +94,10 @@
 	end if
 
 	nbins = maxval(cell) / binwidth + 1
-	write(0,"(A,I5,A,F6.3,A)") "There will be ",nbins," histogram bins of ",binwidth," Angstroms."
-	allocate(rdfxyz(3,nbins,0:180))
+	nangbins = 180.0 / angbinwidth + 1
+	write(0,"(A,I5,A,F6.3,A)") "There will be ",nbins," distance histogram bins of ",binwidth," Angstroms."
+	write(0,"(A,I5,A,F6.3,A)") "There will be ",nangbins," angle histogram bins of ",angbinwidth," Degrees."
+	allocate(rdfxyz(3,nbins,nangbins))
 	rdfxyz = 0
 
 	! Check that the relevant axes definitions have been supplied
@@ -168,7 +174,7 @@
 	      ! Take dot product of axis on sp2 with that of the central molecule, and calculate the angle delta
 	      ax = axesA(sp2,m2,(n-1)*3+1)*axesA(sp1,m1,(n-1)*3+1) + axesA(sp2,m2,(n-1)*3+2)*axesA(sp1,m1,(n-1)*3+2) + axesA(sp2,m2,(n-1)*3+3)*axesA(sp1,m1,(n-1)*3+3)
 	      angle = acos(ax) * radcon
-	      angbin = int(angle)
+	      angbin = int(angle/angbinwidth)+1
 	      rdfxyz(n,bin,angbin) = rdfxyz(n,bin,angbin) + 1
 	    end do
 
@@ -215,7 +221,7 @@
 
 	! Loop over axes
 	do a=1,3
-	  resfile=basename(1:baselen)//"ardf"//CHAR(48+sp1)//CHAR(48+sp2)//CHAR(77+a)
+	  resfile=basename(1:baselen)//"ardf"//CHAR(48+sp1)//CHAR(48+sp2)//CHAR(119+a)
 	  open(unit=9,file=resfile,form="formatted")
 	  if (sp1Site%n.eq.0) then
 	    write(9,"(a,i2,a)") "# Species ",sp1," site is axis origin."
@@ -229,9 +235,9 @@
 	  end if
 
 	  ! Normalise the RDFs with respect to the number of frames.
-	  do m=0,180
+	  do m=1,nangbins
 	    do n=1,nbins
-	      norm = (4.0/3.0) * pi * (((n-1)*binwidth)**3 - (n*binwidth)**3) * s_nmols(sp1) / volume(cell)
+	      norm = (4.0/3.0) * pi * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * s_nmols(sp1) / volume(cell)
 	      write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), rdfxyz(a,n,m) / norm / nframes / s_nmols(sp1)
 	    end do
 	    write(9,*) ""
