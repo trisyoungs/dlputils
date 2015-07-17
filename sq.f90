@@ -658,9 +658,9 @@
 	        OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 		write(9,"('# b_a * b_b = ',f10.5)") factor
 	        write(9,"('# Self-scattering level is ',f10.5)") weight
-		write(9,"(a68)") "#  Q           S_ab(Q)        STDEV       NAdded   S_ab(Q)-Self"
+		write(9,"(a68)") "#  Q           S_ab(Q)        STDEV       S_ab(Q)*bibj   NAdded   S_ab(Q)-Self"
 	        do n=1,nbins
-		  write(9,"(F8.5,3x,E14.5,2x,e14.5,1x,I10,1x,e14.5)") (n-0.5)*binwidth, partialsq(alpha,beta,n), m2n(alpha,beta,n), totaladded(n), partialsq(alpha,beta,n)-weight
+		  write(9,"(F8.5,3x,E14.5,2x,e14.5,1x,e14.5,1x,I10,1x,e14.5)") (n-0.5)*binwidth, partialsq(alpha,beta,n), m2n(alpha,beta,n), partialsq(alpha,beta,n)*factor, totaladded(n), partialsq(alpha,beta,n)-weight
 	        end do
 	        close(9)
 	      end if

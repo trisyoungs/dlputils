@@ -358,20 +358,25 @@
 	integer, intent(in) :: offset
 	integer :: n, i
 	real*8, intent(out) :: v(3)
-	real*8 :: t(3)
+	real*8 :: t(3), ref(3)
 
 	v = 0.0
 	if (nItems.eq.0) return
 
 	! Calculate COG relative to first atom in list
-	v(1) = xpos(array(1)+offset)
-	v(2) = ypos(array(1)+offset)
-	v(3) = zpos(array(1)+offset)
+	ref(1) = xpos(array(1)+offset)
+	ref(2) = ypos(array(1)+offset)
+	ref(3) = zpos(array(1)+offset)
+	v(1) = ref(1)
+	v(2) = ref(2)
+	v(3) = ref(3)
 	do n=2,nItems
 	  i = offset + array(n)
-	  call PBC(xpos(i),ypos(i),zpos(i),v(1),v(2),v(3),t(1),t(2),t(3))
+	  call PBC(xpos(i),ypos(i),zpos(i),ref(1),ref(2),ref(3),t(1),t(2),t(3))
 	  v = v + t
 	end do
+
+	v = v / real(nItems)
 
 	end subroutine averagePosition
 
