@@ -234,11 +234,11 @@
 	    write(0,"(a,i2,a,20i4)") "# Species ", sp2, ", site is average of: ", sp2Site%items(1:sp2Site%n)
 	  end if
 
-	  ! Normalise the RDFs with respect to the number of frames.
+	  ! Normalise the RDFs with respect to the number of frames and solid angle.
 	  do m=1,nangbins
 	    do n=1,nbins
 	      norm = (4.0/3.0) * pi * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * s_nmols(sp1) / volume(cell)
-	      write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), rdfxyz(a,n,m) / norm / nframes / s_nmols(sp1)
+	      write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), rdfxyz(a,n,m) / norm / nframes / s_nmols(sp1) / dsin((m-0.5)*angbinwidth/RADCON)
 	    end do
 	    write(9,*) ""
 	  end do
