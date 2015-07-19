@@ -23,7 +23,7 @@ DefaultDirName={pf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes          
 LicenseFile=..\..\COPYING
-SetupIconFile=..\dlputils.ico
+SetupIconFile=.\dlputils.ico
 OutputBaseFilename=dlputils-1.40
 Compression=lzma
 SolidCompression=yes
@@ -33,7 +33,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
 Source: "..\..\*.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\dlputils.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\dlputils.ico"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
