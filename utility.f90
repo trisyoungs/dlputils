@@ -381,6 +381,7 @@
 	end subroutine averagePosition
 
 	! Numerical Recipes material starts here
+	! (C) Copr. 1986-92 Numerical Recipes Software
 
 	! Gauss Jordan elimination to find matrix inverse
 	subroutine gaussj(a,n,np)

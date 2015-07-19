@@ -32,8 +32,8 @@ SolidCompression=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "..\*.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\extra\dlputils.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\*.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dlputils.ico"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
