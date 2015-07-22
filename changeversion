@@ -34,8 +34,10 @@ then
     exit 1
   fi
   sed -i -e "s/m4_define(\[DLPUTILS_VERSION\],\[.\+\])/m4_define([DLPUTILS_VERSION],[${MAJOR}.${MINOR}.${SUB}])/g" configure.ac
+  sed -i -e "s/#define MyAppVersion \"[0-9\.]*\"/#define MyAppVersion \"$MAJOR.$MINOR.$PATCH\"/g" -e "s/OutputBaseFilename=Aten-[0-9\.]*/OutputBaseFilename=dlputils-$MAJOR.$MINOR.$PATCH/g" extra/Win32/dlputils.iss
 else
   grep "DLPUTILS_VERSION" configure.ac
+  grep 'define MyAppVersion' extra/Win32/dlputils.iss | sed -e 's/#define MyAppVersion \"\([0-9\.]*\)\"/\1/g'
 fi
 
 exit 0

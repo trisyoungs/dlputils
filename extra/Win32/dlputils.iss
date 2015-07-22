@@ -24,7 +24,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes          
 LicenseFile=..\..\COPYING
 SetupIconFile=.\dlputils.ico
-OutputBaseFilename=dlputils-1.40
+OutputBaseFilename=dlputils-1.4.0
 Compression=lzma
 SolidCompression=yes
 
