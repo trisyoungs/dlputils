@@ -9,16 +9,17 @@
 	character*20 :: temp
 	logical :: altheader = .FALSE., nonorm = .FALSE., zplus = .FALSE., zminus = .FALSE.
 	integer :: n,m,sp,sp1,sp2,m1,m2,baselen,bin,nframes,success,nargs, framestodo = -1,frameskip = 0,framesdone
-	integer :: iargc, nbins, nangbins, angbin, aoff1, aoff2, a
-	real*8 :: dist,i(3),j(3),jtemp(3), binwidth, angbinwidth, angle, ax, norm
+	integer :: iargc, nbins, nangbins, angbin, aoff1, aoff2, a, restrictAxis = 0
+	real*8 :: dist,i(3),j(3),jtemp(3), binwidth, angbinwidth, angles(3), ax, norm
+	real*8 :: angmin, angmax, distmin, distmax
 	type(IntegerList) :: sp1Site, sp2Site
-	integer, allocatable :: rdfxyz(:,:,:)
+	integer, allocatable :: rdfxyz(:,:,:), sanityrdf(:,:)
 
 	binwidth=0.1   ! In Angstroms
 	angbinwidth = 5.0   ! In degrees
 	
 	nargs = iargc()
-	if (nargs.LT.4) stop "Usage : ardf <HISTORYfile> <OUTPUTfile> <sp1> <sp2> [-axis sp x1 x2 y1 y2] [-bin width] [-angbin width] [-header hisfile] [-frames n] [-discard n] [-sp1site atoms] [-sp2site atoms]"
+	if (nargs.LT.4) stop "Usage : ardf <HISTORYfile> <OUTPUTfile> <sp1> <sp2> [-axis sp x1 x2 y1 y2] [-bin width] [-angbin width] [-header hisfile] [-frames n] [-discard n] [-sp1site atoms] [-sp2site atoms] [-restrict x|y|z angmin angmax distmin distmax]"
 	call getarg(1,hisfile)
 	call getarg(2,outfile)
 	sp1 = getargi(3)
@@ -60,6 +61,15 @@
               n = n + 1; call getarg(n,altheaderfile)
               write(0,"(A,I4)") "Alternative header file supplied."
 	      altheader = .TRUE.
+	    case ("-restrict")
+              n = n + 1; call getarg(n,temp)
+	      if ((temp(1:1).lt.'x').or.(temp(1:1).gt.'z')) stop "Error: Bad axis given to -restrict (specify x, y, or z)."
+	      restrictAxis = ICHAR(temp(1:1))-119
+	      n = n + 1; angmin = getargr(n)
+	      n = n + 1; angmax = getargr(n)
+	      n = n + 1; distmin = getargr(n)
+	      n = n + 1; distmax = getargr(n)
+	      write(0,"(a,i2,a,2f8.2,a,2f8.2)") "Calculation restricted: ", char(restrictAxis+119), " vector min/max angle = ", angmin, angmax, ", distance min/max = ", distmin, distmax
 	    case ("-sp1site")
 	      n = n + 1; sp = getargi(n)
 	      if (sp1Site%n.gt.0) stop "Definition of site specified twice for species 1"
@@ -98,6 +108,7 @@
 	write(0,"(A,I5,A,F6.3,A)") "There will be ",nbins," distance histogram bins of ",binwidth," Angstroms."
 	write(0,"(A,I5,A,F6.3,A)") "There will be ",nangbins," angle histogram bins of ",angbinwidth," Degrees."
 	allocate(rdfxyz(3,nbins,nangbins))
+	allocate(sanityrdf(3,nbins))
 	rdfxyz = 0
 
 	! Check that the relevant axes definitions have been supplied
@@ -168,15 +179,27 @@
 	      aoff2 = aoff2 + s_natoms(sp2)
 	      cycle
 	    end if
+	    if (restrictAxis.gt.0) then
+	      if ((dist.lt.distmin).or.(dist.gt.distmax)) then
+	        aoff2 = aoff2 + s_natoms(sp2)
+	        cycle
+	      end if
+	    end if
 
 	    ! Calculate axis angles
 	    do n=1,3
 	      ! Take dot product of axis on sp2 with that of the central molecule, and calculate the angle delta
 	      ax = axesA(sp2,m2,(n-1)*3+1)*axesA(sp1,m1,(n-1)*3+1) + axesA(sp2,m2,(n-1)*3+2)*axesA(sp1,m1,(n-1)*3+2) + axesA(sp2,m2,(n-1)*3+3)*axesA(sp1,m1,(n-1)*3+3)
-	      angle = acos(ax) * radcon
-	      angbin = int(angle/angbinwidth)+1
-	      rdfxyz(n,bin,angbin) = rdfxyz(n,bin,angbin) + 1
+	      angles(n) = acos(ax) * radcon
 	    end do
+
+	    ! Accumulate data
+	    if ((restrictAxis.eq.0).or.((angles(restrictAxis).ge.angmin).and.(angles(restrictAxis).le.angmax))) then
+	      do n=1,3
+	        angbin = int(angles(n)/angbinwidth)+1
+	        rdfxyz(n,bin,angbin) = rdfxyz(n,bin,angbin) + 1
+	      end do
+	    end if
 
 	    ! Increase atom offset
 	    aoff2 = aoff2 + s_natoms(sp2)
@@ -220,6 +243,7 @@
 	endif
 
 	! Loop over axes
+	sanityrdf = 0.0
 	do a=1,3
 	  resfile=basename(1:baselen)//"ardf"//CHAR(48+sp1)//CHAR(48+sp2)//CHAR(119+a)
 	  open(unit=9,file=resfile,form="formatted")
@@ -236,11 +260,20 @@
 
 	  ! Normalise the RDFs with respect to the number of frames and solid angle.
 	  do m=1,nangbins
+	    sanityrdf(a,:) = sanityrdf(a,:) + rdfxyz(a,:,m)
 	    do n=1,nbins
 	      norm = (4.0/3.0) * pi * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * s_nmols(sp1) / volume(cell)
 	      write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), rdfxyz(a,n,m) / norm / nframes / s_nmols(sp1) / dsin((m-0.5)*angbinwidth/RADCON)
 	    end do
 	    write(9,*) ""
+	  end do
+	  close(9)
+
+	  ! Normalise and write sanityrdf
+	  open(unit=9,file=resfile//".sanity",form="formatted")
+	  do n=1,nbins
+	    norm = (4.0/3.0) * pi * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * s_nmols(sp1) / volume(cell)
+	    write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), sanityrdf(a,n) / norm / nframes / s_nmols(sp1)
 	  end do
 	  close(9)
 	end do

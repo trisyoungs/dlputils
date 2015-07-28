@@ -18,13 +18,8 @@ FIELDREAD=fieldread.f90
 PDENSRW=pdensrw.f90
 ILIST=integerlist.f90
 
-SUFFIXES: .oo
-
 .f90.o: 
 	$(FC) ${FCFLAGS} -c $<
-
-.oo:
-	mpif90 ${FCFLAGS} -c $<
 
 acf$(EXEEXT):
 	mpif90 ${FCFLAGS} ${PARSE} ${DLPRW} ${UTILITY} acf.f90 -o acf

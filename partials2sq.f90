@@ -24,7 +24,7 @@
 	integer :: n, m, o, nbins, found
 	integer :: iargc
 	logical :: success, writepartials = .FALSE., readmap = .FALSE., altheader = .FALSE.
-	real*8 :: weight, kcut, binwidth, factor, totalweight
+	real*8 :: kcut, binwidth, factor, selfscatter
 	real*8, allocatable :: partialsq(:,:,:),sq(:)
 
 	! Scattering lengths for H,D,C,N,O,F,P,S,Cl
@@ -237,7 +237,7 @@
 
 	partialsq = 0.0
 	sq = 0.0d0
-	totalweight = 0.0
+	selfscatter = 0.0
 
 	! Sum into total S(Q)
 	do alpha=1,ntypes
@@ -258,21 +258,24 @@
 	    end do
 	    close(15)
 
-	    ! Weight according to fractional populations
-	    !weight = typefrac(alpha)*typefrac(beta)
-	    ! Additional weighting from partitioning of elements into 'sub-types'
-	    !weight = weight / dsqrt((typefrac(alpha)/isofrac(uniqueiso(alpha)))*(typefrac(beta)/isofrac(uniqueiso(beta))))
-	    !totalweight = totalweight + weight
+	    ! Calculate weighting factor for partial (does not include fractional population since this is accounted for)
+	    factor = isoscatter(uniqueiso(alpha)) * isoscatter(uniqueiso(beta))
+
+	    ! Increment self-scattering correction
+	    if (alpha.eq.beta) selfscatter = selfscatter + typefrac(alpha) * factor
 
 	    ! Perform summation into total S(Q)
-	    weight = isoscatter(uniqueiso(alpha))*isoscatter(uniqueiso(beta)) / 100.0
-	    write(6,"(a,f9.6,a,f9.6,a,f12.6)") "Partial "//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))//" has fractional pops ",typefrac(alpha)," and ",typefrac(beta), "for a total atomic weighting of ", weight
+	    write(6,"(a,f9.6,a,f9.6,a,f12.6)") "Partial "//uniquetypes(alpha)(1:namelens(alpha))//"-"//uniquetypes(beta)(1:namelens(beta))//" has fractional pops ",typefrac(alpha)," and ",typefrac(beta), "for a total atomic weighting of ", isoscatter(uniqueiso(alpha))*isoscatter(uniqueiso(beta)) / 100.0
 	    do n=1,nbins
-	      sq(n) = sq(n) + partialsq(alpha,beta,n) * weight
+	      sq(n) = sq(n) + partialsq(alpha,beta,n) * factor
 	    end do
 	  end do
 	end do
 	write(0,*) "Finished sum"
+
+	! Remove self-scattering from S(Q) and convert between units of fm (www.ncnr.nist.gov) and 
+	! 10**-12 cm units (ISIS) used for the scattering lengths
+	sq = (sq - selfscatter) / 100.0
 
 	! Calculate form constant (NOT USED)
 	factor = 0.0

@@ -231,6 +231,7 @@
 	    goto 55
 50	    write(12,"(A,I5,A,I5)") "Error reading from namefile for atom ",n," of ",natms
 55	    close(15)
+	    stop "Failed."
 	  end if
 
 	  ! Now that the atomnames->partitions->isotopes map has been defined, we convert HISfile atomnames into partition names
@@ -668,7 +669,7 @@
 	  end do
 	  write(6,*) "Finished sum"
 
-	  ! Weight total S(Q) against system density *AND* convert between fm (www.ncnr.nist.gov) and 
+	  ! Remove self-scattering from S(Q) and convert between units of fm (www.ncnr.nist.gov) and 
 	  ! 10**-12 cm units (ISIS) used for the scattering lengths
 	  sq = (sq - selfscatter) / 100.0
 
