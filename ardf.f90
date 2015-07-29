@@ -69,7 +69,7 @@
 	      n = n + 1; angmax = getargr(n)
 	      n = n + 1; distmin = getargr(n)
 	      n = n + 1; distmax = getargr(n)
-	      write(0,"(a,i2,a,2f8.2,a,2f8.2)") "Calculation restricted: ", char(restrictAxis+119), " vector min/max angle = ", angmin, angmax, ", distance min/max = ", distmin, distmax
+	      write(0,"(a,a1,a,2f8.2,a,2f8.2)") "Calculation restricted: ", char(restrictAxis+119), " vector min/max angle = ", angmin, angmax, ", distance min/max = ", distmin, distmax
 	    case ("-sp1site")
 	      n = n + 1; sp = getargi(n)
 	      if (sp1Site%n.gt.0) stop "Definition of site specified twice for species 1"
