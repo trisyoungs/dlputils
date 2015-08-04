@@ -261,19 +261,15 @@
 	  end if
 
 	  ! Set up normalisation for the three axes
-	  if (restrictAxis.gt.0) then
-	    if (a.eq.restrictAxis) then
-	      do m=1,nangbins
-	        angleNorm(m) = dsin((m-0.5)*angbinwidth/RADCON)
-	      end do
-	    else
-	      norm = dsin((angmax - angmin) / 2.0 / RADCON)
-	      do m=1,nangbins
-	        angleNorm(m) = (1.0-norm) + dsin((m-0.5)*angbinwidth/RADCON) * norm
-	      end do
-	    end if
+	  if ((restrictAxis.eq.0).or.(a.eq.restrictAxis)) then
+	    do m=1,nangbins
+	      angleNorm(m) = dsin((m-0.5)*angbinwidth/RADCON)
+	    end do
 	  else
-	    angleNorm = 1.0
+	    norm = dsin((angmax - angmin) / 2.0 / RADCON)
+	    do m=1,nangbins
+	      angleNorm(m) = (1.0-norm) + dsin((m-0.5)*angbinwidth/RADCON) * norm
+	    end do
 	  end if
 
 	  ! Normalise the RDFs with respect to the number of frames and solid angle.
