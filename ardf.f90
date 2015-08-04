@@ -10,10 +10,11 @@
 	logical :: altheader = .FALSE., nonorm = .FALSE., zplus = .FALSE., zminus = .FALSE.
 	integer :: n,m,sp,sp1,sp2,m1,m2,baselen,bin,nframes,success,nargs, framestodo = -1,frameskip = 0,framesdone
 	integer :: iargc, nbins, nangbins, angbin, aoff1, aoff2, a, restrictAxis = 0
-	real*8 :: dist,i(3),j(3),jtemp(3), binwidth, angbinwidth, angles(3), ax, norm
+	real*8 :: dist,i(3),j(3),jtemp(3), binwidth, angbinwidth, angles(3), ax, norm, gr
 	real*8 :: angmin, angmax, distmin, distmax
 	type(IntegerList) :: sp1Site, sp2Site
 	integer, allocatable :: rdfxyz(:,:,:), sanityrdf(:,:)
+	real*8, allocatable :: angleNorm(:)
 
 	binwidth=0.1   ! In Angstroms
 	angbinwidth = 5.0   ! In degrees
@@ -108,6 +109,7 @@
 	write(0,"(A,I5,A,F6.3,A)") "There will be ",nbins," distance histogram bins of ",binwidth," Angstroms."
 	write(0,"(A,I5,A,F6.3,A)") "There will be ",nangbins," angle histogram bins of ",angbinwidth," Degrees."
 	allocate(rdfxyz(3,nbins,nangbins))
+	allocate(angleNorm(nangbins))
 	allocate(sanityrdf(3,nbins))
 	rdfxyz = 0
 
@@ -258,21 +260,38 @@
 	    write(0,"(a,i2,a,20i4)") "# Species ", sp2, ", site is average of: ", sp2Site%items(1:sp2Site%n)
 	  end if
 
+	  ! Set up normalisation for the three axes
+	  if (restrictAxis.gt.0) then
+	    if (a.eq.restrictAxis) then
+	      do m=1,nangbins
+	        angleNorm(m) = dsin((m-0.5)*angbinwidth/RADCON)
+	      end do
+	    else
+	      norm = dsin((angmax - angmin) / 2.0 / RADCON)
+	      do m=1,nangbins
+	        angleNorm(m) = (1.0-norm) + dsin((m-0.5)*angbinwidth/RADCON) * norm
+	      end do
+	    end if
+	  else
+	    angleNorm = 1.0
+	  end if
+
 	  ! Normalise the RDFs with respect to the number of frames and solid angle.
 	  do m=1,nangbins
 	    sanityrdf(a,:) = sanityrdf(a,:) + rdfxyz(a,:,m)
 	    do n=1,nbins
-	      norm = (4.0/3.0) * pi * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * s_nmols(sp1) / volume(cell)
-	      write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), rdfxyz(a,n,m) / norm / nframes / s_nmols(sp1) / dsin((m-0.5)*angbinwidth/RADCON)
+	      norm = (4.0/3.0) * pi * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * s_nmols(sp2) / volume(cell)
+	      gr = rdfxyz(a,n,m) / norm / nframes / s_nmols(sp1)
+	      write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), gr / angleNorm(m), gr
 	    end do
 	    write(9,*) ""
 	  end do
 	  close(9)
 
 	  ! Normalise and write sanityrdf
-	  open(unit=9,file=resfile//".sanity",form="formatted")
+	  open(unit=9,file=resfile(1:baselen+7)//".sanity",form="formatted")
 	  do n=1,nbins
-	    norm = (4.0/3.0) * pi * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * s_nmols(sp1) / volume(cell)
+	    norm = (4.0/3.0) * pi * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * s_nmols(sp2) / volume(cell)
 	    write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), sanityrdf(a,n) / norm / nframes / s_nmols(sp1)
 	  end do
 	  close(9)
