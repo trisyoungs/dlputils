@@ -381,7 +381,7 @@
 		end if
 	      end if
 
-	      ! Pass position of axesAorigin, or axesBorogin, or (cog of) individual atomSites, depending on what has been defined
+	      ! Pass position of axesAorigin, or axesBorigin, or (cog of) individual atomSites, depending on what has been defined
 	      ! If atomSites() have been defined, these override everything else
 	      if ((atomSites(sp2)%n.gt.0).and.atomSitesAreCog(sp2)) then
 		! Use list of supplied atoms, forming a COG with them
@@ -593,13 +593,6 @@
 	real*8, intent(in) :: x, y, z, mindistsq, maxdistsq, griddelta
 	real*8 :: px, py, pz, tx, ty, tz, distsq
 
-	! Check minimum / maximum separation
-	distsq = x*x + y*y + z*z
-	if ((distsq.lt.mindistsq).or.(distsq.gt.maxdistsq)) then
-	  getbin = .false.
-	  return
-	end if
-
 	! Get mim of supplied coordinate with the origin of the central species
 	call pbc(x,y,z,axesAorigin(sp1,m1,1),axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
 
@@ -610,6 +603,13 @@
 	tx = px*axesA(sp1,m1,1) + py*axesA(sp1,m1,2) + pz*axesA(sp1,m1,3)
 	ty = px*axesA(sp1,m1,4) + py*axesA(sp1,m1,5) + pz*axesA(sp1,m1,6)
 	tz = px*axesA(sp1,m1,7) + py*axesA(sp1,m1,8) + pz*axesA(sp1,m1,9)
+
+	! Check minimum / maximum separation
+	distsq = tx*tx + ty*ty + tz*tz
+	if ((distsq.lt.mindistsq).or.(distsq.gt.maxdistsq)) then
+	  getbin = .false.
+	  return
+	end if
 
 	! Calculate integer position in grid
 	nx=NINT(tx/griddelta)
