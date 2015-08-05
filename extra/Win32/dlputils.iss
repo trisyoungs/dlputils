@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "dlputils"
-#define MyAppVersion "1.40"
+#define MyAppVersion "1.4.1"
 #define MyAppPublisher "Tristan Youngs"
 #define MyAppURL "http://www.projectaten.net"
 #define MyAppExeName "dlputils.exe"
