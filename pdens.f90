@@ -52,10 +52,10 @@
 	character*80 :: hisfile,outfile,basename,resfile,temp,flagfile,altheaderfile
 	logical :: altheader = .FALSE.
 	integer :: success
-	integer :: n, nframes, m, o, p1, p2, i
+	integer :: n, nframes, o, i, sp2index
 	real*8 :: px, py, pz, mindistsq, maxdistsq, distsq, tx, ty, tz, v(3), origin(3)
 	real*8 :: angdelta, ax
-	integer :: sp1,m1,sp2,m2,nx,ny,nz,refnx,refny,refnz
+	integer :: sp1,m1,sp2,m2,p1,p2,nx,ny,nz,refnx,refny,refnz
 	logical :: failed, getbin
 	integer :: iargc
 
@@ -149,8 +149,8 @@
 	      n = n + 1; axesAatoms(sp1,4) = getargi(n)
 	      write(0,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "Local axes for species ",sp1," calculated from: X=",axesAatoms(sp1,1),"->", &
 	        & axesAatoms(sp1,2),", Y=0.5X->0.5(r(",axesAatoms(sp1,3),")->r(",axesAatoms(sp1,4),"))"
-	      do m=1,3
-		if ((axesAatoms(sp1,m).lt.1).or.(axesAatoms(sp1,m).gt.s_natoms(sp1))) stop "Atom id out of range for axes on this species!"
+	      do i=1,3
+		if ((axesAatoms(sp1,i).lt.1).or.(axesAatoms(sp1,i).gt.s_natoms(sp1))) stop "Atom id out of range for axes on this species!"
 	      end do
 	      axesAdefined(sp1) = .true.
 	    case ("-cartesian")
@@ -315,6 +315,7 @@
 	nframes = 0
 	nframesused = 0
 	nmapframes = 0
+	sp1 = centresp
 	! If we're using a mapfile, read it here
 101	if (molmap) then
 	  read(20,"(I5,1x,40(I2,1x))",end=118,err=117) m1,(molflags(m2),m2=1,s_nmols(centresp))
@@ -339,25 +340,39 @@
 	! Calculate 3D distributions
 	!
 	if (nointer) goto 105
-	sp1 = centresp
-	do m1=1,s_nmols(sp1)      ! Loop over all molecules of species 1...
+	p1 = s_start(sp1) - s_natoms(sp1) - 1
+	! Loop over all molecules of species 1...
+	do m1=1,s_nmols(sp1)
+
+	  p1 = p1 + s_natoms(sp1)
+
 	  ! If we're using a mapfile, decide whether to include this molecule
 	  if (molmap) then
 	    if (molflags(m1).eq.0) cycle 
 	  end if
 	  npdenscentres = npdenscentres + 1	! Normalisation counter
-	  do m=1,othersp%n
 
-	    ! Get origin on central molecule for distance measurements
-	    if (originAtoms%n.gt.0) then
-	      ! Get average position of sites relative to axesA origin
-	      ! call averagePosition(originAtoms%items,originAtoms%n,,origin)
+	  ! Get origin on central molecule for distance measurements
+	  if (originAtoms%n.gt.0) then
+	    ! Get average coordinate, PBC it with the axis origin, and subtract the axis origin
+	    call averagePosition(originAtoms%items,originAtoms%n,p1,v)
+	    call pbc(v(1), v(2), v(3), axesAorigin(sp1,m1,1), axesAorigin(sp1,m1,2), axesAorigin(sp1,m1,3),tx,ty,tz)
+	    tx = tx - axesAorigin(sp1,m1,1)
+	    ty = ty - axesAorigin(sp1,m1,2)
+	    tz = tz - axesAorigin(sp1,m1,3)
 
-	    else
-	      origin = 0.0
-	    end if
+	    ! Rotate into reference frame
+	    origin(1) = tx*axesA(sp1,m1,1) + ty*axesA(sp1,m1,2) + tz*axesA(sp1,m1,3)
+	    origin(2) = tx*axesA(sp1,m1,4) + ty*axesA(sp1,m1,5) + tz*axesA(sp1,m1,6)
+	    origin(3) = tx*axesA(sp1,m1,7) + ty*axesA(sp1,m1,8) + tz*axesA(sp1,m1,9)
+	  else
+	    origin = 0.0
+	  end if
 
-	    sp2 = othersp%items(m)
+	  ! Loop over second (surrounding) species
+	  do sp2index=1,othersp%n
+
+	    sp2 = othersp%items(sp2index)
 
 	    p2 = s_start(sp2) - s_natoms(sp2) - 1
 	    do m2=1,s_nmols(sp2)
@@ -437,46 +452,72 @@
 	end do
 
 	! Calculate average molecule and intramolecular distribution
-105	if (nointra) goto 110
-	p1 = s_start(centresp)
-	do m1=1,s_nmols(centresp)
+105	p1 = s_start(sp1) - s_natoms(sp1) - 1
+	do m1=1,s_nmols(sp1)
+
+	  p1 = p1 + s_natoms(sp1)
+
 	  ! If we're using a mapfile, decide whether to include this molecule
-	  if (molmap) then
-	    if (molflags(m1).eq.0) then
-	      p1 = p1 + s_natoms(centresp)
-	      cycle
-	    end if
-	    nintracentres = nintracentres + 1
-	  else
-	    nintracentres = nintracentres + 1
+	  if (molmap.and.(molflags(m1).eq.0)) cycle
+
+	  nintracentres = nintracentres + 1
+
+	  ! Calculate origin offset (if there is one)
+	  origin = 0.0
+	  if (originAtoms%n.gt.0) then
+	    ! Get average coordinate, PBC it with the axis origin, and subtract the axis origin
+	    call averagePosition(originAtoms%items,originAtoms%n,p1,v)
+	    call pbc(v(1), v(2), v(3), axesAorigin(sp1,m1,1), axesAorigin(sp1,m1,2), axesAorigin(sp1,m1,3),tx,ty,tz)
+	    tx = tx - axesAorigin(sp1,m1,1)
+	    ty = ty - axesAorigin(sp1,m1,2)
+	    tz = tz - axesAorigin(sp1,m1,3)
+
+	    ! Rotate into reference frame
+	    origin(1) = tx*axesA(sp1,m1,1) + ty*axesA(sp1,m1,2) + tz*axesA(sp1,m1,3)
+	    origin(2) = tx*axesA(sp1,m1,4) + ty*axesA(sp1,m1,5) + tz*axesA(sp1,m1,6)
+	    origin(3) = tx*axesA(sp1,m1,7) + ty*axesA(sp1,m1,8) + tz*axesA(sp1,m1,9)
 	  end if
-	  do n=1,s_natoms(centresp)
+
+	  ! Loop over atoms
+	  do n=1,s_natoms(sp1)
+
 	    ! PBC the atom
-	    call pbc(xpos(p1+n-1),ypos(p1+n-1),zpos(p1+n-1),axesAorigin(centresp,m1,1), &
-	  	& axesAorigin(centresp,m1,2),axesAorigin(centresp,m1,3),tx,ty,tz)
+	    call pbc(xpos(p1+n),ypos(p1+n),zpos(p1+n),axesAorigin(sp1,m1,1), &
+	  	& axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
+
 	    ! 'Zero' its position with respect to the axis centre...
-	    tx=tx-axesAorigin(centresp,m1,1)
-	    ty=ty-axesAorigin(centresp,m1,2)
-	    tz=tz-axesAorigin(centresp,m1,3)
-	    ! Transform the coordinate into the local coordinate system...
-	    px=tx*axesA(centresp,m1,1) + ty*axesA(centresp,m1,2) + tz*axesA(centresp,m1,3)
-	    py=tx*axesA(centresp,m1,4) + ty*axesA(centresp,m1,5) + tz*axesA(centresp,m1,6)
-	    pz=tx*axesA(centresp,m1,7) + ty*axesA(centresp,m1,8) + tz*axesA(centresp,m1,9)
+	    tx=tx-axesAorigin(sp1,m1,1)
+	    ty=ty-axesAorigin(sp1,m1,2)
+	    tz=tz-axesAorigin(sp1,m1,3)
+
+	    ! Transform the coordinate into the reference frame
+	    px=tx*axesA(sp1,m1,1) + ty*axesA(sp1,m1,2) + tz*axesA(sp1,m1,3)
+	    py=tx*axesA(sp1,m1,4) + ty*axesA(sp1,m1,5) + tz*axesA(sp1,m1,6)
+	    pz=tx*axesA(sp1,m1,7) + ty*axesA(sp1,m1,8) + tz*axesA(sp1,m1,9)
+
+	    ! Subtract origin offset
+	    px = px - origin(1)
+	    py = py - origin(2)
+	    pz = pz - origin(3)
+
 	    ! Accumulate the position....
-	    avggeom(n,1) = avggeom(n,1)+px-origin(1)
-	    avggeom(n,2) = avggeom(n,2)+py-origin(2)
-	    avggeom(n,3) = avggeom(n,3)+pz-origin(3)
+	    avggeom(n,1) = avggeom(n,1)+px
+	    avggeom(n,2) = avggeom(n,2)+py
+	    avggeom(n,3) = avggeom(n,3)+pz
+
 	    ! Intramolecular distribution.....
-	    nx=NINT(px/pdelta)
-	    ny=NINT(py/pdelta)
-	    nz=NINT(pz/pdelta)
-	    if (MAX(ABS(nx),MAX(ABS(ny),ABS(nz))).lt.pgrid) then
-	      pdensintra(nx,ny,nz) = pdensintra(nx,ny,nz) + 1
-	    else
-	      write(0,*) "Large distance : nx,ny,nz = ",nx,ny,nz
+	    if (.not.nointra) then
+	      nx=NINT(px/pdelta)
+	      ny=NINT(py/pdelta)
+	      nz=NINT(pz/pdelta)
+	      if (MAX(ABS(nx),MAX(ABS(ny),ABS(nz))).lt.pgrid) then
+	        pdensintra(nx,ny,nz) = pdensintra(nx,ny,nz) + 1
+	      else
+	        write(0,*) "Large distance : nx,ny,nz = ",nx,ny,nz
+	      end if
 	    end if
 	  end do
-	  p1 = p1 + s_natoms(centresp)
+
 	end do
 
 110	if (MOD(nframes,100).eq.0) then
@@ -565,19 +606,19 @@
 
 	end do
 
-	if (.not.nointra) then
-	  ! -- Average molecule
-	  resfile=basename(1:baselen)//"avg"//char(48+centresp)//".xyz"
-	  open(unit=9,file=resfile,form="formatted")
-	  ! Write out xyz files of the average molecules
-900	  FORMAT (a2,5x,3(F9.5,2x))
-	  write(9,*) s_natoms(centresp)
-	  write(9,*) "Average: ", s_name(centresp)
-	  do n=1,s_natoms(centresp)
-	    write(9,900) atmname(s_start(centresp)-1+n)(1:2),(avggeom(n,m),m=1,3)
-	  end do
-	  close(9)
+	! -- Average molecule
+	resfile=basename(1:baselen)//"avg"//char(48+centresp)//".xyz"
+	open(unit=9,file=resfile,form="formatted")
+	! Write out xyz files of the average molecules
+900	FORMAT (a2,5x,3(F9.5,2x))
+	write(9,*) s_natoms(centresp)
+	write(9,*) "Average: ", s_name(centresp)
+	do n=1,s_natoms(centresp)
+	  write(9,900) atmname(s_start(centresp)-1+n)(1:2),(avggeom(n,i),i=1,3)
+	end do
+	close(9)
 
+	if (.not.nointra) then
 	  ! -- Intramolecular probability distribution
 	  resfile=basename(1:baselen)//"intra"//char(48+centresp)//".pdens"
 	  open(unit=9,file=resfile,form="formatted")
@@ -585,10 +626,10 @@
 	  write(9,"(9f8.4)") pdelta,0.0,0.0,0.0,pdelta,0.0,0.0,0.0,pdelta
 	  write(9,"(3f10.4)") -pgrid*pdelta,-pgrid*pdelta,-pgrid*pdelta
 	  write(9,*) "zyx"
-	  do n=-pgrid,pgrid
-	    do m=-pgrid,pgrid
-	      do o=-pgrid,pgrid
-	        write(9,"(F12.8)") pdensintra(n,m,o)
+	  do nx=-pgrid,pgrid
+	    do ny=-pgrid,pgrid
+	      do nz=-pgrid,pgrid
+	        write(9,"(F12.8)") pdensintra(nx,ny,nz)
 	      end do
 	    end do
 	  end do
