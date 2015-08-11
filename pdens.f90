@@ -30,6 +30,8 @@
 	! Map file for selecting central species
 	logical :: molmap = .FALSE.			! Whether we're using a file of mol flags
 	integer, allocatable :: molflags(:)		! Per-frame map of sp1 mols to include in averaging
+	! Atomic sites for central species position
+	type(IntegerList) :: originAtoms		! Atoms for central species origin (if any)
 	! Atomic sites for surrounding species position
 	type(IntegerList) :: atomSites(MAXSP)		! Atoms for surrounding species centres (if any)
 	logical :: atomSitesAreCog(MAXSP) = .false.
@@ -50,8 +52,8 @@
 	character*80 :: hisfile,outfile,basename,resfile,temp,flagfile,altheaderfile
 	logical :: altheader = .FALSE.
 	integer :: success
-	integer :: n, nframes, m, o, p, i
-	real*8 :: px, py, pz, mindistsq, maxdistsq, distsq, tx, ty, tz, v(3)
+	integer :: n, nframes, m, o, p1, p2, i
+	real*8 :: px, py, pz, mindistsq, maxdistsq, distsq, tx, ty, tz, v(3), origin(3)
 	real*8 :: angdelta, ax
 	integer :: sp1,m1,sp2,m2,nx,ny,nz,refnx,refny,refnz
 	logical :: failed, getbin
@@ -66,7 +68,7 @@
 	  write(*,"(a)") "        [-axis sp x1 x2 y1 y2]     Atoms to use for axis calculation in species sp"
 	  write(*,"(a)") "        [-atoms sp <list>]         Add list of atoms in species sp to use as other points"
 	  write(*,"(a)") "        [-cartesian sp]            Use Cartesian axes for species sp"
-	  write(*,"(a)") "        [-cog sp <list>]           Add list of atoms in species sp to use as other point (centre of geometry)"
+	  write(*,"(a)") "        [-cog sp <list>]           Use centre-of-geometry calculated from atom list for other point"
 	  write(*,"(a)") "        [-delta spacing]           Spacing between grid points (default = 0.5 Angstrom)"
 	  write(*,"(a)") "        [-end frameno]             Trajectory frame to end calculations on (default = last)"
 	  write(*,"(a)") "        [-grid npoints]            Grid points in each direction for prob. densities (default = 20)"
@@ -78,6 +80,7 @@
 	  write(*,"(a)") "        [-intra]                   Enable calculation of the intramolecular probability density and average molecule"
 	  write(*,"(a)") "        [-orient sp axis angle delta]  Specify a restriction in the angular orientation of the second &
 		& molecule (use negative delta for symmetry about 90deg)"
+	  write(*,"(a)") "        [-origin <list>]           Use centre-of-geometry calculated from atom list for central point"
 	  write(*,"(a)") "        [-otheraxis sp x1 x2 y1 y2] Alternative axis definition, for surrounding &
 		& molecule position and orientation"
 	  write(*,"(a)") "        [-pdelta spacing]          Spacing between pgrid points (default = 0.15 Angstrom)"
@@ -201,6 +204,9 @@
 	      write(0,"(A,i2,a,i1,a,f10.4,a,f10.4,a)") "Only molecules of sp ",sp1," with axis ", i, " angle delta of ", &
 		& orientdelta(sp1,i), " degrees about ", orientangle(sp1,i), " will be binned"
 	      orientcheck(sp1,i) = .TRUE.
+	    case ("-origin")
+	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, originAtoms)) stop "Failed to parse atom list for origin."
+	      write(0,"(i2,a,20i4)") originAtoms%n, " atoms added as origin site for central species :", originAtoms%items(1:originAtoms%n)
 	    case ("-otheraxis") 
 	      n = n + 1; sp1 = getargi(n)
 	      if (atomSites(sp1)%n.ne.0) stop "Definition of sites and otheraxis cannot be used together."
@@ -342,13 +348,22 @@
 	  npdenscentres = npdenscentres + 1	! Normalisation counter
 	  do m=1,othersp%n
 
+	    ! Get origin on central molecule for distance measurements
+	    if (originAtoms%n.gt.0) then
+	      ! Get average position of sites relative to axesA origin
+	      ! call averagePosition(originAtoms%items,originAtoms%n,,origin)
+
+	    else
+	      origin = 0.0
+	    end if
+
 	    sp2 = othersp%items(m)
 
-	    p = s_start(sp2) - s_natoms(sp2) - 1
+	    p2 = s_start(sp2) - s_natoms(sp2) - 1
 	    do m2=1,s_nmols(sp2)
 
 	      ! Increase atom offset
-	      p=p+s_natoms(sp2)
+	      p2 = p2 + s_natoms(sp2)
 
 	      ! Don't consider central molecule with itself
 	      if ((sp1.eq.sp2).and.(m1.eq.m2)) cycle
@@ -375,8 +390,8 @@
 	      ! Filter based on position/density of site in reference pdens?
 	      if (selectsp(sp2)) then
 		! Get target bin from atom list supplied
-		call averagePosition(selectSites(sp2)%items,selectSites(sp2)%n,p,v)
-		if (getbin(sp1,m1,0.0d0,maxdistsq*2.0,v(1),v(2),v(3),refnx,refny,refnz,grid,delta)) then
+		call averagePosition(selectSites(sp2)%items,selectSites(sp2)%n,p2,v)
+		if (getbin(sp1,m1,origin,0.0d0,maxdistsq*2.0,v(1),v(2),v(3),refnx,refny,refnz,grid,delta)) then
 		  if (selectpdens(sp2)%grid(refnx,refny,refnz).lt.selectmin(sp2)) cycle
 		end if
 	      end if
@@ -385,8 +400,8 @@
 	      ! If atomSites() have been defined, these override everything else
 	      if ((atomSites(sp2)%n.gt.0).and.atomSitesAreCog(sp2)) then
 		! Use list of supplied atoms, forming a COG with them
-		call averagePosition(atomSites(sp2)%items, atomSites(sp2)%n, p, v)
-		if (getbin(sp1,m1,mindistsq,maxdistsq,v(1),v(2),v(3),nx,ny,nz,grid,delta)) then
+		call averagePosition(atomSites(sp2)%items, atomSites(sp2)%n, p2, v)
+		if (getbin(sp1,m1,origin,mindistsq,maxdistsq,v(1),v(2),v(3),nx,ny,nz,grid,delta)) then
 		  pdensinter(sp2)%grid(nx,ny,nz) = pdensinter(sp2)%grid(nx,ny,nz) + 1
 		  ncaught(sp2) = ncaught(sp2) + 1
 		end if
@@ -394,8 +409,8 @@
 	      else if (atomSites(sp2)%n.gt.0) then
 		! Use list of supplied atoms, with each contributing a point to the pdens
 		do n=1,atomSites(sp2)%n
-		  i = p+atomSites(sp2)%items(n)
-		  if (getbin(sp1,m1,mindistsq,maxdistsq,xpos(i),ypos(i),zpos(i),nx,ny,nz,grid,delta)) then
+		  i = p2+atomSites(sp2)%items(n)
+		  if (getbin(sp1,m1,origin,mindistsq,maxdistsq,xpos(i),ypos(i),zpos(i),nx,ny,nz,grid,delta)) then
 		    pdensinter(sp2)%grid(nx,ny,nz) = pdensinter(sp2)%grid(nx,ny,nz) + 1
 		    ncaught(sp2) = ncaught(sp2) + 1
 		  end if
@@ -403,14 +418,14 @@
 		end do
 	      else if (axesBdefined(sp2)) then
 		! Use origin of alternative axes
-		if (getbin(sp1,m1,mindistsq,maxdistsq,axesBorigin(sp2,m2,1),axesBorigin(sp2,m2,2),axesBorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
+		if (getbin(sp1,m1,origin,mindistsq,maxdistsq,axesBorigin(sp2,m2,1),axesBorigin(sp2,m2,2),axesBorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
 		  pdensinter(sp2)%grid(nx,ny,nz) = pdensinter(sp2)%grid(nx,ny,nz) + 1
 		  ncaught(sp2) = ncaught(sp2) + 1
 		end if
 		nfound(sp2) = nfound(sp2) + 1
 	      else
 		! Use origin of axes
-		if (getbin(sp1,m1,mindistsq,maxdistsq,axesAorigin(sp2,m2,1),axesAorigin(sp2,m2,2),axesAorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
+		if (getbin(sp1,m1,origin,mindistsq,maxdistsq,axesAorigin(sp2,m2,1),axesAorigin(sp2,m2,2),axesAorigin(sp2,m2,3),nx,ny,nz,grid,delta)) then
 		  pdensinter(sp2)%grid(nx,ny,nz) = pdensinter(sp2)%grid(nx,ny,nz) + 1
 		  ncaught(sp2) = ncaught(sp2) + 1
 		end if
@@ -423,12 +438,12 @@
 
 	! Calculate average molecule and intramolecular distribution
 105	if (nointra) goto 110
-	p=s_start(centresp)
+	p1 = s_start(centresp)
 	do m1=1,s_nmols(centresp)
 	  ! If we're using a mapfile, decide whether to include this molecule
 	  if (molmap) then
 	    if (molflags(m1).eq.0) then
-	      p = p+s_natoms(centresp)
+	      p1 = p1 + s_natoms(centresp)
 	      cycle
 	    end if
 	    nintracentres = nintracentres + 1
@@ -437,7 +452,7 @@
 	  end if
 	  do n=1,s_natoms(centresp)
 	    ! PBC the atom
-	    call pbc(xpos(p+n-1),ypos(p+n-1),zpos(p+n-1),axesAorigin(centresp,m1,1), &
+	    call pbc(xpos(p1+n-1),ypos(p1+n-1),zpos(p1+n-1),axesAorigin(centresp,m1,1), &
 	  	& axesAorigin(centresp,m1,2),axesAorigin(centresp,m1,3),tx,ty,tz)
 	    ! 'Zero' its position with respect to the axis centre...
 	    tx=tx-axesAorigin(centresp,m1,1)
@@ -448,9 +463,9 @@
 	    py=tx*axesA(centresp,m1,4) + ty*axesA(centresp,m1,5) + tz*axesA(centresp,m1,6)
 	    pz=tx*axesA(centresp,m1,7) + ty*axesA(centresp,m1,8) + tz*axesA(centresp,m1,9)
 	    ! Accumulate the position....
-	    avggeom(n,1) = avggeom(n,1)+px
-	    avggeom(n,2) = avggeom(n,2)+py
-	    avggeom(n,3) = avggeom(n,3)+pz
+	    avggeom(n,1) = avggeom(n,1)+px-origin(1)
+	    avggeom(n,2) = avggeom(n,2)+py-origin(2)
+	    avggeom(n,3) = avggeom(n,3)+pz-origin(3)
 	    ! Intramolecular distribution.....
 	    nx=NINT(px/pdelta)
 	    ny=NINT(py/pdelta)
@@ -461,7 +476,7 @@
 	      write(0,*) "Large distance : nx,ny,nz = ",nx,ny,nz
 	    end if
 	  end do
-	  p=p+s_natoms(centresp)
+	  p1 = p1 + s_natoms(centresp)
 	end do
 
 110	if (MOD(nframes,100).eq.0) then
@@ -585,24 +600,29 @@
 
 	end program calcpdens
 
-	logical function getbin(sp1,m1,mindistsq,maxdistsq,x,y,z,nx,ny,nz,grid,griddelta)
+	logical function getbin(sp1,m1,origin,mindistsq,maxdistsq,x,y,z,nx,ny,nz,grid,griddelta)
 	use utility
 	implicit none
 	integer, intent(in) :: sp1, m1, grid
 	integer, intent(out) :: nx, ny, nz
 	real*8, intent(in) :: x, y, z, mindistsq, maxdistsq, griddelta
-	real*8 :: px, py, pz, tx, ty, tz, distsq
+	real*8 :: px, py, pz, tx, ty, tz, origin(3), distsq
 
 	! Get mim of supplied coordinate with the origin of the central species
 	call pbc(x,y,z,axesAorigin(sp1,m1,1),axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
 
-	! Get vector between minimuim image coordinates and central molecule axis origin
+	! Get vector between minimum image coordinates and central molecule axis origin
 	px = tx - axesAorigin(sp1,m1,1)
 	py = ty - axesAorigin(sp1,m1,2)
 	pz = tz - axesAorigin(sp1,m1,3)
 	tx = px*axesA(sp1,m1,1) + py*axesA(sp1,m1,2) + pz*axesA(sp1,m1,3)
 	ty = px*axesA(sp1,m1,4) + py*axesA(sp1,m1,5) + pz*axesA(sp1,m1,6)
 	tz = px*axesA(sp1,m1,7) + py*axesA(sp1,m1,8) + pz*axesA(sp1,m1,9)
+
+	! Adjust position for different reference point on central molecule
+	tx = tx - origin(1)
+	ty = ty - origin(2)
+	tz = tz - origin(3)
 
 	! Check minimum / maximum separation
 	distsq = tx*tx + ty*ty + tz*tz
