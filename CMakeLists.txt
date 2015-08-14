@@ -41,7 +41,7 @@ else (Fortran_COMPILER_NAME MATCHES "gfortran.*")
 endif (Fortran_COMPILER_NAME MATCHES "gfortran.*")
 
 # Setup function library build
-add_library(external "parse.f90" "dlprw.f90" "utility.f90" "pdensrw.f90" "integerlist.f90")
+add_library(external "parse.f90" "dlprw.f90" "utility.f90" "pdensrw.f90" "integerlist.f90" "reallist.f90")
 
 # Setup binary builds
 set (PROGRAMS 
@@ -51,13 +51,13 @@ set (PROGRAMS
   "dahist" "dist2" "dlp2dlp" "dlp2dlpflipz" "dlp2dlpshift" "dlp2xyzf" "dlpreorder"  "dlpsize"
   "editconfig" 
   "filterdlp"
-  "getcell" "genlb" "gengg" "geom" "glucanal" "glucgeom" "gluchb" "gluchbeach" "glucsphere"
+  "getcell" "genlb" "gengg" "geom" "glucanal" "glucgeom" "gluchb" "gluchbeach"
   "his2config" "his2xyzs"
   "intertorsion" "intratorsion" "intratorsion2" 
   "legendre" "lifehb"
   "moldist" "msd" "msd2"
   "pairs" "pdens" "pdensgauss" "pdensint" "pdensmirror" "pdenstrim" "probedlp"  
-  "rdf" "rdfaa" "rdfaainter" "rdfdep" "rdfss" "rdfsum"
+  "rdf" "rdfaa" "rdfaainter" "rdfdep" "rdfss" "rdfsum" "ringconf"
   "xyz2his"
   "zangle" "zdens"
   "vac" "vac2"

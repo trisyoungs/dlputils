@@ -81,7 +81,6 @@ glucanal
 glucgeom
 gluchb
 gluchbeach
-glucsphere
 pdens
 pdensint
 pdensmirror
@@ -98,3 +97,4 @@ acf
 dacf
 totalgr
 partials2sq
+ringconf

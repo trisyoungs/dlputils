@@ -65,20 +65,20 @@
 	end function parseIntegerList
 
 	! Return whether specified value is contained within the list
-	logical function listContains(list, item)
+	logical function integerListContains(list, item)
 	implicit none
 	type(IntegerList), intent(in) :: list
 	integer, intent(in) :: item
 	integer :: n
 	
-	listContains = .false.
+	integerListContains = .false.
 	do n=1,list%n
 	  if (list%items(n).eq.item) then
-	    listContains = .true.
+	    integerListContains = .true.
 	    return
 	  end if
 	end do
 
-	end function listContains
+	end function integerListContains
 
 	end module IList

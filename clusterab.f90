@@ -79,7 +79,7 @@
 	allocate(marked(s_totalMols))
 	allocate(clusters(s_totalMols))
 	clusters = 0.0
-	notSelf = .not.listContains(otherSp,sp1)
+	notSelf = .not.integerListContains(otherSp,sp1)
 
 	! Set up the vars...
 100	nframes=0
@@ -203,7 +203,7 @@
 	aoff = 0
 	do sp=1,nspecies
 	  ! Loop if this species is not in the otherSp list
-	  if (.not.listContains(otherSp,sp)) cycle
+	  if (.not.integerListContains(otherSp,sp)) cycle
 
 	  ! Loop over all molecules of this species, checking for H...O and O...H contacts with the current molecule
 	  aoff = s_start(sp)-1

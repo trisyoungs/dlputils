@@ -4,7 +4,7 @@
 !	Updated version - rotates all molecules about target molecule first, then performs minimum
 !	image before binning
 
-	program calcpdens
+	program pdensprog
 	use dlprw; use utility; use parse; use PDensRW; use IList
 	implicit none
 	real*8, parameter :: radcon = 57.29577951d0
@@ -387,7 +387,7 @@
 	      failed = .false.
 	      do n=1,3
 	        if (orientcheck(sp2,n)) then
-	          ! Take dot product of X-axis on sp2 with that of the central molecule, and calculate the angle delta
+	          ! Take dot product of axis 'n' on sp2 with that of the central molecule, and calculate the angle delta
 		  if (axesBdefined(sp2)) then
 		    ax = axesB(sp2,m2,(n-1)*3+1)*axesA(sp1,m1,(n-1)*3+1) + axesB(sp2,m2,(n-1)*3+2)*axesA(sp1,m1,(n-1)*3+2) + axesB(sp2,m2,(n-1)*3+3)*axesA(sp1,m1,(n-1)*3+3)
 		  else
@@ -639,7 +639,7 @@
 	write(6,"(A)") "Finished!"
 999	close(10)
 
-	end program calcpdens
+	end program pdensprog
 
 	logical function getbin(sp1,m1,origin,mindistsq,maxdistsq,x,y,z,nx,ny,nz,grid,griddelta)
 	use utility

@@ -18,7 +18,7 @@
 	logical :: altheader = .FALSE., nonorm = .FALSE., zplus = .FALSE., zminus = .FALSE.
 	integer :: n,m,a1,s1,s2,m1,m2,baselen,bin,nframes,success,o,nargs,numadded,framestodo = -1,frameskip = 0,framesdone, compairs(10,2), otherpairs(10,2)
 	integer :: iargc
-	real*8 :: dist,c1x,c1y,c1z,c2x,c2y,c2z,c3x,c3y,c3z,tx,ty,tz,bdens, integral
+	real*8 :: dist,c1x,c1y,c1z,c2x,c2y,c2z,c3x,c3y,c3z,tx,ty,tz,bdens,integral
 
 	binwidth=0.1   ! In Angstroms
 	compairs = 0

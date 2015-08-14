@@ -1,14 +1,14 @@
 bin_PROGRAMS = dlp2xyzf catdlp dlp2dlp addheader editconfig filterdlp his2config his2xyzs dlp2dlpflipz dlp2dlpshift dlpreorder chunkdlp xyz2his
 bin_PROGRAMS += cdf dist2 ardf rdf rdfsum rdfaa rdfaainter rdfss rdfdep zdens
 bin_PROGRAMS += acfcat acfprep acfsum angle cagecor2 cn counthb geom getcell intertorsion intratorsion intratorsion2 lifehb moldist msd msd2 vac vac2
-bin_PROGRAMS += bident bident2 bident2anal bident3 bident4 cluster clusterab cryscomp dahist legendre zangle
-bin_PROGRAMS += glucanal glucgeom gluchb gluchbeach glucsphere
+bin_PROGRAMS += bident bident2 bident2anal bident3 bident4 cluster clusterab cryscomp dahist legendre ringconf zangle
+bin_PROGRAMS += glucanal glucgeom gluchb gluchbeach
 bin_PROGRAMS += pdens pdensint pdensmirror pdenstrim pdensgauss
 bin_PROGRAMS += avgconfig dlpsize genlb gengg pairs probedlp
 bin_PROGRAMS += partials2sq
 #bin_PROGRAMS += acf dacf sq totalgr
 
-EXTRA_DIST = acf.f90 dacf.f90 sq.f90 totalgr.f90
+EXTRA_DIST = acf.f90 dacf.f90 sq.f90 totalgr.f90 ringconf_test.tors
 
 # Define some module variables
 PARSE=parse.f90
@@ -17,6 +17,7 @@ UTILITY=utility.f90
 FIELDREAD=fieldread.f90
 PDENSRW=pdensrw.f90
 ILIST=integerlist.f90
+RLIST=reallist.f90
 
 .f90.o: 
 	$(FC) ${FCFLAGS} -c $<
@@ -102,6 +103,7 @@ clusterab_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${ILIST} clusterab.f90
 cryscomp_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} cryscomp.f90
 dahist_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} dahist.f90
 legendre_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} legendre.f90
+ringconf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} ringconf.f90 
 zangle_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} zangle.f90
 
 # Glucose
@@ -109,7 +111,6 @@ glucanal_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} glucanal.f90
 glucgeom_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} glucgeom.f90
 gluchb_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} gluchb.f90
 gluchbeach_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} gluchbeach.f90
-glucsphere_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} glucsphere.f90
 
 # Probability Densities
 pdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} ${ILIST} pdens.f90

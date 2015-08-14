@@ -217,7 +217,7 @@
 	! 1) Determine the X axis of the molecule
 	!    -- Get the vector between atoms 1 and 2...
 	call pbc(xpos(aa(2)), ypos(aa(2)), zpos(aa(2)), xpos(aa(1)), ypos(aa(1)), zpos(aa(1)), tx, ty, tz)
-	call getvector(tx,ty,tz, xpos(aa(1)), ypos(aa(1)), zpos(aa(1)), vx, vy, vz)
+	call getVector(tx,ty,tz, xpos(aa(1)), ypos(aa(1)), zpos(aa(1)), vx, vy, vz)
 	xmag = SQRT(vx**2 + vy**2 + vz**2)     ! Magnitude of vector
 	xmagsq = xmag * xmag
 	axes(1) = vx		! Store the un-normalised components of the x-axis vector
@@ -235,7 +235,7 @@
 	tx = 0.5*(tx+vx)
 	ty = 0.5*(ty+vy)
 	tz = 0.5*(tz+vz)
-	call getvector(origin(1),origin(2),origin(3),tx,ty,tz,vx,vy,vz)
+	call getVector(origin(1),origin(2),origin(3),tx,ty,tz,vx,vy,vz)
 	axes(4) = vx   ! Store the un-normalised components of the y-axis vector
 	axes(5) = vy
 	axes(6) = vz
@@ -319,15 +319,6 @@
 	axesBatoms = 0
 	end subroutine alloc_axis
 
-	subroutine getvector(x1,y1,z1,x2,y2,z2,x3,y3,z3)
-	implicit none
-	real*8 :: x1,y1,z1,x2,y2,z2,x3,y3,z3
-	! xyz1,xyz2: coordinates of two atoms; xyz3: vector between them (result)
-	x3=x1-x2
-	y3=y1-y2
-	z3=z1-z2
-	end subroutine getvector
-
 	subroutine vmatmult(x1,y1,z1,a)
 	implicit none
 	real*8 :: x1,y1,z1,x2,y2,z2,a(9)
@@ -379,6 +370,117 @@
 	v = v / real(nItems)
 
 	end subroutine averagePosition
+
+	! ========================================
+	! 3-Vectors
+	! ========================================
+
+	subroutine getVector(x1,y1,z1,x2,y2,z2,x3,y3,z3)
+	implicit none
+	real*8 :: x1,y1,z1,x2,y2,z2,x3,y3,z3
+	! xyz1,xyz2: coordinates of two atoms; xyz3: vector between them (result)
+	x3=x1-x2
+	y3=y1-y2
+	z3=z1-z2
+	end subroutine getVector
+
+	real*8 function vec3Magnitude(vec)
+	implicit none
+	real*8 :: vec(3)
+	vec3Magnitude = dsqrt(vec(1)*vec(1) + vec(2)*vec(2) + vec(3)*vec(3))
+	end function vec3Magnitude
+     
+	real*8 function vec3DotProduct(abc,xyz)
+	implicit none
+	real*8 :: abc(3), xyz(3), result
+	result=abc(1)*xyz(1) + abc(2)*xyz(2) + abc(3)*xyz(3)
+	vec3DotProduct = result
+	end function vec3DotProduct
+
+	subroutine vec3CrossProduct(abc,xyz,result)
+	implicit none
+	real*8 :: abc(3), xyz(3), result(3)
+	result(1)=abc(2)*xyz(3) - abc(3)*xyz(2)
+	result(2)=abc(3)*xyz(1) - abc(1)*xyz(3)
+	result(3)=abc(1)*xyz(2) - abc(2)*xyz(1)
+	end subroutine vec3CrossProduct
+
+	! ========================================
+	! Geometry
+	! ========================================
+	real*8 function calculateTorsion(ii,jj,kk,ll,offset)
+	use dlprw
+	implicit none
+	real*8, parameter :: radcon = 57.29577951d0
+	integer, intent(in) :: ii, jj, kk, ll, offset
+	integer :: i, j, k, l
+	real*8 :: tx, ty, tz, ktx, kty, ktz, dp, mag1, mag2
+	real*8 :: vecji(3), vecjk(3), veckj(3), veckl(3), xp1(3), xp2(3)
+
+	! Minimum Image w.r.t. atom j 
+	i = ii + offset
+	j = jj + offset
+	k = kk + offset
+	l = ll + offset
+
+	! Angle i-j-k
+	! Vector j->i
+	call pbc(xpos(i),ypos(i),zpos(i),xpos(j),ypos(j),zpos(j),tx,ty,tz)
+	call getVector(tx,ty,tz,xpos(j),ypos(j),zpos(j),vecji(1),vecji(2),vecji(3))
+	! Vector j->k
+	call pbc(xpos(k),ypos(k),zpos(k),xpos(j),ypos(j),zpos(j),ktx,kty,ktz)
+	call getVector(ktx,kty,ktz,xpos(j),ypos(j),zpos(j),vecjk(1),vecjk(2),vecjk(3))
+	! Angle j-k-l (mim w.r.t. k (mim j))
+	! Vector k->j
+	veckj = -vecjk
+	! Vector k->l
+	call pbc(xpos(l),ypos(l),zpos(l),ktx,kty,ktz,tx,ty,tz)
+	call getVector(tx,ty,tz,ktx,kty,ktz,veckl(1),veckl(2),veckl(3))
+
+	! Calculate cross products and magnitudes
+	call vec3CrossProduct(vecji,vecjk,xp1)
+	mag1 = vec3Magnitude(xp1)
+	call vec3CrossProduct(veckj,veckl,xp2)
+	mag2 = vec3Magnitude(xp2)
+		  
+	! Calculate dot product and angle...
+	dp = vec3DotProduct(xp1, xp2) / (mag1 * mag2)
+	calculateTorsion = acos(dp)*radcon
+
+	! Calculate sign
+	dp = vec3DotProduct(xp1, veckl)
+	if (dp.lt.0) calculateTorsion = -calculateTorsion
+
+	end function calculateTorsion
+
+	real*8 function calculateAngle(ii,jj,kk,offset)
+	use dlprw
+	implicit none
+	real*8, parameter :: radcon = 57.29577951d0
+	integer, intent(in) :: ii, jj, kk, offset
+	integer :: i, j, k
+	real*8 :: tx, ty, tz, ktx, kty, ktz, dp, mag1, mag2
+	real*8 :: vecji(3), vecjk(3)
+
+	! Minimum Image w.r.t. atom j 
+	i = ii + offset
+	j = jj + offset
+	k = kk + offset
+
+	! Vector j->i
+	call pbc(xpos(i),ypos(i),zpos(i),xpos(j),ypos(j),zpos(j),tx,ty,tz)
+	call getVector(tx,ty,tz,xpos(j),ypos(j),zpos(j),vecji(1),vecji(2),vecji(3))
+	mag1 = vec3Magnitude(vecji)
+	! Vector j->k
+	call pbc(xpos(k),ypos(k),zpos(k),xpos(j),ypos(j),zpos(j),tx,ty,tz)
+	call getVector(tx,ty,tz,xpos(j),ypos(j),zpos(j),vecjk(1),vecjk(2),vecjk(3))
+	mag2 = vec3Magnitude(vecjk)
+
+	! Calculate dot product and angle...
+	dp = vec3DotProduct(vecji, vecjk) / (mag1 * mag2)
+	calculateAngle = acos(dp)*radcon
+
+	end function calculateAngle
 
 	! Numerical Recipes material starts here
 	! (C) Copr. 1986-92 Numerical Recipes Software

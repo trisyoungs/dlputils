@@ -17,7 +17,7 @@
 	integer :: bonds(MAXDATA,2),angles(MAXDATA,3),torsions(MAXDATA,4)
 	integer :: iargc
 	logical :: configfile = .false.
-	real*8 :: dist, magnitude, dotproduct, warndist = 100.0, warnangle = 200.0
+	real*8 :: warndist = 100.0, warnangle = 200.0
 1       FORMAT (A8/,3f20.14)
 2       FORMAT (3F20.14)
 3	FORMAT (2I10)
@@ -169,7 +169,7 @@
 	    i = bonds(n,1) + a1
 	    j = bonds(n,2) + a1
 	    call pbc(xpos(i),ypos(i),zpos(i),xpos(j),ypos(j),zpos(j),tx,ty,tz)
-	    rij = dist(tx,ty,tz,j)
+	    rij = sqrt( (tx-xpos(j))*(tx-xpos(j)) + (ty-ypos(j))*(ty-ypos(j)) + (tz-zpos(j))*(tz-zpos(j)) )
 	    gbdata(n,num) = rij
 	    if (rij.gt.warndist) then
 	      write(6,"(a,i4,'/',i6,'/',i6,'/',f12.6)") "Big bond found : mol/i/j/rij = ", m, i, j, rij
@@ -179,62 +179,14 @@
 
 	  ! Calculate angles....
 	  do n=1,nangles
-	    ! Minimum Image w.r.t. atom j ('elbow')
-	    j=angles(n,2) + a1
-	    ! Vector j->i
-	    i=angles(n,1) + a1
-	    call pbc(xpos(i),ypos(i),zpos(i),xpos(j),ypos(j),zpos(j),tx,ty,tz)
-	    call getvector(tx,ty,tz,xpos(j),ypos(j),zpos(j),vecji(1),vecji(2),vecji(3))
-	    mag1 = magnitude(vecji)
-	    ! Vector j->k
-	    k=angles(n,3) + a1
-	    call pbc(xpos(k),ypos(k),zpos(k),xpos(j),ypos(j),zpos(j),tx,ty,tz)
-	    call getvector(tx,ty,tz,xpos(j),ypos(j),zpos(j),vecjk(1),vecjk(2),vecjk(3))
-	    mag2 = magnitude(vecjk)
-
-	    ! Calculate dot product and angle...
-	    dp = dotproduct(vecji, vecjk) / (mag1 * mag2)
-	    angle = acos(dp)*radcon
+	    angle = calculateAngle(angles(n,1),angles(n,2),angles(n,3),a1)
 	    if (angle.gt.warnangle) write(6,"(a,i4,'/',i6,'/',i6,'/',i6,'/',f12.6)") "Big angle found : mol/i/j/k/rij = ", m, i, j, k, angle
 	    gadata(n,num) = angle
 	  end do
 
 	  ! Calculate torsions....
 	  do n=1,ntorsions
-	    ! Minimum Image w.r.t. atom j 
-	    j=torsions(n,2) + a1
-	    ! Angle i-j-k
-	    ! Vector j->i
-	    i=torsions(n,1) + a1
-	    call pbc(xpos(i),ypos(i),zpos(i),xpos(j),ypos(j),zpos(j),tx,ty,tz)
-	    call getvector(tx,ty,tz,xpos(j),ypos(j),zpos(j),vecji(1),vecji(2),vecji(3))
-	    ! Vector j->k
-	    k=torsions(n,3) + a1
-	    call pbc(xpos(k),ypos(k),zpos(k),xpos(j),ypos(j),zpos(j),ktx,kty,ktz)
-	    call getvector(ktx,kty,ktz,xpos(j),ypos(j),zpos(j),vecjk(1),vecjk(2),vecjk(3))
-	    ! Angle j-k-l (mim w.r.t. k (mim j))
-	    ! Vector k->j
-	    veckj = -vecjk
-	    ! Vector k->l
-	    l=torsions(n,4) + a1
-	    call pbc(xpos(l),ypos(l),zpos(l),ktx,kty,ktz,tx,ty,tz)
-	    call getvector(tx,ty,tz,ktx,kty,ktz,veckl(1),veckl(2),veckl(3))
-
-	    ! Calculate cross products and magnitudes
-	    call crossproduct(vecji,vecjk,xp1)
-	    mag1 = magnitude(xp1)
-	    call crossproduct(veckj,veckl,xp2)
-	    mag2 = magnitude(xp2)
-		  
-	    ! Calculate dot product and angle...
-	    dp = dotproduct(xp1, xp2) / (mag1 * mag2)
-	    angle = acos(dp)*radcon
-
-	    ! Calculate sign
-	    dp = dotproduct(xp1, veckl)
-	    if (dp.lt.0) angle = -angle
-
-	    gtdata(n,num) = angle
+	    gtdata(n,num) = calculateTorsion(torsions(n,1),torsions(n,2),torsions(n,3),torsions(n,4),a1)
           end do
 
 	  a1 = a1 + s_natoms(sp)
@@ -295,32 +247,3 @@
 999	stop
 	end program dlpgeom
 	
-        real*8 function dist(ix,iy,iz,j)
-        use dlprw; implicit none
-        integer :: j
-        real*8 :: ix,iy,iz
-        ! Calculate the distance between the two atoms a (specified by ix,iy,iz) and j.
-        dist = SQRT( (ix-xpos(j))**2 + (iy-ypos(j))**2 + (iz-zpos(j))**2 )
-        end function dist
-
-        real*8 function magnitude(vec)
-	implicit none
-        real*8 :: vec(3)
-        magnitude=dsqrt(vec(1)*vec(1) + vec(2)*vec(2) + vec(3)*vec(3))
-        end function magnitude
-
-        subroutine crossproduct(abc,xyz,result)
-	implicit none
-        real*8 :: abc(3), xyz(3), result(3)
-        result(1)=abc(2)*xyz(3) - abc(3)*xyz(2)
-        result(2)=abc(3)*xyz(1) - abc(1)*xyz(3)
-        result(3)=abc(1)*xyz(2) - abc(2)*xyz(1)
-        end subroutine crossproduct
-
-        real*8 function dotproduct(abc,xyz)
-	implicit none
-        real*8 :: abc(3), xyz(3), result
-        result=abc(1)*xyz(1) + abc(2)*xyz(2) + abc(3)*xyz(3)
-        dotproduct = result
-        end function dotproduct
-
