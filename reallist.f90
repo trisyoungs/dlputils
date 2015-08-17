@@ -50,7 +50,7 @@
 	        return
 	      end if
 	      exit
-	    case (48:57,'.','e','E')
+	    case (43,45,46,48:57,69,101)
 	      ! Number - add to argument and continue
 	      arglen = arglen + 1
 	      i(arglen:arglen) = string(n:n)

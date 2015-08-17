@@ -50,8 +50,8 @@
 	        return
 	      end if
 	      exit
-	    case (48:57)
-	      ! Number - add to argument and continue
+	    case (43,45,48:57)
+	      ! Plus, Minus, or Number - add to argument and continue
 	      arglen = arglen + 1
 	      i(arglen:arglen) = string(n:n)
 	    case default
