@@ -10,7 +10,7 @@
 	logical :: altheader = .FALSE., crossTerms = .FALSE.
 	integer :: n,m,sp,sp1,sp2,m1,m2,baselen,bin,nframes,success,nargs, framestodo = -1,frameskip = 0,framesdone
 	integer :: iargc, nbins, nangbins, angbin, aoff1, aoff2, a1, a2, restrictAxis = 0, element
-	real*8 :: dist,i(3),j(3),jtemp(3), binwidth, angbinwidth, angles(9), ax, norm, gr
+	real*8 :: dist,i(3),j(3),jtemp(3), binwidth, angbinwidth, angles(9), ax, norm, gr, cn
 	real*8 :: angmin, angmax, distmin, distmax
 	type(IntegerList) :: sp1Site, sp2Site
 	integer, allocatable :: rdfxyz(:,:,:), sanityrdf(:,:)
@@ -306,12 +306,19 @@
 	    ! Normalise the RDFs with respect to the number of frames and solid angle.
 	    do m=1,nangbins
 	      if (a1.eq.a2) sanityrdf(a1,:) = sanityrdf(a1,:) + rdfxyz(element,:,m)
+	      cn = 0.0
 	      do n=1,nbins
 	        norm = (4.0/3.0) * pi * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * s_nmols(sp2) / volume(cell)
 	        gr = rdfxyz(element,n,m) / norm / nframes / s_nmols(sp1)
-	        write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), gr / angleNorm(m), gr
+		cn = cn + 1.0*rdfxyz(element,n,m) / nframes / s_nmols(sp1)
+	        if (n.eq.1) then
+		  write(9,"(F10.4,3(3x,F12.8),'   # Range ',2(1x,f10.4))") ((n-0.5)*binwidth), gr / angleNorm(m), gr, cn, (m-1)*angbinwidth, m*angbinwidth
+		else
+		  write(9,"(F10.4,3(3x,F12.8))") ((n-0.5)*binwidth), gr / angleNorm(m), gr, cn
+		end if
 	      end do
 	      write(9,*) ""
+	      write(88,*) cn
 	    end do
 	    close(9)
 

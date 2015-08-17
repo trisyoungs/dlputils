@@ -3,7 +3,7 @@ bin_PROGRAMS += cdf dist2 ardf rdf rdfsum rdfaa rdfaainter rdfss rdfdep zdens
 bin_PROGRAMS += acfcat acfprep acfsum angle cagecor2 cn counthb geom getcell intertorsion intratorsion intratorsion2 lifehb moldist msd msd2 vac vac2
 bin_PROGRAMS += bident bident2 bident2anal bident3 bident4 cluster clusterab cryscomp dahist legendre ringconf zangle
 bin_PROGRAMS += glucanal glucgeom gluchb gluchbeach
-bin_PROGRAMS += pdens pdensint pdensmirror pdenstrim pdensgauss
+bin_PROGRAMS += pdens pdensinfo pdensint pdensmirror pdenstrim pdensgauss
 bin_PROGRAMS += avgconfig dlpsize genlb gengg pairs probedlp
 bin_PROGRAMS += partials2sq
 #bin_PROGRAMS += acf dacf sq totalgr
@@ -114,10 +114,11 @@ gluchbeach_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} gluchbeach.f90
 
 # Probability Densities
 pdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} ${ILIST} pdens.f90
+pdensgauss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} ${ILIST} pdensgauss.f90
+pdensinfo_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensinfo.f90
 pdensint_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensint.f90
 pdensmirror_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensmirror.f90
 pdenstrim_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdenstrim.f90
-pdensgauss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} ${ILIST} pdensgauss.f90
 
 # Misc
 avgconfig_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} avgconfig.f90

@@ -273,7 +273,7 @@
 	  sp1 = othersp%items(n)
 	  pdensinter(sp1)%axes = (/ delta,0.0d0,0.0d0,0.0d0,delta,0.0d0,0.0d0,0.0d0,delta /)
 	  pdensinter(sp1)%origin = (/ -grid*delta,-grid*delta,-grid*delta /)
-	  if (.not.allocPDens(pdensinter(sp1),grid)) stop
+	  if (.not.allocPDens(pdensinter(sp1),-grid,-grid,-grid,grid,grid,grid)) stop
 	end do
 	ncaught = 0
 	nfound = 0
@@ -301,12 +301,14 @@
 	  if (.not.selectsp(n)) cycle
 	  if (.not.loadPDens(selectfile(n), selectpdens(n))) stop "Failed to load reference pdens."
 	  ! Make some basic checks on grid extent etc...
-	  if (selectpdens(n)%ngrid.ne.pdensinter(centresp)%ngrid) then
-	    write(0,*) "Error: Supplied reference pdens has different grid to that requested for this calculation."
-	    write(0,"(a,3i3)") "Reference: ", selectpdens(n)%ngrid
-	    write(0,"(a,3i3)") "Current: ", pdensinter(centresp)%ngrid
-	    stop
-	  end if
+	  do i=1,3
+	    if ((selectpdens(n)%gridMin(i).ne.pdensinter(centresp)%gridMin(1)).or.(selectpdens(n)%gridMax(i).ne.pdensinter(centresp)%gridMax(i))) then
+	      write(0,*) "Error: Supplied reference pdens has different grid to that requested for this calculation."
+	      write(0,"(a,6i3)") "Reference: ", selectpdens(n)%gridMin, selectpdens(n)%gridMax
+	      write(0,"(a,6i3)") "Current: ", pdensinter(centresp)%gridMin,pdensinter(centresp)%gridMax
+	      stop
+	    end if
+	  end do
 	end do
 
 	! XXXX
@@ -495,11 +497,6 @@
 	    py=tx*axesA(sp1,m1,4) + ty*axesA(sp1,m1,5) + tz*axesA(sp1,m1,6)
 	    pz=tx*axesA(sp1,m1,7) + ty*axesA(sp1,m1,8) + tz*axesA(sp1,m1,9)
 
-	    ! Subtract origin offset
-	    px = px - origin(1)
-	    py = py - origin(2)
-	    pz = pz - origin(3)
-
 	    ! Accumulate the position....
 	    avggeom(n,1) = avggeom(n,1)+px
 	    avggeom(n,2) = avggeom(n,2)+py
@@ -647,7 +644,7 @@
 	integer, intent(in) :: sp1, m1, grid
 	integer, intent(out) :: nx, ny, nz
 	real*8, intent(in) :: x, y, z, mindistsq, maxdistsq, griddelta
-	real*8 :: px, py, pz, tx, ty, tz, origin(3), distsq
+	real*8 :: px, py, pz, tx, ty, tz, offx, offy, offz, origin(3), distsq
 
 	! Get mim of supplied coordinate with the origin of the central species
 	call pbc(x,y,z,axesAorigin(sp1,m1,1),axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
@@ -661,18 +658,18 @@
 	tz = px*axesA(sp1,m1,7) + py*axesA(sp1,m1,8) + pz*axesA(sp1,m1,9)
 
 	! Adjust position for different reference point on central molecule
-	tx = tx - origin(1)
-	ty = ty - origin(2)
-	tz = tz - origin(3)
+	offx = tx - origin(1)
+	offy = ty - origin(2)
+	offz = tz - origin(3)
 
-	! Check minimum / maximum separation
-	distsq = tx*tx + ty*ty + tz*tz
+	! Check minimum / maximum separation between point and specified origin
+	distsq = offx*offx + offy*offy + offz*offz
 	if ((distsq.lt.mindistsq).or.(distsq.gt.maxdistsq)) then
 	  getbin = .false.
 	  return
 	end if
 
-	! Calculate integer position in grid
+	! Calculate integer position in grid (using non-offset coordinates)
 	nx=NINT(tx/griddelta)
 	ny=NINT(ty/griddelta)
 	nz=NINT(tz/griddelta)

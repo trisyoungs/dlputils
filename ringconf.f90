@@ -331,7 +331,7 @@
 	grid = 1.5/delta
 	conformers%axes = (/ delta,0.0d0,0.0d0,0.0d0,delta,0.0d0,0.0d0,0.0d0,delta /)
 	conformers%origin = (/ -grid*delta,-grid*delta,-grid*delta /)
-	if (.not.allocPDens(conformers,grid)) stop
+	if (.not.allocPDens(conformers,-grid,-grid,-grid,grid,grid,grid)) stop
 
 	! If we are performing a test, set the torsions here, calculate the conformer, and exit
 	if (testCalculation) then

@@ -57,9 +57,9 @@
 	  if (cutoff.gt.maximum) exit
 	  ! Calculate
 	  nmols = 0.0
-	  do x=1,-grid%ngrid,grid%ngrid
-	    do y= -grid%ngrid,grid%ngrid
-	      do z= -grid%ngrid,grid%ngrid
+	  do x=grid%gridMin(1),grid%gridMax(1)
+	    do y=grid%gridMin(2),grid%gridMax(2)
+	      do z=grid%gridMin(3),grid%gridMax(3)
 	        if (grid%grid(x,y,z) > cutoff) nmols = nmols + grid%grid(x,y,z)
 	      end do
 	    end do

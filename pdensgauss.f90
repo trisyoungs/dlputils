@@ -47,16 +47,17 @@
 	gauss%loop = original%loop
 	gauss%origin = original%origin
 	gauss%axes = original%axes
-	if (.not.allocPDens(gauss, original%ngrid)) stop "Failed to allocate new PDens."
+	if (.not.allocPDens(gauss, original%gridMin(1),original%gridMin(2),original%gridMin(3),  &
+ 		& original%gridMax(1),original%gridMax(2),original%gridMax(3))) stop "Failed to allocate new PDens."
 
 	! Prune input grid
 	if (minLimit.or.maxLimit) then
 	  write(0,*) "Pruning input grid..."
 	  ! Loop over original data
-	  do x=-original%ngrid,original%ngrid
-	    write(0,"(a,i4,a,i4)") "At x = ", x+original%ngrid+1, " of ", 2*original%ngrid+1
-	    do y=-original%ngrid,original%ngrid
-	      do z=-original%ngrid,original%ngrid
+	  do x=original%gridMin(1),original%gridMax(1)
+	    write(0,"(a,i4,a,i4)") "At x = ", x, ", max = ", original%gridMax(1)
+	    do y=original%gridMin(2),original%gridMax(2)
+	      do z=original%gridMin(3),original%gridMax(3)
 		if (minLimit.and.(original%grid(x,y,z).lt.minValue)) then
 		  original%grid(x,y,z) = 0.0
 		  cycle
@@ -97,21 +98,21 @@
 	write(0,*) gaussvalues
 	
 	! Loop over original data
-	do x=-original%ngrid,original%ngrid
-	  write(0,"(a,i4,a,i4)") "At x = ", x+original%ngrid+1, " of ", 2*original%ngrid+1
-	  do y=-original%ngrid,original%ngrid
-	    do z=-original%ngrid,original%ngrid
+	do x=original%gridMin(1),original%gridMax(1)
+	  write(0,"(a,i4,a,i4)") "At x = ", x, ", max = ", original%gridMax(1)
+	  do y=original%gridMin(2),original%gridMax(2)
+	    do z=original%gridMin(3),original%gridMax(3)
 
 	      ! Loop over gaussian extent
 	      do i=-extents(1),extents(1)
 	        do j=-extents(2),extents(2)
 	          do k=-extents(3),extents(3)
 		    point(1) = x+i
-		    if ((point(1).lt.-original%ngrid).or.(point(1).gt.original%ngrid)) cycle
+		    if ((point(1).lt.original%gridMin(1)).or.(point(1).gt.original%gridMax(1))) cycle
 		    point(2) = y+j
-		    if ((point(2).lt.-original%ngrid).or.(point(2).gt.original%ngrid)) cycle
+		    if ((point(2).lt.-original%gridMin(2)).or.(point(2).gt.original%gridMax(2))) cycle
 		    point(3) = z+k
-		    if ((point(3).lt.-original%ngrid).or.(point(3).gt.original%ngrid)) cycle
+		    if ((point(3).lt.-original%gridMin(3)).or.(point(3).gt.original%gridMax(3))) cycle
 
 		    !xyz = (mag(1)*i)*(mag(1)*i) + (mag(2)*j)*(mag(2)*j) * (mag(3)*k)*(mag(3)*k)
 		    !g = grid(x,y,z) * exp(-xyz/twosigma2)

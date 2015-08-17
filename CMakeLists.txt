@@ -56,7 +56,7 @@ set (PROGRAMS
   "intertorsion" "intratorsion" "intratorsion2" 
   "legendre" "lifehb"
   "moldist" "msd" "msd2"
-  "pairs" "pdens" "pdensgauss" "pdensint" "pdensmirror" "pdenstrim" "probedlp"  
+  "pairs" "pdens" "pdensgauss" "pdensinfo" "pdensint" "pdensmirror" "pdenstrim" "probedlp"  
   "rdf" "rdfaa" "rdfaainter" "rdfdep" "rdfss" "rdfsum" "ringconf"
   "xyz2his"
   "zangle" "zdens"
