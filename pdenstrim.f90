@@ -7,7 +7,7 @@
 	character*20 :: temp
 	character :: c
 	type(PDens) :: original, trimmed
-	integer :: ngrid(3), nargs, n, x, y, z, point(3), nchanges = 0
+	integer :: ngrid(3), nargs, n, i, j, k, point(3), nchanges = 0
 	integer :: mingrid(3), maxgrid(3), d(3)
 	logical :: gnufile = .false., success, minProvided = .false., maxProvided = .false.
 	integer :: iargc
@@ -68,23 +68,16 @@
 	trimmed%loop = original%loop
 
 	! Determine new grid extents
-	x = mingrid(1)
-	y = mingrid(2)
-	z = mingrid(3)
 	d = maxgrid - mingrid
 	d = d + 1
 	ngrid = d
 
 	! Allocate new pdens space
 	if (.not.allocPDens(trimmed,mingrid(1),mingrid(2),mingrid(3),maxgrid(1),maxgrid(2),maxgrid(3))) stop
-	do x=mingrid(1),maxgrid(1)
-	  do y=mingrid(2),maxgrid(2)
-	    do z=mingrid(3),maxgrid(3)
-	      point(original%loop(3)) = x
-	      point(original%loop(2)) = y
-	      point(original%loop(1)) = z
-	  !write(55,*) "writing point",x,y,z
-	      trimmed%grid(point(1),point(2),point(3)) = original%grid(point(1),point(2),point(3))
+	do i=mingrid(1),maxgrid(1)
+	  do j=mingrid(2),maxgrid(2)
+	    do k=mingrid(3),maxgrid(3)
+	      trimmed%grid(i,j,k) = original%grid(i,j,k)
 	    end do
 	  end do
 	end do
@@ -96,12 +89,12 @@
 	else
 
           open(unit=11,file=outfile,form='formatted',status='new')
-	  do x=mingrid(1),maxgrid(1)
-	    do y=mingrid(2),maxgrid(2)
-	      do z=mingrid(3),maxgrid(3)
-	        point(original%loop(3)) = x
-	        point(original%loop(2)) = y
-	        point(original%loop(1)) = z
+	  do i=mingrid(original%loop(1)),maxgrid(original%loop(1))
+	    do j=mingrid(original%loop(2)),maxgrid(original%loop(2))
+	      do k=mingrid(original%loop(3)),maxgrid(original%loop(3))
+	        point(original%loop(1)) = i
+	        point(original%loop(2)) = j
+	        point(original%loop(3)) = k
 	  !write(55,*) "writing point",x,y,z
 	        write(11,"(f12.5)") trimmed%grid(point(1),point(2),point(3))
 	      end do

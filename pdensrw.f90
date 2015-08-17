@@ -56,7 +56,7 @@
 	character*80, intent(in) :: filename
 	type(PDens), intent(out) :: p
 	character*80 :: looporder
-	integer :: point(3), n, x, y, z, nPoints
+	integer :: point(3), n, i, j, k, nPoints
 	logical :: success
 
 	! Clear structure
@@ -123,14 +123,14 @@
 	looporder = arg(1)
 	do n=1,3
 	  ! Grab character and convert to lowercase
-	  x = ichar(looporder(n:n))
-	  if (x.lt.120) x = x + 32
-	  if ((x.lt.120).or.(x.gt.122)) then
+	  i = ichar(looporder(n:n))
+	  if (i.lt.120) i = i + 32
+	  if ((i.lt.120).or.(i.gt.122)) then
 	    write(0,*) "Illegal character found in loop specification."
 	    loadPDens = .false.
 	    return
 	  end if
-	  p%loop(n) = x-119
+	  p%loop(n) = i-119
 	end do
 
 	! Allocate voxel array
@@ -141,26 +141,15 @@
 	end if
 
 	! Read in voxel data
-	x = p%gridMin(1)
-	y = p%gridMin(2)
-	z = p%gridMin(3)
-	nPoints = ((p%gridMax(1)-p%gridMin(1))+1)*((p%gridMax(2)-p%gridMin(2))+1)*((p%gridMax(3)-p%gridMin(3))+1)
-	do n=1,nPoints
-	  point(p%loop(1)) = x
-	  point(p%loop(2)) = y
-	  point(p%loop(3)) = z
-	  read(11,*) p%grid(point(1),point(2),point(3))
-	  ! Increase counters
-	  x = x + 1
-	  if (x.gt.p%gridMax(1)) then
-	    x = p%gridMin(1)
-	    y = y + 1
-	    if (y.gt.p%gridMax(2)) then
-	      y = p%gridMin(2)
-	      z = z + 1
-	      if (z.gt.p%gridMax(3)) write(0,*) "Array is full."
-	    end if
-	  end if
+	do i=p%gridMin(p%loop(1)),p%gridMax(p%loop(1))
+	  do j=p%gridMin(p%loop(2)),p%gridMax(p%loop(2))
+	    do k=p%gridMin(p%loop(3)),p%gridMax(p%loop(3))
+	      point(p%loop(1)) = i
+	      point(p%loop(2)) = j
+	      point(p%loop(3)) = k
+	      read(11,*) p%grid(point(1),point(2),point(3))
+	    end do
+	  end do
 	end do
 	close(11)
 
@@ -177,6 +166,9 @@
 
 	loadPDens = .true.
 	return
+998	loadPDens = .false.
+	write(0,*) "Not enough data in pdens file."
+	return
 999	loadPDens = .false.
 	write(0,*) "Failed to open file: ", filename
 	return
@@ -188,7 +180,7 @@
 	implicit none
 	character*80, intent(in) :: filename
 	type(PDens), intent(in) :: p
-	integer :: point(3), n, x, y, z
+	integer :: point(3), n, i, j, k
 	logical :: success
 
 	! Open file for writing
@@ -200,12 +192,12 @@
 	write(12,"(3f10.4)") p%origin
 	write(12,"(3a1)") (char(p%loop(n)+119),n=1,3)
 	
-	do x=p%gridMin(1),p%gridMax(1)
-	  do y=p%gridMin(2),p%gridMax(2)
-	    do z=p%gridMin(3),p%gridMax(3)
-	      point(p%loop(3)) = x
-	      point(p%loop(2)) = y
-	      point(p%loop(1)) = z
+	do i=p%gridMin(p%loop(1)),p%gridMax(p%loop(1))
+	  do j=p%gridMin(p%loop(2)),p%gridMax(p%loop(2))
+	    do k=p%gridMin(p%loop(3)),p%gridMax(p%loop(3))
+	      point(p%loop(1)) = i
+	      point(p%loop(2)) = j
+	      point(p%loop(3)) = k
 	      write(12,*) p%grid(point(1),point(2),point(3))
 	    end do
 	  end do
