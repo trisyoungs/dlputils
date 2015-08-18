@@ -98,11 +98,11 @@
 	  !write(55,*) "writing point",x,y,z
 	        write(11,"(f12.5)") trimmed%grid(point(1),point(2),point(3))
 	      end do
+	      write(11,*) ""
 	    end do
-	    write(11,*) ""
 	  end do
+	  close(11)
 
 	end if
-	close(11)
 
 	end program pdenstrim

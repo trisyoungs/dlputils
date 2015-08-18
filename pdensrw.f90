@@ -6,7 +6,7 @@
 	  type PDens
 	    ! Number of gridpoints in each +/- direction
 	    integer :: gridMin(3) = 0, gridMax(3) = 0
-	    ! Loop ordering of points within file
+	    ! Data order - fastest varying (innermost) in loop first
 	    integer :: loop(3) = (/ 3, 2, 1/)
 	    ! Axes definition (for single voxel)
 	    real*8 :: axes(9) = (/ 1.0d0, 0.0d0, 0.0d0, 0.0d0, 1.0d0, 0.0d0, 0.0d0, 0.0d0, 1.0d0 /)
@@ -141,12 +141,12 @@
 	end if
 
 	! Read in voxel data
-	do i=p%gridMin(p%loop(1)),p%gridMax(p%loop(1))
+	do i=p%gridMin(p%loop(3)),p%gridMax(p%loop(3))
 	  do j=p%gridMin(p%loop(2)),p%gridMax(p%loop(2))
-	    do k=p%gridMin(p%loop(3)),p%gridMax(p%loop(3))
-	      point(p%loop(1)) = i
+	    do k=p%gridMin(p%loop(1)),p%gridMax(p%loop(1))
+	      point(p%loop(3)) = i
 	      point(p%loop(2)) = j
-	      point(p%loop(3)) = k
+	      point(p%loop(1)) = k
 	      read(11,*) p%grid(point(1),point(2),point(3))
 	    end do
 	  end do
@@ -192,12 +192,12 @@
 	write(12,"(3f10.4)") p%origin
 	write(12,"(3a1)") (char(p%loop(n)+119),n=1,3)
 	
-	do i=p%gridMin(p%loop(1)),p%gridMax(p%loop(1))
+	do i=p%gridMin(p%loop(3)),p%gridMax(p%loop(3))
 	  do j=p%gridMin(p%loop(2)),p%gridMax(p%loop(2))
-	    do k=p%gridMin(p%loop(3)),p%gridMax(p%loop(3))
-	      point(p%loop(1)) = i
+	    do k=p%gridMin(p%loop(1)),p%gridMax(p%loop(1))
+	      point(p%loop(3)) = i
 	      point(p%loop(2)) = j
-	      point(p%loop(3)) = k
+	      point(p%loop(1)) = k
 	      write(12,*) p%grid(point(1),point(2),point(3))
 	    end do
 	  end do
