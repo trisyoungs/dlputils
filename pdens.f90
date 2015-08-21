@@ -670,9 +670,9 @@
 	end if
 
 	! Calculate integer position in grid (using non-offset coordinates)
-	nx=NINT(tx/griddelta)
-	ny=NINT(ty/griddelta)
-	nz=NINT(tz/griddelta)
+	nx=NINT(offx/griddelta)
+	ny=NINT(offy/griddelta)
+	nz=NINT(offz/griddelta)
 
 	if (MAX(ABS(nx),MAX(ABS(ny),ABS(nz))).gt.grid) then
 	  getbin = .false.
