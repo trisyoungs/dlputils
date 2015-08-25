@@ -15,6 +15,86 @@
 	  real*8 :: icell(9)
 	contains
 
+	! ========================================
+	! Text / String Handling
+	! ========================================
+	! Return constructed output filename
+	character*80 function outputFileName(baseName, defaultName, suffix)
+	implicit none
+	character*80, intent(in) :: baseName
+	character*(*), intent(in) :: defaultName, suffix
+	integer :: baseLength, n, dotPos
+
+	if (LEN_TRIM(baseName).eq.0) then
+	  outputFileName = defaultName
+	else if (baseName.eq."0") then
+	  outputFileName = defaultName
+	else
+	  dotPos = SCAN(baseName,".",.true.)
+	  if (dotPos.eq.0) then
+	    outputFileName = TRIM(baseName)
+	  else
+	    outputFileName = baseName(1:dotPos-1)
+	  end if
+	end if
+
+	! Add on trailing dot
+	outputFileName = TRIM(outputFileName)//"."
+	baseLength = LEN_TRIM(outputFileName)
+
+	outputFileName = TRIM(outputFileName)//TRIM(suffix)
+	end function outputFileName
+
+	! ========================================
+	! Cell / Reciprocal Cell
+	! ========================================
+	subroutine calc_rcell()
+	use dlprw; implicit none
+	real*8 :: rvol
+	real*8, parameter :: pi = 3.14159265358979d0
+	integer :: n
+	if (imcon.gt.3) stop "calc_rcell can't handle this image convention."
+
+	! Calculate the reciprocal cell (cubic, orthorhombic, or parallelepiped)
+	! Take cross products of original cell vectors to get reciprocal cell vectors
+	! R(1,4,7) = C(Y) * C(Z)
+	! R(2,5,8) = C(Z) * C(X)
+	! R(3,6,9) = C(X) * C(Y)
+	rcell(1) = cell(5) * cell(9) - cell(8) * cell(6)
+	rcell(4) = cell(8) * cell(3) - cell(2) * cell(9)
+	rcell(7) = cell(2) * cell(6) - cell(5) * cell(3)
+
+	rcell(2) = cell(6) * cell(7) - cell(9) * cell(4)
+	rcell(5) = cell(9) * cell(1) - cell(3) * cell(7)
+	rcell(8) = cell(3) * cell(4) - cell(6) * cell(1)
+
+	rcell(3) = cell(4) * cell(8) - cell(7) * cell(5)
+	rcell(6) = cell(7) * cell(2) - cell(1) * cell(8)
+	rcell(9) = cell(1) * cell(5) - cell(4) * cell(2)
+	rvol = 2.0d0*pi / volume(cell)
+	rcell = rcell * rvol
+	write(0,"(3F12.4)") rcell
+	end subroutine calc_rcell
+
+	subroutine calc_icell()
+	use dlprw; implicit none
+	icell = cell
+	call gaussj(icell,3,3)
+	has_icell = .true.
+	end subroutine calc_icell
+
+	real*8 function volume(cell)
+	implicit none
+	real*8, intent(in) :: cell(9)
+	! Hard-coded calculation of determinant of 3x3 matrix
+	volume = cell(1) * (cell(5)*cell(9) - cell(8)*cell(6));
+	volume = volume - cell(2) * (cell(4)*cell(9) - cell(7)*cell(6));
+	volume = volume + cell(3) * (cell(4)*cell(8) - cell(7)*cell(5));
+	end function volume
+
+	! ========================================
+	! Periodic boundary conditions
+	! ========================================
 	subroutine pbc(x1,y1,z1,x2,y2,z2,x3,y3,z3)
 	use dlprw
 	implicit none
@@ -117,6 +197,9 @@
 	end if
 	end subroutine unitfold
 
+	! ========================================
+	! Centre of mass (arrays)
+	! ========================================
 	subroutine calc_com
 	use dlprw
 	implicit none
@@ -173,41 +256,42 @@
 	allocate(comz(i,j),stat=status); if (status.GT.0) stop "Allocation error for comz()"
 	end subroutine alloc_com
 
-	subroutine calc_rcell()
-	use dlprw; implicit none
-	real*8 :: rvol
-	real*8, parameter :: pi = 3.14159265358979d0
-	integer :: n
-	if (imcon.gt.3) stop "calc_rcell can't handle this image convention."
+	! ========================================
+	! Centre of geometry
+	! ========================================
+	! Calculate average, mim'd coordinates from array of atom indices provided
+	subroutine averagePosition(array, nItems, offset, v)
+	use dlprw
+	implicit none
+	integer, intent(in) :: nItems, array(nItems)
+	integer, intent(in) :: offset
+	integer :: n, i
+	real*8, intent(out) :: v(3)
+	real*8 :: t(3), ref(3)
 
-	! Calculate the reciprocal cell (cubic, orthorhombic, or parallelepiped)
-	! Take cross products of original cell vectors to get reciprocal cell vectors
-	! R(1,4,7) = C(Y) * C(Z)
-	! R(2,5,8) = C(Z) * C(X)
-	! R(3,6,9) = C(X) * C(Y)
-	rcell(1) = cell(5) * cell(9) - cell(8) * cell(6)
-	rcell(4) = cell(8) * cell(3) - cell(2) * cell(9)
-	rcell(7) = cell(2) * cell(6) - cell(5) * cell(3)
+	v = 0.0
+	if (nItems.eq.0) return
 
-	rcell(2) = cell(6) * cell(7) - cell(9) * cell(4)
-	rcell(5) = cell(9) * cell(1) - cell(3) * cell(7)
-	rcell(8) = cell(3) * cell(4) - cell(6) * cell(1)
+	! Calculate COG relative to first atom in list
+	ref(1) = xpos(array(1)+offset)
+	ref(2) = ypos(array(1)+offset)
+	ref(3) = zpos(array(1)+offset)
+	v(1) = ref(1)
+	v(2) = ref(2)
+	v(3) = ref(3)
+	do n=2,nItems
+	  i = offset + array(n)
+	  call PBC(xpos(i),ypos(i),zpos(i),ref(1),ref(2),ref(3),t(1),t(2),t(3))
+	  v = v + t
+	end do
 
-	rcell(3) = cell(4) * cell(8) - cell(7) * cell(5)
-	rcell(6) = cell(7) * cell(2) - cell(1) * cell(8)
-	rcell(9) = cell(1) * cell(5) - cell(4) * cell(2)
-	rvol = 2.0d0*pi / volume(cell)
-	rcell = rcell * rvol
-	write(0,"(3F12.4)") rcell
-	end subroutine calc_rcell
+	v = v / real(nItems)
 
-	subroutine calc_icell()
-	use dlprw; implicit none
-	icell = cell
-	call gaussj(icell,3,3)
-	has_icell = .true.
-	end subroutine calc_icell
+	end subroutine averagePosition
 
+	! ========================================
+	! Calculate Axes
+	! ========================================
 	subroutine calculate_axes(aa, axes, origin)
 	use dlprw
 	implicit none
@@ -319,58 +403,6 @@
 	axesBatoms = 0
 	end subroutine alloc_axis
 
-	subroutine vmatmult(x1,y1,z1,a)
-	implicit none
-	real*8 :: x1,y1,z1,x2,y2,z2,a(9)
-	! Multiply vector(3) v by matrix(3x3) a
-	! Assume matrix is stored in row-major order
-	x2 = x1*a(1) + y1*a(4) + z1*a(7)
-	y2 = x1*a(2) + y1*a(5) + z1*a(8)
-	z2 = x1*a(3) + y1*a(6) + z1*a(9)
-	x1 = x2
-	y1 = y2
-	z1 = z2
-	end subroutine vmatmult
-
-	real*8 function volume(cell)
-	implicit none
-	real*8, intent(in) :: cell(9)
-	! Hard-coded calculation of determinant of 3x3 matrix
-	volume = cell(1) * (cell(5)*cell(9) - cell(8)*cell(6));
-	volume = volume - cell(2) * (cell(4)*cell(9) - cell(7)*cell(6));
-	volume = volume + cell(3) * (cell(4)*cell(8) - cell(7)*cell(5));
-	end function volume
-
-	! Calculate average, mim'd coordinates from array of atom indices provided
-	subroutine averagePosition(array, nItems, offset, v)
-	use dlprw
-	implicit none
-	integer, intent(in) :: nItems, array(nItems)
-	integer, intent(in) :: offset
-	integer :: n, i
-	real*8, intent(out) :: v(3)
-	real*8 :: t(3), ref(3)
-
-	v = 0.0
-	if (nItems.eq.0) return
-
-	! Calculate COG relative to first atom in list
-	ref(1) = xpos(array(1)+offset)
-	ref(2) = ypos(array(1)+offset)
-	ref(3) = zpos(array(1)+offset)
-	v(1) = ref(1)
-	v(2) = ref(2)
-	v(3) = ref(3)
-	do n=2,nItems
-	  i = offset + array(n)
-	  call PBC(xpos(i),ypos(i),zpos(i),ref(1),ref(2),ref(3),t(1),t(2),t(3))
-	  v = v + t
-	end do
-
-	v = v / real(nItems)
-
-	end subroutine averagePosition
-
 	! ========================================
 	! 3-Vectors
 	! ========================================
@@ -404,6 +436,19 @@
 	result(2)=abc(3)*xyz(1) - abc(1)*xyz(3)
 	result(3)=abc(1)*xyz(2) - abc(2)*xyz(1)
 	end subroutine vec3CrossProduct
+
+	subroutine vmatmult(x1,y1,z1,a)
+	implicit none
+	real*8 :: x1,y1,z1,x2,y2,z2,a(9)
+	! Multiply vector(3) v by matrix(3x3) a
+	! Assume matrix is stored in row-major order
+	x2 = x1*a(1) + y1*a(4) + z1*a(7)
+	y2 = x1*a(2) + y1*a(5) + z1*a(8)
+	z2 = x1*a(3) + y1*a(6) + z1*a(9)
+	x1 = x2
+	y1 = y2
+	z1 = z2
+	end subroutine vmatmult
 
 	! ========================================
 	! Geometry

@@ -264,7 +264,7 @@
 	implicit none
 
 	! Input / output files
-	character*80 :: hisfile,dlpoutfile,torsfile,mapfile,altheaderfile
+	character*80 :: hisfile,dlpoutfile,torsfile,mapfile,altheaderfile,outputFile
 	character*20 :: tempArg
 	logical :: altheader = .false.
 	integer :: iargc
@@ -279,9 +279,10 @@
 	real*8 :: testTorsions(6)
 	! Calculation
 	logical :: testCalculation = .false., torsionsFile = .false.
-	real*8 :: torsions(6), d, phi, theta, x, y, z, delta = 0.025
-	integer :: i, j, k, l, moleculeCount = 0, grid
-	type(PDens) :: conformers
+	real*8 :: torsions(6), d, phi, theta, x, y, z, mag, delta = 0.025
+	integer :: i, j, k, l, moleculeCount = 0, grid, numAdded = 0
+	type(PDens) :: conformers, conformersNorm
+	logical :: addPoint
 
 	nargs = iargc()
 	if (nargs.lt.3) stop "Usage : ringconf <HISTORYfile> <OUTPUTfile> <sp> [-ring i j k l m n] [-test t1 t2 t3 t4 t5 t6] [-tors file]"
@@ -329,9 +330,13 @@
 	call setupConformerData()
 
 	grid = 1.5/delta
+write(0,*) grid, delta, -grid*delta
 	conformers%axes = (/ delta,0.0d0,0.0d0,0.0d0,delta,0.0d0,0.0d0,0.0d0,delta /)
 	conformers%origin = (/ -grid*delta,-grid*delta,-grid*delta /)
 	if (.not.allocPDens(conformers,-grid,-grid,-grid,grid,grid,grid)) stop
+	conformersNorm%axes = (/ delta,0.0d0,0.0d0,0.0d0,delta,0.0d0,0.0d0,0.0d0,delta /)
+	conformersNorm%origin = (/ -grid*delta,-grid*delta,-grid*delta /)
+	if (.not.allocPDens(conformersNorm,-grid,-grid,-grid,grid,grid,grid)) stop
 
 	! If we are performing a test, set the torsions here, calculate the conformer, and exit
 	if (testCalculation) then
@@ -340,7 +345,19 @@
 	  call sphericalToCartesian(d, phi, theta, x, y, z)
 	  write(6,"(a,3(f7.3,2x))") "Sphere mapping: ", x, y, z
 	  write(6,*) ""
-	  stop
+
+	  ! Add point to conformers grid
+	  if (addPoint(conformers,x,y,z)) numAdded = numAdded + 1
+
+	  ! Normalise to 1.0, and add to conformersNorm grid
+	  mag = sqrt(x*x + y*y + z*z)
+	  x = x / mag
+	  y = y / mag
+	  z = z / mag
+	  if (addPoint(conformersNorm,x,y,z)) numAdded = numAdded + 1
+
+	  goto 900
+
 	end if
 
 	! If we are reading from a torsions file, do it here and then exit
@@ -358,8 +375,18 @@
 	    call sphericalToCartesian(d, phi, theta, x, y, z)
 	    write(6,"(a,3(f7.3,2x))") "Sphere mapping: ", x, y, z
 	    write(6,*) ""
+
+	    ! Add point to conformers grid
+	    if (addPoint(conformers,x,y,z)) numAdded = numAdded + 1
+
+	    ! Normalise to 1.0, and add to conformersNorm grid
+	    mag = sqrt(x*x + y*y + z*z)
+	    x = x / mag
+	    y = y / mag
+	    z = z / mag
+	    if (addPoint(conformersNorm,x,y,z)) numAdded = numAdded + 1
 	  end do
-	  stop
+	  goto 900
 	end if
 
 	! Open files
@@ -395,7 +422,11 @@
 	  ! if (m1.NE.nframes) stop "Mapfile missed a frame number!"
 	end if
 
-102	nframes=nframes+1
+102	success=readframe()
+	if (success.eq.1) goto 800  ! End of file encountered....
+	if (success.lt.0) goto 800  ! File error....
+
+	nframes=nframes+1
 	if (mod(nframes,100).EQ.0) then
 	  if (molmap) then
 	    write(0,"(I6,2x,'(',I6,',',I6,')')") nframes,nmapframes
@@ -432,6 +463,15 @@
 	  call calculateConformer(torsions, d, phi, theta, .false.) 
 	  call sphericalToCartesian(d, phi, theta, x, y, z)
 
+	  ! Add point to conformers grid
+	  if (addPoint(conformers,x,y,z)) numAdded = numAdded + 1
+
+	  ! Normalise to 1.0, and add to conformersNorm grid
+	  mag = sqrt(x*x + y*y + z*z)
+	  x = x / mag
+	  y = y / mag
+	  z = z / mag
+	  if (addPoint(conformersNorm,x,y,z)) numAdded = numAdded + 1
 
 	end do
 
@@ -452,8 +492,15 @@
 800	write(0,*) "Framestodo was fulfilled."
 801	write(0,*) ""
 
-	close(20)
-	close(19)
+900	write(0,*) "Writing output files..."
+
+	conformers%grid = conformers%grid / (numAdded)
+	outputFile = outputFileName(hisfile, "test", "pdens")
+	if (.not.savePDens(outputFile, conformers)) write(0,*) "Error saving pdens file."
+
+	conformersNorm%grid = conformersNorm%grid / (numAdded)
+	outputFile = outputFileName(hisfile, "test", "norm.pdens")
+	if (.not.savePDens(outputFile, conformersNorm)) write(0,*) "Error saving pdens file."
 
 999	write(0,*) "Finished."
 	end program ringconf
@@ -476,3 +523,23 @@
 	z = d * cos(thetaRad);
 
 	end subroutine sphericalToCartesian
+
+	logical function addPoint(grid,x,y,z)
+	use PDensRW
+	implicit none
+	type(PDens), intent(inout) :: grid
+	real*8, intent(in) :: x, y, z
+	integer :: nx, ny, nz
+
+	! Work out grid coordinates, assuming that we have orthogonal voxel axes
+	nx = x / grid%axes(1)
+	ny = y / grid%axes(5)
+	nz = z / grid%axes(9)
+	addPoint = .false.
+	if ((nx.lt.grid%gridMin(1)).or.(nx.gt.grid%gridMax(1))) return
+	if ((ny.lt.grid%gridMin(2)).or.(ny.gt.grid%gridMax(2))) return
+	if ((nz.lt.grid%gridMin(3)).or.(nz.gt.grid%gridMax(3))) return
+
+	grid%grid(nx,ny,nz) = grid%grid(nx,ny,nz) + 1
+	addPoint = .true.
+	end function addPoint

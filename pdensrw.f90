@@ -188,7 +188,7 @@
 
 	! Write description of grid / voxels
 	write(12,"(9i5)") (p%gridMax(1)-p%gridMin(1))+1, (p%gridMax(2)-p%gridMin(2))+1, (p%gridMax(3)-p%gridMin(3))+1, p%gridMin, p%gridMax
-	write(12,"(9f6.2)") p%axes
+	write(12,"(9(e9.3,1x))") p%axes
 	write(12,"(3f10.4)") p%origin
 	write(12,"(3a1)") (char(p%loop(n)+119),n=1,3)
 	
