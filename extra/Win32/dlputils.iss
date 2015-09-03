@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "dlputils"
-#define MyAppVersion "1.4.1"
+#define MyAppVersion "1.4.2"
 #define MyAppPublisher "Tristan Youngs"
 #define MyAppURL "http://www.projectaten.net"
 #define MyAppExeName "dlputils.exe"
@@ -24,7 +24,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes          
 LicenseFile=..\..\COPYING
 SetupIconFile=.\dlputils.ico
-OutputBaseFilename=dlputils-1.4.1
+OutputBaseFilename=dlputils-1.4.2
 Compression=lzma
 SolidCompression=yes
 
