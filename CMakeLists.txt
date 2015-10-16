@@ -50,7 +50,7 @@ set (PROGRAMS
   "cagecor2" "catdlp" "cdf" "chunkdlp" "cluster" "clusterab" "cn" "counthb" "cryscomp"
   "dahist" "dist2" "dlp2dlp" "dlp2dlpflipz" "dlp2dlpshift" "dlp2xyzf" "dlpreorder"  "dlpsize"
   "editconfig" 
-  "filterdlp"
+  "dlpfilter"
   "getcell" "genlb" "gengg" "geom" "glucanal" "glucgeom" "gluchb" "gluchbeach"
   "his2config" "his2xyzs"
   "intertorsion" "intratorsion" "intratorsion2" 
