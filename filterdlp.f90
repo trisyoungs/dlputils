@@ -11,7 +11,10 @@
 	logical :: fromfile = .true.
 
 	nargs = iargc()
-	if ((nargs.ne.3).and.(nargs.ne.5)) stop "Usage : filterdlp <input HISfile> <output HISfile> <frame file | first skip last>"
+	if ((nargs.ne.3).and.(nargs.ne.5)) then
+	  write(0,*) "Usage : filterdlp <input HISfile> <output HISfile> <frame file | first skip last>"
+	  stop
+	end if
 	call getarg(1,hisfile)
 	call getarg(2,outfile)
 	if (nargs.eq.3) then
@@ -52,6 +55,7 @@
 	  stop "Quit."
 	end if
 	nframes = nframes + 1
+
 	if (nframes.EQ.seek) then
 	  ! Write out the frame...
 	  success = writeframe()
@@ -62,7 +66,7 @@
 	  if (fromfile) then
 	    read(19,"(I10)",err=17,end=14) seek
 	  else
-	    seek = seek + frameskip
+	    seek = seek + frameskip + 1
 	    if (seek.gt.framelast) goto 15
 	  end if
 	  write(0,"(A,I6,A)") "Seeking frame ",seek,"..."

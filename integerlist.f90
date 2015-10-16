@@ -54,6 +54,9 @@
 	      ! Plus, Minus, or Number - add to argument and continue
 	      arglen = arglen + 1
 	      i(arglen:arglen) = string(n:n)
+	    case (88,120)
+	      ! Upper or lowercase 'x' - terminate parsing
+	      return
 	    case default
 	      ! Not a comma, not a space, and not a number, so complain
 	      write(0,*) "Found illegal character in integer list: ", string(n:n), " at pos ", n

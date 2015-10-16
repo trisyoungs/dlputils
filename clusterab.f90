@@ -31,8 +31,8 @@
 	      n = n + 1; sp = getargi(n)
 	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, aAtoms(sp))) stop "Failed to parse A atom list."
 	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, bAtoms(sp))) stop "Failed to parse B atom list."
-	      write(0,"(i2,a,i2,a,20i4)") aAtoms(sp)%n, " A atom sites added as for species ", sp, ": ", aAtoms(sp)%items(1:aAtoms(sp)%n)
-	      write(0,"(i2,a,i2,a,20i4)") bAtoms(sp)%n, " B atom sites added as for species ", sp, ": ", bAtoms(sp)%items(1:bAtoms(sp)%n)
+	      write(0,"(i2,a,i2,a,20i4)") aAtoms(sp)%n, " A atom sites added for species ", sp, ": ", aAtoms(sp)%items(1:aAtoms(sp)%n)
+	      write(0,"(i2,a,i2,a,20i4)") bAtoms(sp)%n, " B atom sites added for species ", sp, ": ", bAtoms(sp)%items(1:bAtoms(sp)%n)
             case ("-discard")
               n = n + 1; frameskip = getargi(n)
               write(0,"(A,I4)") "Frames to discard at start: ",frameskip

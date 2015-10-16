@@ -7,6 +7,9 @@
 #define MyAppURL "http://www.projectaten.net"
 #define MyAppExeName "dlputils.exe"
 
+; Locations of bin directories of Qt, GnuWin(32), and MinGW(32)
+#define MinGWDir "C:\MinGW32"
+
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
@@ -34,10 +37,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "..\..\build\*.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\dlputils.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MinGWDir}\bin\libgcc_s_dw2-1.dll"; DestDir: "{app}"
+Source: "{#MinGWDir}\bin\libgfortran-3.dll"; DestDir: "{app}"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\dlputils.ico"; IconIndex: 0
-
-[Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
