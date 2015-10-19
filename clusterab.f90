@@ -5,14 +5,14 @@
 	use parse; use dlprw; use utility; use IList
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
-	character*20 :: temp
-	logical :: altheader = .FALSE., individual = .false., notSelf = .true.
+	character*80 :: temp
+	logical :: altheader = .FALSE., individual = .false., notSelf = .true., doCorrelation = .false.
 	integer :: n,sp1,sp,m1,m2,baselen,nframes,success,nargs,framestodo = -1,frameskip = 0,framesdone
 	type(IntegerList) :: otherSp, aAtoms(MAXSP), bAtoms(MAXSP)
-	integer, allocatable :: marked(:)
-	integer :: iargc, newsize, oldsize, maxpath = -1
+	integer, allocatable :: marked(:), oldMarked(:), tempMarked(:)
+	integer :: iargc, i, j, newsize, maxpath = -1
 	real*8 :: maxdist, sumtotal
-	real*8, allocatable :: clusters(:)
+	real*8, allocatable :: clusters(:), correlation(:,:)
 
 	nargs = iargc()
 	if (nargs.lt.5) stop "Usage : clusterab <HISTORYfile> <OUTPUTfile> <sp> <othersp> <maxdist> [-ab sp Aatoms Batoms] [-header hisfile] [-frames n] [-discard n] [-individual] [-maxpath n]"
@@ -21,6 +21,7 @@
         sp1 = getargi(3)
 	call getarg(4,temp); if (.not.parseIntegerList(temp, otherSp)) stop "Failed to parse other species list." 
         maxdist = getargr(5)
+	if (otherSp%n.eq.2) doCorrelation = .true.
 	
 	n = 5
         do
@@ -31,8 +32,8 @@
 	      n = n + 1; sp = getargi(n)
 	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, aAtoms(sp))) stop "Failed to parse A atom list."
 	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, bAtoms(sp))) stop "Failed to parse B atom list."
-	      write(0,"(i2,a,i2,a,20i4)") aAtoms(sp)%n, " A atom sites added for species ", sp, ": ", aAtoms(sp)%items(1:aAtoms(sp)%n)
-	      write(0,"(i2,a,i2,a,20i4)") bAtoms(sp)%n, " B atom sites added for species ", sp, ": ", bAtoms(sp)%items(1:bAtoms(sp)%n)
+	      write(0,"(i2,a,i2,a,(10i4))") aAtoms(sp)%n, " A atom sites added for species ", sp, ": ", aAtoms(sp)%items(1:aAtoms(sp)%n)
+	      write(0,"(i2,a,i2,a,(10i4))") bAtoms(sp)%n, " B atom sites added for species ", sp, ": ", bAtoms(sp)%items(1:bAtoms(sp)%n)
             case ("-discard")
               n = n + 1; frameskip = getargi(n)
               write(0,"(A,I4)") "Frames to discard at start: ",frameskip
@@ -77,7 +78,13 @@
 
 	! Allocate arrays
 	allocate(marked(s_totalMols))
+	allocate(oldMarked(s_totalMols))
+	allocate(tempMarked(s_totalMols))
 	allocate(clusters(s_totalMols))
+	if (doCorrelation) then
+	  allocate(correlation(0:s_nmols(otherSp%items(1)), 0:s_nmols(otherSp%items(2))))
+	  correlation = 0.0
+	end if
 	clusters = 0.0
 	notSelf = .not.integerListContains(otherSp,sp1)
 
@@ -98,18 +105,31 @@
 	marked = 0
 
 	do m1=1,s_nmols(sp1)
+	!write(0,*) "Starting from molecule ", m1
 	  ! Cycle if this molecule is already marked
 	  if (marked(s_molstart(sp1)+m1-1).eq.1) cycle
 
 	  ! From this molecule, mark it and all neighbours within maxdist
-	  oldsize = sum(marked)
+	  oldMarked = marked
 	  call mark(sp1, m1, marked, maxdist, otherSp, aAtoms, bAtoms, 0, maxPath)
-	  newsize = sum(marked) - oldsize
+	  !write(0,"(a,10i2)") "Marked array is now: ", marked
+	  newsize = sum(marked) - sum(oldMarked)
+	  !write(0,*) "Total cluster size is ", newsize
 	  !write(0,*) "Cluster size is ", newsize
 	  clusters(newsize) = clusters(newsize) + 1
 
-	  ! Zero array?
-	  if (individual) marked = 0
+	  ! If calculating individual cluster sizes, store necessary info now and then reset the marked list
+	  if (individual) then
+	    marked = 0
+	  end if
+
+	  ! Update correlation count
+	  if (doCorrelation) then
+	    tempMarked = marked - oldMarked
+	    i = sum(tempMarked(s_molstart(otherSp%items(1)):s_molstart(otherSp%items(1))+s_nmols(otherSp%items(1))-1))
+	    j = sum(tempMarked(s_molstart(otherSp%items(2)):s_molstart(otherSp%items(2))+s_nmols(otherSp%items(2))-1))
+	    correlation(i,j) = correlation(i,j) + 1.0
+	  end if
 	end do
 
 	if (framesdone.eq.framestodo) goto 801
@@ -143,13 +163,16 @@
 	  basename=hisfile(1:baselen)
 	endif
 
+	! Normalise w.r.t. number of frames
+	clusters = clusters / framesdone
+	if (doCorrelation) then
+	  correlation = correlation / framesdone
+	end if
+
 	! Write output
 	resfile=basename(1:baselen)//"clusterab"//CHAR(48+sp1)
 	open(unit=9,file=resfile,form="formatted")
 	!write(9,"(a,i2,a,f10.4)") "# Species ",sp1," clusters with COM distance < ", maxdist
-
-	! Normalise w.r.t. number of frames
-	clusters = clusters / framesdone
 
 	! Write data
 	write(9,"(a6,5(3x,a12))") "# Size", "NClusters", "NMolecules", "%Clusters", "%Molecules", "Sum(S*N)"
@@ -166,6 +189,20 @@
 	  end do
 	end if
 	close(9)
+
+	! Write correlation matrix
+	if (doCorrelation) then
+	  resfile = outputFileName(hisfile, "clusterab", "cormat")
+	  open(unit=9,file=resfile,form="formatted")
+	  do i=0,s_nmols(otherSp%items(1))
+	    do j=0,s_nmols(otherSp%items(2))
+	      write(9,*) correlation(i,j)
+	    end do
+	    write(9,*) ""
+	  end do
+	  close(9)
+	end if
+
 	write(0,*) "Finished."
 999	close(10)
 	close(13)
@@ -173,6 +210,7 @@
 	! Deallocate arrays
 	deallocate(marked)
 	deallocate(clusters)
+	if (doCorrelation) deallocate(correlation)
 
 	end program clusterab
 
@@ -194,10 +232,14 @@
 	! Mark the 'mol' specified, if it has not been marked already
 	if (marked(currentMol+currentMolOffset).eq.0) then
 	  marked(currentMol+currentMolOffset) = 1
+	else
+	  return
 	end if
 
 	! Increase pathsize
 	newPathSize = pathSize + 1
+	!write(0,*) "Current pathsize = ", pathSize
+	!write(0,*) "Beginning new subsearch from ", s_name(currentSp), currentMol
 
 	! Find close neighbours (over active species), and mark those as well
 	aoff = 0
@@ -205,7 +247,7 @@
 	  ! Loop if this species is not in the otherSp list
 	  if (.not.integerListContains(otherSp,sp)) cycle
 
-	  ! Loop over all molecules of this species, checking for H...O and O...H contacts with the current molecule
+	  ! Loop over all molecules of this species, checking for A(this)...B(other) and B(this)...A(other) contacts with the current molecule
 	  aoff = s_start(sp)-1
 	  moff = s_molstart(sp)-1
 	  do m=1,s_nmols(sp)
@@ -219,6 +261,8 @@
 	      aoff = aoff + s_natoms(sp)
 	      cycle
 	    end if
+
+	    !write(0,*) "Checking sp/molecule ", s_name(sp), m
 
 	    ! Check A (on currentMol) to B (on our molecule)
 	    do i=1,aAtoms(currentSp)%n
@@ -243,17 +287,23 @@
 		v = A - B
 		dist = dsqrt(sum(v*v))
 		if (dist.gt.maxdist) cycle
+		!write(0,*) "Found contact A(this)-B(other)", currentAtomOffset + aAtoms(currentSp)%items(i), aoff + bAtoms(sp)%items(j), dist
 
 		! Within range, so mark it (and possibly those nearby...)
 		if ((maxPath.gt.0).and.(newPathSize.eq.maxPath)) then
+		  ! Have reached maximum path length, so just mark molecule without doing a subsearch
 		  marked(m+moff) = 1
 		else
+		  ! Perform subsearch 
 		  call mark(sp, m, marked, maxdist, otherSp, aAtoms, bAtoms, newPathSize, maxPath)
 		end if
 
-	      end do !H
+		! Have now marked this molecule, so can exit loop
+		exit
 
-	    end do !O
+	      end do !B
+
+	    end do !A
 
 	    ! Check B (on currentMol) to A (on our molecule)
 	    do i=1,bAtoms(currentSp)%n
@@ -278,17 +328,22 @@
 		v = A - B
 		dist = dsqrt(sum(v*v))
 		if (dist.gt.maxdist) cycle
+		!write(0,*) "Found contact B(this)-A(other)", currentAtomOffset + bAtoms(currentSp)%items(i), aoff + aAtoms(sp)%items(j), dist
 
 		! Within range, so mark it (and possibly those nearby...)
 		if ((maxPath.gt.0).and.(newPathSize.eq.maxPath)) then
+		  ! Have reached maximum path length, so just mark molecule without doing a subsearch
 		  marked(m+moff) = 1
 		else
 		  call mark(sp, m, marked, maxdist, otherSp, aAtoms, bAtoms, newPathSize, maxPath)
 		end if
 
-	      end do !H
+		! Have now marked this molecule, so can exit loop
+		exit
 
-	    end do !O
+	      end do !A
+
+	    end do !B
 
 	    ! Increase atom offset and continue
 	    aoff = aoff + s_natoms(sp)
@@ -296,5 +351,6 @@
 	  end do
 
 	end do
+	!write(0,*) "End subsearch."
 
 	end subroutine mark
