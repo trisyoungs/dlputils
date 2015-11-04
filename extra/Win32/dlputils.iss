@@ -30,6 +30,7 @@ SetupIconFile=.\dlputils.ico
 OutputBaseFilename=dlputils-1.4.2
 Compression=lzma
 SolidCompression=yes
+ChangesEnvironment=true
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -44,3 +45,19 @@ Source: "{#MinGWDir}\bin\libquadmath-0.dll"; DestDir: "{app}"
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\dlputils.ico"; IconIndex: 0
+
+[Tasks]
+Name: modifypath; Description: Add application directory to your environment path; Flags: unchecked
+
+[Code]
+const 
+    ModPathName = 'modifypath'; 
+    ModPathType = 'user'; 
+
+function ModPathDir(): TArrayOfString; 
+begin 
+    setArrayLength(Result, 1) 
+    Result[0] := ExpandConstant('{app}'); 
+end; 
+#include "modpath.iss"
+
