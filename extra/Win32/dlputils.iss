@@ -39,6 +39,7 @@ Source: "..\..\build\*.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\dlputils.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MinGWDir}\bin\libgcc_s_dw2-1.dll"; DestDir: "{app}"
 Source: "{#MinGWDir}\bin\libgfortran-3.dll"; DestDir: "{app}"
+Source: "{#MinGWDir}\bin\libquadmath-0.dll"; DestDir: "{app}"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
