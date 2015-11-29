@@ -91,7 +91,7 @@
 	  do j=-extents(2),extents(2)
 	    do k=-extents(3),extents(3)
 	      xyz = (mag(1)*i)*(mag(1)*i) + (mag(2)*j)*(mag(2)*j) + (mag(3)*k)*(mag(3)*k)
-	      gaussvalues(i,j,k) =(1.0 / (4.0*pi*pi*sigma*sigma*sigma*sigma)) * exp(-xyz/twosigma2)
+	      gaussvalues(i,j,k) = (1.0 / (4.0*pi*pi*sigma*sigma*sigma*sigma)) * exp(-xyz/twosigma2)
 	    end do
 	  end do
 	end do
@@ -110,9 +110,9 @@
 		    point(1) = x+i
 		    if ((point(1).lt.original%gridMin(1)).or.(point(1).gt.original%gridMax(1))) cycle
 		    point(2) = y+j
-		    if ((point(2).lt.-original%gridMin(2)).or.(point(2).gt.original%gridMax(2))) cycle
+		    if ((point(2).lt.original%gridMin(2)).or.(point(2).gt.original%gridMax(2))) cycle
 		    point(3) = z+k
-		    if ((point(3).lt.-original%gridMin(3)).or.(point(3).gt.original%gridMax(3))) cycle
+		    if ((point(3).lt.original%gridMin(3)).or.(point(3).gt.original%gridMax(3))) cycle
 
 		    !xyz = (mag(1)*i)*(mag(1)*i) + (mag(2)*j)*(mag(2)*j) * (mag(3)*k)*(mag(3)*k)
 		    !g = grid(x,y,z) * exp(-xyz/twosigma2)
@@ -127,7 +127,7 @@
 
 	! Normalise
 	!gaussgrid = gauss%grid / (4.0*pi*pi*sigma*sigma*sigma*sigma)
-	!gauss%grid = gauss%grid * (sum(original%grid) / sum(gauss%grid))
+	gauss%grid = gauss%grid * (sum(original%grid) / sum(gauss%grid))
 	!gauss%grid = gauss%grid * (maxval(original%grid) / maxval(gauss%grid))
 	write(0,"(a,2e12.5)") "Sanity sums are ", sum(original%grid) , sum(gauss%grid)
 	

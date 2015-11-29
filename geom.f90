@@ -1,6 +1,6 @@
-	! #########################################################
-	! geom (new) - analyses the average geometry in a history file
-	! #########################################################
+	! ################################################################
+	! geom - analyses the average geometry in a history or config file
+	! ################################################################
 
 	program geom
 	use utility; use dlprw; use parse
@@ -10,12 +10,12 @@
 	real*8, allocatable :: calctors(:)
 	real*8  :: tx,ty,tz,vecji(3),vecjk(3),veckj(3),veckl(3),xp1(3),xp2(3),mag1,mag2,ktx,kty,ktz
         real*8  :: dp,angle,radcon,minimum,maximum,avg,sd,total, rij
-	character*80 :: outfile,hisfile,temp
+	character*80 :: outfile,hisfile,temp,altheaderfile
 	integer :: nargs,n,m,i,j,k,l,status, nframes, framestodo, sp, a1, ngeom, num
 	integer :: nbonds, nangles, ntorsions, success, framestodiscard = 0
 	integer :: bonds(MAXDATA,2),angles(MAXDATA,3),torsions(MAXDATA,4)
 	integer :: iargc
-	logical :: configfile = .false.
+	logical :: configfile = .false., altheader = .false.
 	real*8 :: warndist = 100.0, warnangle = 200.0
 1       FORMAT (A8/,3f20.14)
 2       FORMAT (3F20.14)
@@ -27,8 +27,8 @@
 	if (nargs.lt.5) stop "Usage : geom <HISfile|CONFIG> <OUTfile> <sp> <nframes> [-bond i j] [-angle i j k] [-torsion i j k l] [-data file] [-discard n] [-warndist maxdist] [-warnangle maxangle]"
 	call getarg(1,hisfile)
 	call getarg(2,outfile)
-	call getarg(3,temp); read(temp,"(I10)") sp
-	call getarg(4,temp); read(temp,"(I10)") framestodo
+	sp = getargi(3)
+	framestodo = getargi(4)
 
 	nbonds = 0
 	nangles = 0
@@ -40,29 +40,33 @@
           call getarg(n,temp)
           select case (temp)
 	    case ("-discard")
-              n = n + 1; call getarg(n,temp); read(temp,"(i5)") framestodiscard
+              n = n + 1; framestodiscard = getargi(n)
+            case ("-header")
+              n = n + 1; call getarg(n,altheaderfile)
+              write(0,"(A)") "Alternative header file supplied."
+	      altheader = .TRUE.
 	    case ("-warndist")
-              n = n + 1; call getarg(n,temp); read(temp,"(f10.4)") warndist
+              n = n + 1; warndist = getargr(n)
 	    case ("-warnangle")
-              n = n + 1; call getarg(n,temp); read(temp,"(f10.4)") warnangle
+              n = n + 1; warnangle = getargr(n)
             case ("-bond")
 	      nbonds = nbonds + 1
 	      if (nbonds.gt.MAXDATA) stop "Bond array MAXDATA exceeded. Increase and recompile."
-              n = n + 1; call getarg(n,temp); read(temp,"(i5)") bonds(nbonds,1)
-              n = n + 1; call getarg(n,temp); read(temp,"(i5)") bonds(nbonds,2)
+              n = n + 1; bonds(nbonds,1) = getargi(n)
+              n = n + 1; bonds(nbonds,2) = getargi(n)
             case ("-angle")
 	      nangles = nangles + 1
 	      if (nangles.gt.MAXDATA) stop "Angle array MAXDATA exceeded. Increase and recompile."
-              n = n + 1; call getarg(n,temp); read(temp,"(i5)") angles(nangles,1)
-              n = n + 1; call getarg(n,temp); read(temp,"(i5)") angles(nangles,2)
-              n = n + 1; call getarg(n,temp); read(temp,"(i5)") angles(nangles,3)
+              n = n + 1; angles(nangles,1) = getargi(n)
+              n = n + 1; angles(nangles,2) = getargi(n)
+              n = n + 1; angles(nangles,3) = getargi(n)
             case ("-torsion")
 	      ntorsions = ntorsions + 1
 	      if (ntorsions.gt.MAXDATA) stop "Torsion array MAXDATA exceeded. Increase and recompile."
-              n = n + 1; call getarg(n,temp); read(temp,"(i5)") torsions(ntorsions,1)
-              n = n + 1; call getarg(n,temp); read(temp,"(i5)") torsions(ntorsions,2)
-              n = n + 1; call getarg(n,temp); read(temp,"(i5)") torsions(ntorsions,3)
-              n = n + 1; call getarg(n,temp); read(temp,"(i5)") torsions(ntorsions,4)
+              n = n + 1; torsions(ntorsions,1) = getargi(n)
+              n = n + 1; torsions(ntorsions,2) = getargi(n)
+              n = n + 1; torsions(ntorsions,3) = getargi(n)
+              n = n + 1; torsions(ntorsions,4) = getargi(n)
 	    case ("-data")
 	      n = n + 1; call getarg(n,temp)
 	      open(unit=20, file=temp, form='formatted', status='old', err=999)
@@ -95,17 +99,21 @@
 	! Open and check the files...
 	if (outinfo(outfile,1).EQ.-1) stop "Bad OUTPUT file."
 
+
 	if (nbonds.gt.0) then
 	  allocate(gbdata(nbonds,framestodo*s_nmols(sp)))
 	  write(6,*) nbonds,"bonds defined."
+	  gbdata = 0.0
 	end if
 	if (nangles.gt.0) then
 	  allocate(gadata(nangles,framestodo*s_nmols(sp)))
 	  write(6,*) nangles,"angles defined."
+	  gadata = 0.0
 	end if
 	if (ntorsions.gt.0) then
 	  allocate(gtdata(ntorsions,framestodo*s_nmols(sp)))
 	  write(6,*) ntorsions,"torsions defined."
+	  gtdata = 0.0
 	end if
 
 	! Open the history file or config file
@@ -116,16 +124,19 @@
 	  call readconfig(hisfile)
 	else
 	  call openhis(hisfile,15)
-	  success = readheader()
-	  if (success.NE.0) then
-	    write(0,*) "Couldn't read history file header. Error code:", success
-	    stop
+          if (readheader().EQ.-1) then
+	    if (altheader) then
+	      write(0,*) "Restarted trajectory:"
+	      close(dlpun_his)
+	      call openhis(altheaderfile,15)
+	      if (readheader().EQ.-1) stop "Error reading header / history file."
+	      close(dlpun_his)
+	      call openhis(hisfile,15)
+	    else
+	      stop "Error reading header / history file."
+	    end if
 	  end if
 	end if
-
-	gadata = 0.0
-	gbdata = 0.0
-	gtdata = 0.0
 
 	nframes = 0
 	num = 0

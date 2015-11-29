@@ -30,7 +30,7 @@ catdlp
 dlp2dlp
 addheader
 editconfig
-filterdlp
+dlpfilter
 his2config
 his2xyzs
 dlp2dlpflipz

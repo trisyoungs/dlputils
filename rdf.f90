@@ -11,7 +11,7 @@
 	end module rdfssdat
 
 	program rdf
-	use dlprw; use rdfssdat; use utility
+	use dlprw; use rdfssdat; use utility; use parse
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
 	character*20 :: temp
@@ -34,18 +34,18 @@
           call getarg(n,temp)
           select case (temp)
             case ("-bin")
-              n = n + 1; call getarg(n,temp); read(temp,"(F10.4)") binwidth
+              n = n + 1; binwidth = getargr(n)
               write(0,"(A,f6.2)") "Binwidth set to ",binwidth
             case ("-compair")
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") s1
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(s1,1)
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(s1,2)
+              n = n + 1; s1 = getargi(n)
+              n = n + 1; compairs(s1,1) = getargi(n)
+              n = n + 1; compairs(s1,2) = getargi(n)
               write(0,"(A,3I4)") "Using COMpair for species ",s1, compairs(s1,:)
             case ("-discard")
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") frameskip
+              n = n + 1; frameskip = getargi(n)
               write(0,"(A,I4)") "Frames to discard at start: ",frameskip
             case ("-frames")
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") framestodo
+              n = n + 1; framestodo = getargi(n)
               write(0,"(A,I4)") "Frames to process: ",framestodo
             case ("-header")
               n = n + 1; call getarg(n,altheaderfile)
@@ -55,9 +55,9 @@
               write(0,"(A)") "RDFs will not be normalised by species number density."
 	      nonorm = .TRUE.
             case ("-otherpair")
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") s1
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") otherpairs(s1,1)
-              n = n + 1; call getarg(n,temp); read(temp,"(I6)") otherpairs(s1,2)
+              n = n + 1; s1 = getargi(n)
+              n = n + 1; otherpairs(s1,1) = getargi(n)
+              n = n + 1; otherpairs(s1,2) = getargi(n)
               write(0,"(A,3I4)") "Using other pair (for surrounding molecules) for species ",s1, otherpairs(s1,:)
             case ("-zminus")
               write(0,"(A)") "Minimum image molecules will only be accepted if z < zcentre."

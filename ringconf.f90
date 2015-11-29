@@ -330,7 +330,6 @@
 	call setupConformerData()
 
 	grid = 1.5/delta
-write(0,*) grid, delta, -grid*delta
 	conformers%axes = (/ delta,0.0d0,0.0d0,0.0d0,delta,0.0d0,0.0d0,0.0d0,delta /)
 	conformers%origin = (/ -grid*delta,-grid*delta,-grid*delta /)
 	if (.not.allocPDens(conformers,-grid,-grid,-grid,grid,grid,grid)) stop
