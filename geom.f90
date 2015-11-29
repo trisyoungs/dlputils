@@ -1,8 +1,8 @@
 	! #########################################################
-	! dlpgeom (new) - analyses the average geometry in a history file
+	! geom (new) - analyses the average geometry in a history file
 	! #########################################################
 
-	program dlpgeom
+	program geom
 	use utility; use dlprw; use parse
 	implicit none
 	integer, parameter :: MAXDATA = 100
@@ -11,7 +11,6 @@
 	real*8  :: tx,ty,tz,vecji(3),vecjk(3),veckj(3),veckl(3),xp1(3),xp2(3),mag1,mag2,ktx,kty,ktz
         real*8  :: dp,angle,radcon,minimum,maximum,avg,sd,total, rij
 	character*80 :: outfile,hisfile,temp
-	character*6 :: geom
 	integer :: nargs,n,m,i,j,k,l,status, nframes, framestodo, sp, a1, ngeom, num
 	integer :: nbonds, nangles, ntorsions, success, framestodiscard = 0
 	integer :: bonds(MAXDATA,2),angles(MAXDATA,3),torsions(MAXDATA,4)
@@ -25,7 +24,7 @@
 	radcon = 57.29577951d0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : dlpgeom <HISfile|CONFIG> <OUTfile> <sp> <nframes> [-bond i j] [-angle i j k] [-torsion i j k l] [-data file] [-discard n] [-warndist maxdist] [-warnangle maxangle]"
+	if (nargs.lt.5) stop "Usage : geom <HISfile|CONFIG> <OUTfile> <sp> <nframes> [-bond i j] [-angle i j k] [-torsion i j k l] [-data file] [-discard n] [-warndist maxdist] [-warnangle maxangle]"
 	call getarg(1,hisfile)
 	call getarg(2,outfile)
 	call getarg(3,temp); read(temp,"(I10)") sp
@@ -245,5 +244,5 @@
         end do
 
 999	stop
-	end program dlpgeom
+	end program geom
 	
