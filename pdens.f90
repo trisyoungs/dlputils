@@ -97,7 +97,6 @@
 	end if
 
 	write(0,"(A,A)") "History file : ",hisfile
-	!call openhis(hisfile,n)
 	write(0,"(A,A)") " Output file : ",outfile
 	if (outinfo(outfile,1).eq.-1) goto 798
 	write(0,"(A,i3)") "Central species is = ",centresp
