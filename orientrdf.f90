@@ -308,9 +308,9 @@
 
 	do sp2=1,nspecies
 	  if (nonorm) then
-	    resfile=basename(1:baselen)//"urdf"//CHAR(48+centresp)//CHAR(48+sp2)
+	    resfile=basename(1:baselen)//"uordf"//CHAR(48+centresp)//CHAR(48+sp2)
 	  else
-	    resfile=basename(1:baselen)//"rdf"//CHAR(48+centresp)//CHAR(48+sp2)
+	    resfile=basename(1:baselen)//"ordf"//CHAR(48+centresp)//CHAR(48+sp2)
 	  end if
 	  open(unit=9,file=resfile,form="formatted")
 	  if (compairs(centresp,1).eq.0) then
