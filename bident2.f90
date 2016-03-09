@@ -274,10 +274,10 @@
 	  sitetotals(i) = sitetotals(i) + multitab(i)
 	end do
 
-	write(11,"('Found ',f12.1,' individual contacts in ', i7,' frames')") total, nframes
-	write(11,"('  --> ',f12.1,' per frame')") total / nframes
-	write(11,"('  --> ',f12.1,' per molecule')") total / nframes / s_nmols(sp1)
-	write(11,"('Of these, ', f12.1, ' (',f5.1,'%) are isolated single contacts')") sum(singletab), sum(singletab)/total*100.0
+	write(11,"('Found ',f12.2,' individual contacts in ', i7,' frames')") total, nframes
+	write(11,"('  --> ',f12.2,' per frame')") total / nframes
+	write(11,"('  --> ',f12.2,' per molecule')") total / nframes / s_nmols(sp1)
+	write(11,"('Of these, ', f12.2, ' (',f5.1,'%) are isolated single contacts')") sum(singletab), sum(singletab)/total*100.0
 	write(11,"('          --> ',f12.2,' per frame')") sum(singletab) / nframes
 	write(11,"('          --> ',f12.2,' per central molecule')") sum(singletab) / nframes / s_nmols(sp1)
 	write(11,"('          ', f12.2, ' (',f5.1,'%) are paired in bidentate (X-S-X) interactions')") sum(bitab), sum(bitab)/total*100.0
