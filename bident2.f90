@@ -269,6 +269,7 @@
 	do i=1,nsp1sites
 	  sitetotals(i) = sitetotals(i) + singletab(i)
 	  sitetotals(i) = sitetotals(i) + bitab(i)
+	  sitetotals(i) = sitetotals(i) + sum(bridgetab(i,:))
 	  sitetotals(i) = sitetotals(i) + sum(bifurtab(i,:))
 	  sitetotals(i) = sitetotals(i) + multitab(i)
 	end do
