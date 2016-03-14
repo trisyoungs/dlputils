@@ -45,6 +45,36 @@
 	outputFileName = TRIM(outputFileName)//TRIM(suffix)
 	end function outputFileName
 
+	! Return formatted string of the form N_MM
+	character*4 function stringNMM(n, m)
+	implicit none
+	integer, intent(in) :: n, m
+
+	if ((n.gt.9).or.(n.lt.0)) write(0,*) "WARNING : stringNMM - 'n' is out of range (0-9)"
+	if ((m.gt.99).or.(m.lt.0)) write(0,*) "WARNING : stringNMM - 'm' is out of range (0-99)"
+	stringNMM(1:1) = CHAR(48+n)
+	stringNMM(2:2) = '_'
+	stringNMM(3:3) = CHAR(48+(m/10))
+	stringNMM(4:4) = CHAR(48+mod(m,10))
+	end function stringNMM
+
+	! Return formatted string of the form N_MM_OO
+	character*7 function stringNMMOO(n, m, o)
+	implicit none
+	integer, intent(in) :: n, m, o
+
+	if ((n.gt.9).or.(n.lt.0)) write(0,*) "WARNING : stringNMMOO - 'n' is out of range (0-9)"
+	if ((m.gt.99).or.(m.lt.0)) write(0,*) "WARNING : stringNMMOO - 'm' is out of range (0-99)"
+	if ((o.gt.99).or.(o.lt.0)) write(0,*) "WARNING : stringNMMOO - 'o' is out of range (0-99)"
+	stringNMMOO(1:1) = CHAR(48+n)
+	stringNMMOO(2:2) = '_'
+	stringNMMOO(3:3) = CHAR(48+(m/10))
+	stringNMMOO(4:4) = CHAR(48+mod(m,10))
+	stringNMMOO(5:5) = '_'
+	stringNMMOO(6:6) = CHAR(48+(o/10))
+	stringNMMOO(7:7) = CHAR(48+mod(o,10))
+	end function stringNMMOO
+
 	! ========================================
 	! Cell / Reciprocal Cell
 	! ========================================

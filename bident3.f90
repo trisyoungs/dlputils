@@ -5,7 +5,7 @@
 	program bident3
 	use dlprw; use utility
 	implicit none
-	character*80 :: hisfile,dlpoutfile,basename,headerfile,resfile
+	character*80 :: hisfile,dlpoutfile,headerfile,resfile
 	character*20 :: temparg
 	integer, parameter :: MAXSITES = 20, MAXCONTACTS = 10
 	real*8, parameter :: pi = 3.14159265358979d0, radcon = 57.29577951d0
@@ -71,21 +71,8 @@
 	end do
 	
 	! Open output files
-	! Ascertain length of basename....
-	baselen=-1
-	do n=80,1,-1
-	  if (hisfile(n:n).eq.".") then
-	    baselen=n
-	    goto 802
-	  endif
-	end do
-802     if (baselen.EQ.-1) then
-	  basename="bident3results."
-	  baselen=15
-	else
-	  basename=hisfile(1:baselen)
-	endif
-	open(unit=11,file=basename(1:baselen)//"bident"//CHAR(48+sp1)//CHAR(48+sp2),form='formatted',status='replace')
+	resfile = outputFileName(hisfile, "bident3", "bident"//CHAR(48+sp1)//CHAR(48+sp2))
+	open(unit=11,file=resfile,form='formatted',status='replace')
 	write(11,"('# Central species is ',i4)") sp1
 	write(11,"('# Number of sites defined on central species ',i4)") nsp1sites
 	do n=1,nsp1sites
@@ -94,7 +81,7 @@
 	write(11,"('# Outer species is ',i4)") sp2
 	write(11,"('# Atom IDs used for interaction points :',i4,i4)") sp2sites
 	if (dump) then
-	  open(unit=12,file=basename(1:baselen)//"bidentdump"//CHAR(48+sp1)//CHAR(48+sp2),form='formatted',status='replace')
+	  open(unit=12,file="bidentdump"//CHAR(48+sp1)//CHAR(48+sp2),form='formatted',status='replace')
 	  write(12,*) "ncentre", s_nmols(sp1)
 	  write(12,*) "nouter", s_nmols(sp2)
 	  write(12,*) "ncentresites", nsp1sites
@@ -413,59 +400,51 @@
 	bimap = bimap / (nframes * s_nmols(sp1))
 
 	do site=1,nsp1sites
-	  resfile=basename(1:baselen)//"single_"//CHAR(48+sp1)//"_"//CHAR(48+(sp1sites(site,1)/10))//CHAR(48+MOD(sp1sites(site,1),10))// &
-		& "_"//CHAR(48+(sp1sites(site,2)/10))//CHAR(48+MOD(sp1sites(site,2),10))//".dist"
+	  resfile = outputFileName(hisfile, "bident3", "single_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".dist")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	  do n=1,nbins
 	    write(9,"(f6.3,3x,e16.8)") (n*binwidth)-binwidth/2.0,singlehist(site,n)
 	  end do
 	  close(9)
-	  resfile=basename(1:baselen)//"bifur_"//CHAR(48+sp1)//"_"//CHAR(48+(sp1sites(site,1)/10))//CHAR(48+MOD(sp1sites(site,1),10))// &
-		& "_"//CHAR(48+(sp1sites(site,2)/10))//CHAR(48+MOD(sp1sites(site,2),10))//".dist"
+	  resfile = outputFileName(hisfile, "bident3", "bifur_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".dist")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	  do n=1,nbins
 	    write(9,"(f6.3,3x,e16.8)") (n*binwidth)-binwidth/2.0,bifurhist(site,n)
 	  end do
 	  close(9)
-	  resfile=basename(1:baselen)//"bridge_"//CHAR(48+sp1)//"_"//CHAR(48+(sp1sites(site,1)/10))//CHAR(48+MOD(sp1sites(site,1),10))// &
-		& "_"//CHAR(48+(sp1sites(site,2)/10))//CHAR(48+MOD(sp1sites(site,2),10))//".dist"
+	  resfile = outputFileName(hisfile, "bident3", "bridge_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".dist")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	  do n=1,nbins
 	    write(9,"(f6.3,3x,e16.8)") (n*binwidth)-binwidth/2.0,bridgehist(site,n)
 	  end do
 	  close(9)
-	  resfile=basename(1:baselen)//"bi_"//CHAR(48+sp1)//"_"//CHAR(48+(sp1sites(site,1)/10))//CHAR(48+MOD(sp1sites(site,1),10))// &
-		& "_"//CHAR(48+(sp1sites(site,2)/10))//CHAR(48+MOD(sp1sites(site,2),10))//".dist"
+	  resfile = outputFileName(hisfile, "bident3", "bident_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".dist")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	  do n=1,nbins
 	    write(9,"(f6.3,3x,e16.8)") (n*binwidth)-binwidth/2.0,bihist(site,n)
 	  end do
 	  close(9)
 
-	  resfile=basename(1:baselen)//"single_"//CHAR(48+sp1)//"_"//CHAR(48+(sp1sites(site,1)/10))//CHAR(48+MOD(sp1sites(site,1),10))// &
-		& "_"//CHAR(48+(sp1sites(site,2)/10))//CHAR(48+MOD(sp1sites(site,2),10))//".surf"
+	  resfile = outputFileName(hisfile, "bident3", "single_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".surf")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	  do n=1,nbins
 	    write(9,"(3f16.8)") ((n-0.5)*binwidth,m*1.0,singlemap(site,n,m),m=1,180)
 	    write(9,*) ""
 	  end do
 	  close(9)
-	  resfile=basename(1:baselen)//"bridge_"//CHAR(48+sp1)//"_"//CHAR(48+(sp1sites(site,1)/10))//CHAR(48+MOD(sp1sites(site,1),10))// &
-		& "_"//CHAR(48+(sp1sites(site,2)/10))//CHAR(48+MOD(sp1sites(site,2),10))//".surf"
+	  resfile = outputFileName(hisfile, "bident3", "bridge_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".surf")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	  do n=1,nbins
 	    write(9,"(3f16.8)") ((n-0.5)*binwidth,m*1.0,bridgemap(site,n,m),m=1,180)
 	    write(9,*) ""
 	  end do
-	  resfile=basename(1:baselen)//"bifur_"//CHAR(48+sp1)//"_"//CHAR(48+(sp1sites(site,1)/10))//CHAR(48+MOD(sp1sites(site,1),10))// &
-		& "_"//CHAR(48+(sp1sites(site,2)/10))//CHAR(48+MOD(sp1sites(site,2),10))//".surf"
+	  resfile = outputFileName(hisfile, "bident3", "bifur_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".surf")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	  do n=1,nbins
 	    write(9,"(3f16.8)") ((n-0.5)*binwidth,m*1.0,bifurmap(site,n,m),m=1,180)
 	    write(9,*) ""
 	  end do
-	  resfile=basename(1:baselen)//"bi_"//CHAR(48+sp1)//"_"//CHAR(48+(sp1sites(site,1)/10))//CHAR(48+MOD(sp1sites(site,1),10))// &
-		& "_"//CHAR(48+(sp1sites(site,2)/10))//CHAR(48+MOD(sp1sites(site,2),10))//".surf"
+	  resfile = outputFileName(hisfile, "bident3", "bident_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".surf")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	  do n=1,nbins
 	    write(9,"(3f16.8)") ((n-0.5)*binwidth,m*1.0,bimap(site,n,m),m=1,180)

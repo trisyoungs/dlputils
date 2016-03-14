@@ -22,19 +22,18 @@
 	ntriplets = 0
 
 	nargs = iargc()
-	if (nargs.lt.5) stop "Usage : dahist <HISTORYfile> <OUTPUTfile> <maxdist> [-triplet a1 a2 a3, where a1(sp1)...a2-a3(sp2)] [-sp1 n] [-sp2 n] [-frames n] [-mindist d]"
+	if (nargs.lt.5) stop "Usage : dahist <HISTORYfile> <OUTPUTfile> <sp1> <sp2> <maxdist> [-triplet a1 a2 a3, where a1(sp1)...a2-a3(sp2)] [-frames n] [-mindist d]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
-	call getarg(3,temp); read(temp,"(f20.14)") maxdist
-	n = 3
+	call getarg(3,temp); read (temp,"(i4)") sp1
+	call getarg(4,temp); read (temp,"(i4)") sp2
+	call getarg(5,temp); read(temp,"(f20.14)") maxdist
+
+	n = 5
 	do
 	  n = n + 1; if (n.GT.nargs) exit
 	  call getarg(n,temp)
 	  select case (temp)
-	    case ("-sp1") 
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp1
-	    case ("-sp2") 
-	      n = n + 1; call getarg(n,temp); read(temp,"(I3)") sp2
 	    case ("-frames") 
 	      n = n + 1; call getarg(n,temp); read(temp,"(I5)") framestodo
 	    case ("-mindist") 
@@ -50,7 +49,6 @@
 	  end select
 	end do
 	     
-
 	! Open and check the files...
 	call openhis(hisfile,10)
 	if (outinfo(dlpoutfile,1).EQ.-1) goto 798
@@ -64,7 +62,7 @@
 	write(0,"(A,F6.3,A)") "Minimum a1...a2 distance to consider is ", mindist
 	write(0,"(A,I5,A)") "There will be ",nbins," histogram bins."
 	if (framestodo.gt.0) write(0,"(a,i6)") "Number of frames to use in average = ",framestodo
-	write(0,"(a)") "Pairs to calculate are : "
+	write(0,"(a)") "Triplets contributing to final maps are : "
 	write(0,"(20(i3,'/ (',i3,',',i3,')'))") (a1(n),a2(n),a3(n),n=1,ntriplets)
 	
 	allocate(hist(nbins),stat=status); if (status.GT.0) stop "Allocation error for hist ()"
@@ -161,22 +159,7 @@
 	hist = hist / (nframes * s_nmols(sp1))
 	anglemap = anglemap / (nframes * s_nmols(sp1))
 
-	! Ascertain length of basename....
-	baselen=-1
-	do n=80,1,-1
-	  if (hisfile(n:n).EQ.".") THEN
-	    baselen=n
-	    goto 802
-	  endif
-	end do
-802     if (baselen.EQ.-1) THEN
-	  basename="rdfresults."
-	  baselen=11
-	ELSE
-	  basename=hisfile(1:baselen)
-	endif
-
-	resfile=basename(1:baselen)//"dahist.dist"
+	resfile=outputFileName(hisfile, "dahist", "dahist"//stringNMM(sp1,a1(1))//"_"//stringNMMOO(sp2,a2(1),a3(1))//".hist")
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	! Normalise RDF with respect to the number of frames.
 	do n=1,nbins
@@ -184,7 +167,7 @@
 	end do
 	close(9)
 
-	resfile=basename(1:baselen)//"dahist.surf"
+	resfile=outputFileName(hisfile, "dahist", "dahist"//stringNMM(sp1,a1(1))//"_"//stringNMMOO(sp2,a2(1),a3(1))//".surf")
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
 	!write(9,*) nbins, 180
 	!write(9,"(6f9.4)") binwidth,0.0,0.0,0.0,1.0,0.0
