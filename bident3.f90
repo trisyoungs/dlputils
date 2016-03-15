@@ -22,12 +22,12 @@
 	real*8, allocatable :: singlehist(:,:), bifurhist(:,:), bridgehist(:,:), bihist(:,:)
 	real*8, allocatable :: singlemap(:,:,:), bifurmap(:,:,:), bridgemap(:,:,:), bimap(:,:,:)
 
-	binwidth=0.01   ! In Angstroms
+	binwidth=0.05   ! In Angstroms
 
 	nargs = iargc()
 	if (nargs.lt.7) then
 	  write(0,"(a120)") "Usage : bident3 <HISTORYfile> <OUTfile> <sp1 (central)> <sp2 (outer)> <sp2 atom i> <sp2 atom j> <maxdist>"
-	  write(0,"(a80)") "    [-nframes n] [-discard n] [-site a b (e.g. H-O)] [-dump] [-bin width]"
+	  write(0,"(a80)") "    [-frames n] [-discard n] [-site a b (e.g. H-O)] [-dump] [-bin width]"
 	  stop
 	end if
 	call getarg(1,hisfile)

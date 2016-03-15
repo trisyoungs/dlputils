@@ -1,7 +1,7 @@
 bin_PROGRAMS = dlp2xyzf catdlp dlp2dlp addheader editconfig dlpfilter his2config his2xyzs dlp2dlpflipz dlp2dlpshift dlpreorder chunkdlp xyz2his
 bin_PROGRAMS += cdf dist2 ardf orientrdf rdf rdfsum rdfaa rdfaainter rdfss rdfdep zdens
 bin_PROGRAMS += acfcat acfprep acfsum angle cagecor2 cn counthb geom getcell intertorsion intratorsion intratorsion2 lifehb moldist msd msd2 vac vac2
-bin_PROGRAMS += bident bident2 bident2anal bident3 bident4 cluster clusterab cryscomp dahist legendre ringconf zangle
+bin_PROGRAMS += bident2 bident2anal bident3 bident4 cluster clusterab cryscomp dahist legendre ringconf zangle
 bin_PROGRAMS += glucanal glucgeom gluchb gluchbeach
 bin_PROGRAMS += pdens pdensinfo pdensint pdensmirror pdenstrim pdensgauss
 bin_PROGRAMS += avgconfig dlpsize genlb gengg pairs probedlp
@@ -94,7 +94,6 @@ vac_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} vac.f90
 vac2_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} vac2.f90
 
 # Analyse 2
-bident_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} bident.f90
 bident2_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} bident2.f90
 bident2anal_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} bident2anal.f90
 bident3_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} bident3.f90

@@ -18,7 +18,7 @@
 	nargs = iargc()
 	if (nargs.LT.2) then
 	  write(*,"(a)") "Usage: avgconfig <HISTORYfile> <OUTPUTfile> [-options]"
-	  write(*,"(a)") "        [-nframes n]          Number of frames to do"
+	  write(*,"(a)") "        [-frames n]          Number of frames to do"
 	  stop
 	else
 	  call getarg(1,hisfile)
@@ -57,7 +57,7 @@
 	  n = n + 1; if (n.GT.nargs) exit
 	  call getarg(n,temp)
 	  select case (temp)
-	    case ("-nframes") 
+	    case ("-frames") 
 	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") maxframes
 	      write(0,"(A,I1)") "Frames to do is", maxframes
 	    case default

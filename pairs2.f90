@@ -13,7 +13,7 @@
 	real*8, external :: ran2
 
 	nargs = iargc()
-	if (nargs.lt.6) stop "Usage : pairs2 <HISTORYfile> <OUTPUTfile> <sp1> <sp2> <mindist> <maxdist> <nsets> [-nframes n] [-header] [-ranlim r] [-seed i] [-compair sp i j]"
+	if (nargs.lt.6) stop "Usage : pairs2 <HISTORYfile> <OUTPUTfile> <sp1> <sp2> <mindist> <maxdist> <nsets> [-frames n] [-header] [-ranlim r] [-seed i] [-compair sp i j]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
         call getarg(3,temp); read(temp,"(I6)") sp1
@@ -29,7 +29,7 @@
           n = n + 1; if (n.GT.nargs) exit
           call getarg(n,temp)
           select case (temp)
-            case ("-nframes")
+            case ("-frames")
               n = n + 1; call getarg(n,temp); read(temp,"(i10)") framestodo
               write(0,"(a,i4)") "Frames to do:", framestodo
             case ("-seed")
