@@ -97,8 +97,8 @@
 	    end do
 	  end do
 	end do
+
 	! Store new data in old arrays
-	
 	do i=1,newnatoms
 	  xpos(i) = newx(i)
 	  ypos(i) = newy(i)

@@ -2,7 +2,7 @@
 	! dlp filter
 	! ###############
 
-	program filterdlp
+	program dlpfilter
 	use dlprw
 	implicit none
 	character*80 :: hisfile,outfile,framefile,temp
@@ -12,7 +12,7 @@
 
 	nargs = iargc()
 	if ((nargs.ne.3).and.(nargs.ne.5)) then
-	  write(0,*) "Usage : filterdlp <input HISfile> <output HISfile> <frame file | first skip last>"
+	  write(0,*) "Usage : dlpfilter <input HISfile> <output HISfile> <frame file | first skip last>"
 	  stop
 	end if
 	call getarg(1,hisfile)
@@ -83,4 +83,4 @@
 20      close(14)
 	stop "Finished filtering."
 
-	end program filterdlp
+	end program dlpfilter
