@@ -1,4 +1,4 @@
-bin_PROGRAMS = dlp2xyzf catdlp dlp2dlp addheader editconfig dlpfilter his2config his2xyzs dlp2dlpflipz dlp2dlpshift dlpreorder chunkdlp xyz2his
+bin_PROGRAMS = dlp2xyzf dlp2xyzs catdlp dlp2dlp addheader editconfig dlpfilter dlp2config dlp2dlpflipz dlp2dlpshift dlpreorder chunkdlp xyz2his
 bin_PROGRAMS += cdf dist2 ardf orientrdf rdf rdfsum rdfaa rdfaainter rdfss rdfdep zdens
 bin_PROGRAMS += acfcat acfprep acfsum angle cagecor2 cn counthb geom getcell intertorsion intratorsion intratorsion2 lifehb moldist msd msd2 vac vac2
 bin_PROGRAMS += bident2 bident2anal bident3 bident4 cluster clusterab cryscomp dahist legendre ringconf zangle
@@ -42,15 +42,15 @@ clean-local:
 addheader_SOURCES = ${PARSE} ${DLPRW} addheader.f90
 catdlp_SOURCES = ${PARSE} ${DLPRW} catdlp.f90
 chunkdlp_SOURCES = ${PARSE} ${DLPRW} chunkdlp.f90
+dlp2config_SOURCES = ${PARSE} ${DLPRW} dlp2config.f90
 dlp2xyzf_SOURCES = ${PARSE} ${DLPRW} dlp2xyzf.f90
+dlp2xyzs_SOURCES = ${PARSE} ${DLPRW} dlp2xyzs.f90
 dlp2dlp_SOURCES = ${PARSE} ${DLPRW} dlp2dlp.f90
 dlp2dlpflipz_SOURCES = ${PARSE} ${DLPRW} dlp2dlpflipz.f90
 dlp2dlpshift_SOURCES = ${PARSE} ${DLPRW} dlp2dlpshift.f90
 dlpreorder_SOURCES = ${PARSE} ${DLPRW} dlpreorder.f90
 editconfig_SOURCES = ${PARSE} ${DLPRW} editconfig.f90
 dlpfilter_SOURCES = ${PARSE} ${DLPRW} dlpfilter.f90
-his2config_SOURCES = ${PARSE} ${DLPRW} his2config.f90
-his2xyzs_SOURCES = ${PARSE} ${DLPRW} his2xyzs.f90
 xyz2his_SOURCES = ${PARSE} ${DLPRW} xyz2his.f90
 
 # RDF

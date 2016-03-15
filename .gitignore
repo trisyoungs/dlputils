@@ -31,8 +31,8 @@ changes
 /addheader
 /editconfig
 /dlpfilter
-/his2config
-/his2xyzs
+/dlp2config
+/dlp2xyzs
 /dlp2dlpflipz
 /dlp2dlpshift
 /dlpreorder
