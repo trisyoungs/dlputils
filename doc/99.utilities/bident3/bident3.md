@@ -59,3 +59,4 @@ Given an input HISTORY file `results.HISu`, then output files are as follows:
 `results.bridge_NNAABB_MMIIJJ.surf` : distance-angle map for bridging contacts between species NN atom AA and species MM atoms II and JJ
 `results.bifur_NNAABB_MMIIJJ.surf` : distance-angle map for bifurcated contacts between species NN atom AA and species MM atoms II and JJ
 
+All `surf` files are three-column format - distance, angle, histogram value - with distinct angles separated by blank lines.
