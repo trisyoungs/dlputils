@@ -42,5 +42,5 @@ Add a triplet a-b-c to the calculation. Note that if multiple triplets are defin
 
 Given an input HISTORY file `results.HISu`, then output files are as follows:
 `results.dahistNNAAMMBBCC.hist` : histogram of the a-b distances found in the calculation
-`results.dahistNNAAMMBBCC.surf` : distance angle map of the a-b-c interaction in three column format (distance, angle, histogram value)
+`results.dahistNNAAMMBBCC.surf` : distance angle map of the a-b-c interaction in three column format (distance, angle, histogram value) with a blank line separating each angle
 

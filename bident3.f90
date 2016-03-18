@@ -427,27 +427,35 @@
 
 	  resfile = outputFileName(hisfile, "bident3", "single_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".surf")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	  do n=1,nbins
-	    write(9,"(3f16.8)") ((n-0.5)*binwidth,m*1.0,singlemap(site,n,m),m=1,180)
+	  do m=1,180
+	    do n=1,nbins
+	      write(9,"(3f16.8)") (n-0.5)*binwidth, m*1.0, singlemap(site,n,m)
+	    end do
 	    write(9,*) ""
 	  end do
 	  close(9)
 	  resfile = outputFileName(hisfile, "bident3", "bridge_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".surf")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	  do n=1,nbins
-	    write(9,"(3f16.8)") ((n-0.5)*binwidth,m*1.0,bridgemap(site,n,m),m=1,180)
+	  do m=1,180
+	    do n=1,nbins
+	      write(9,"(3f16.8)") (n-0.5)*binwidth, m*1.0, bridgemap(site,n,m)
+	    end do
 	    write(9,*) ""
 	  end do
 	  resfile = outputFileName(hisfile, "bident3", "bifur_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".surf")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	  do n=1,nbins
-	    write(9,"(3f16.8)") ((n-0.5)*binwidth,m*1.0,bifurmap(site,n,m),m=1,180)
+	  do m=1,180
+	    do n=1,nbins
+	      write(9,"(3f16.8)") (n-0.5)*binwidth, m*1.0, bifurmap(site,n,m)
+	    end do
 	    write(9,*) ""
 	  end do
 	  resfile = outputFileName(hisfile, "bident3", "bident_"//stringNMMOO(sp1,sp1sites(site,1),sp1sites(site,2))//"_"//stringNMMOO(sp2,sp2sites(1),sp2sites(2))//".surf")
 	  OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	  do n=1,nbins
-	    write(9,"(3f16.8)") ((n-0.5)*binwidth,m*1.0,bimap(site,n,m),m=1,180)
+	  do m=1,180
+	    do n=1,nbins
+	      write(9,"(3f16.8)") (n-0.5)*binwidth, m*1.0, bimap(site,n,m)
+	    end do
 	    write(9,*) ""
 	  end do
 

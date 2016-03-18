@@ -173,8 +173,10 @@
 	!write(9,"(6f9.4)") binwidth,0.0,0.0,0.0,1.0,0.0
 	!write(9,"(3f9.4)") 0.0, -1.0, 0.0
 	!write(9,*) "yxz"
-	do n=1,nbins
-	  write(9,"(3f16.8)") ((n-0.5)*binwidth+mindist,m*1.0,anglemap(n,m),m=1,180)
+	do m=1,180
+	  do n=1,nbins
+	    write(9,"(3f16.8)") (n-0.5)*binwidth+mindist, m*1.0, anglemap(n,m)
+	  end do
 	  write(9,*) ""
 	end do
 	close(9)
