@@ -12,7 +12,7 @@ template: manpage
 ## Basic Usage
 
 ```
-filterdlp <inputHISTORYfile> <outputHISTORYfile> <framefile | first skip last>
+dlpfilter <inputHISTORYfile> <outputHISTORYfile> <framefile | first skip last>
 ```
 
 Where:

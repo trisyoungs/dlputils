@@ -46,13 +46,12 @@ add_library(external "parse.f90" "dlprw.f90" "utility.f90" "pdensrw.f90" "intege
 # Setup binary builds
 set (PROGRAMS 
   "acfcat" "acfprep" "acfsum" "addheader" "angle" "ardf" "avgconfig"
-  "bident" "bident2" "bident2anal" "bident3" "bident4" 
+  "bident2" "bident2anal" "bident3" "bident4" 
   "cagecor2" "catdlp" "cdf" "chunkdlp" "cluster" "clusterab" "cn" "counthb" "cryscomp"
-  "dahist" "dist2" "dlp2dlp" "dlp2dlpflipz" "dlp2dlpshift" "dlp2xyzf" "dlpreorder"  "dlpsize"
+  "dahist" "dist2" "dlp2config" "dlp2dlp" "dlp2dlpflipz" "dlp2dlpshift" "dlp2xyzf" "dlp2xyzs" "dlpreorder"  "dlpsize"
   "editconfig" 
   "dlpfilter"
   "getcell" "genlb" "gengg" "geom" "glucanal" "glucgeom" "gluchb" "gluchbeach"
-  "his2config" "his2xyzs"
   "intertorsion" "intratorsion" "intratorsion2" 
   "legendre" "lifehb"
   "moldist" "msd" "msd2"

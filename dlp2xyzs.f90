@@ -1,8 +1,8 @@
 	! ###############
-	! his2xyzs
+	! dlp2xyzs
 	! ###############
 
-	program his2xyzs
+	program dlp2xyzs
 	use dlprw
 	implicit none
 	character*80 :: hisfile,outfile
@@ -12,7 +12,7 @@
 	logical :: failed_header
 
 	nargs = iargc()
-	if (nargs.NE.2) stop "Usage: his2xyzs <HISTORYfile> <interval>"
+	if (nargs.NE.2) stop "Usage: dlp2xyzs <HISTORYfile> <interval>"
 	call getarg(1,hisfile)
 	call getarg(2,frameid)
 	read (frameid,"(i4)") interval
@@ -63,4 +63,4 @@
 	  
 	stop "Finished."
 
-	end program his2xyzs
+	end program dlp2xyzs
