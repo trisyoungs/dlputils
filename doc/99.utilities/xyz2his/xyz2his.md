@@ -4,6 +4,7 @@ brief: Convert a sequence of xyz trajectory frames to an unformatted DL_POLY HIS
 visible: true
 taxonomy:
   category: docs
+  classification: "History File Conversion / Manipulation"
 docroot: /dlputils/docs
 template: manpage
 ---

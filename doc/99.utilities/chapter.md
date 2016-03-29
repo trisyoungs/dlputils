@@ -6,7 +6,7 @@ taxonomy:
 docroot: /dlputils/docs
 sectionindex: classifications
 classifications:
-  - "History File Manipulation"
+  - "History File Conversion / Manipulation"
   - "Radial Distribution Functions"
   - "Intramolecular (Bound) Geometry"
   - "Spatial Probability Densities"

@@ -4,7 +4,7 @@ brief: Convert between formatted and unformatted HISTORY files
 visible: true
 taxonomy:
   category: docs
-  classification: "History File Manipulation"
+  classification: "History File Conversion / Manipulation"
 docroot: /dlputils/docs
 template: manpage
 ---

@@ -4,7 +4,7 @@ brief: Add a header to a history file
 visible: true
 taxonomy:
   category: docs
-  classification: "History File Manipulation"
+  classification: "History File Conversion / Manipulation"
 docroot: /dlputils/docs
 template: manpage
 ---
