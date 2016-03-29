@@ -1,8 +1,10 @@
 ---
 title: pdensgauss
 brief: Apply Gaussian smooth to probability density
+visible: true
 taxonomy:
   category: docs
+  classification: "Spatial Probability Densities"
 docroot: /dlputils/docs
 template: manpage
 ---

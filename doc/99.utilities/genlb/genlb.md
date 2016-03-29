@@ -1,8 +1,10 @@
 ---
 title: genlj
 brief: Generate van der Waals cross terms using Lorentz-Berthelot mixing rules
+visible: true
 taxonomy:
   category: docs
+  classification: "Miscellaneous"
 docroot: /dlputils/docs
 template: manpage
 ---

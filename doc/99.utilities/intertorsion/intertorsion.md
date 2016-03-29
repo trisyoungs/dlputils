@@ -1,8 +1,10 @@
 ---
 title: intertorsion
 brief: Calculate torsion histogram for a single torsion defined over two species
+visible: true
 taxonomy:
   category: docs
+  classification: "Intramolecular (Bound) Geometry"
 docroot: /dlputils/docs
 template: manpage
 ---

@@ -1,8 +1,10 @@
 ---
 title: geom
 brief: Calculate average geometric parameters
+visible: true
 taxonomy:
   category: docs
+  classification: "Intramolecular (Bound) Geometry"
 docroot: /dlputils/docs
 template: manpage
 ---

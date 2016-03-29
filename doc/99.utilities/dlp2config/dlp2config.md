@@ -1,8 +1,10 @@
 ---
 title: dlp2config
 brief: Convert a history file into individual CONFIG files
+visible: true
 taxonomy:
   category: docs
+  classification: "History File Manipulation"
 docroot: /dlputils/docs
 template: manpage
 ---

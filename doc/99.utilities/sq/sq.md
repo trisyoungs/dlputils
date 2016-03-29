@@ -1,6 +1,7 @@
 ---
 title: sq
 brief: Calculate neutron-weighted structure factors
+visible: true
 taxonomy:
   category: docs
 docroot: /dlputils/docs

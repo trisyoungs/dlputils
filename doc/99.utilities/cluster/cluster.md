@@ -1,8 +1,10 @@
 ---
 title: cluster
 brief: Calculate cluster sizes of molecules
+visible: true
 taxonomy:
   category: docs
+  classification: "Coordination / Contact Numbers"
 docroot: /dlputils/docs
 template: manpage
 ---

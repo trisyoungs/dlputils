@@ -1,8 +1,10 @@
 ---
 title: bident2
 brief: Calculate contact types between sites on different molecules
+visible: true
 taxonomy:
   category: docs
+  classification: "Coordination / Contact Numbers"
 docroot: /dlputils/docs
 template: manpage
 ---

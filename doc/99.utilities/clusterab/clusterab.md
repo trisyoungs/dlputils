@@ -1,8 +1,10 @@
 ---
 title: clusterab
 brief: Calculate continuous cluster sizes or paths of molecules
+visible: true
 taxonomy:
   category: docs
+  classification: "Coordination / Contact Numbers"
 docroot: /dlputils/docs
 template: manpage
 ---

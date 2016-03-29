@@ -1,8 +1,10 @@
 ---
 title: rdfaa
 brief: Calculate atomic partial radial distribution functions involving a single species
+visible: true
 taxonomy:
   category: docs
+  classification: "Radial Distribution Functions"
 docroot: /dlputils/docs
 template: manpage
 ---

@@ -1,8 +1,10 @@
 ---
 title: dlp2xyzs
 brief: Convert a history file into individual XYZ files
+visible: true
 taxonomy:
   category: docs
+  classification: "History File Manipulation"
 docroot: /dlputils/docs
 template: manpage
 ---

@@ -143,7 +143,7 @@
 	    !if (keytrj.GT.1) read(dlpun_his,12,ERR=108,end=108) xfor(n),yfor(n),zfor(n)
           end do
 	end if
-	has_icell = .false.
+
 	readframe=0  ; return	! Success
 	! Other return conditions:
 91	readframe=1  ; return	! No error, but end of file encountered.

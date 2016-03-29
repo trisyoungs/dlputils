@@ -1,8 +1,10 @@
 ---
-ntitle: bident3
+title: bident3
 brief: Calculate contact types between sites on different molecules, with distance and angle maps
+visible: true
 taxonomy:
   category: docs
+  classification: "Coordination / Contact Numbers"
 docroot: /dlputils/docs
 template: manpage
 ---

@@ -1,8 +1,10 @@
 ---
 title: dlpfilter
 brief: Prune frames from a HIStory file
+visible: true
 taxonomy:
   category: docs
+  classification: "History File Manipulation"
 docroot: /dlputils/docs
 template: manpage
 ---

@@ -1,6 +1,7 @@
 ---
 title: dahist
 brief: Calculate distance-angle map between atoms on two species
+visible: true
 taxonomy:
   category: docs
 docroot: /dlputils/docs

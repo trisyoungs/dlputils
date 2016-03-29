@@ -1,8 +1,10 @@
 ---
 title: dlp2xyzf
 brief: Convert a history file into a sequential XYZ file (including forces)
+visible: true
 taxonomy:
   category: docs
+  classification: "History File Manipulation"
 docroot: /dlputils/docs
 template: manpage
 ---

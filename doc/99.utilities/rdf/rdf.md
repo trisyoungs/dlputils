@@ -1,8 +1,10 @@
 ---
 title: rdf
 brief: Calculate centre-of-mass radial distribution functions
+visible: true
 taxonomy:
   category: docs
+  classification: "Radial Distribution Functions"
 docroot: /dlputils/docs
 template: manpage
 ---

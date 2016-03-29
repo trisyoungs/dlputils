@@ -1,8 +1,10 @@
 ---
 title: dlp2dlp
 brief: Convert between formatted and unformatted HISTORY files
+visible: true
 taxonomy:
   category: docs
+  classification: "History File Manipulation"
 docroot: /dlputils/docs
 template: manpage
 ---

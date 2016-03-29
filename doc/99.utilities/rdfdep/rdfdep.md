@@ -1,8 +1,10 @@
 ---
 title: rdfdep
 brief: Calculate site-site radial distribution functions dependent on other contacts
+visible: true
 taxonomy:
   category: docs
+  classification: "Radial Distribution Functions"
 docroot: /dlputils/docs
 template: manpage
 ---

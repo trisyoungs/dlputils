@@ -1,8 +1,10 @@
 ---
 title: ardf
 brief: Calculate angle-dependent radial distribution functions
+visible: true
 taxonomy:
   category: docs
+  classification: "Radial Distribution Functions"
 docroot: /dlputils/docs
 template: manpage
 ---

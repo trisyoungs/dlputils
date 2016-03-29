@@ -1,6 +1,7 @@
 ---
 title: xyz2his
 brief: Convert a sequence of xyz trajectory frames to an unformatted DL_POLY HISTORY file
+visible: true
 taxonomy:
   category: docs
 docroot: /dlputils/docs

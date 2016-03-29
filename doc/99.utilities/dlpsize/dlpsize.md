@@ -1,8 +1,10 @@
 ---
 title: dlpsize
 brief: Count the frames in a DL_POLY HISTORY file
+visible: true
 taxonomy:
   category: docs
+  classification: "History File Manipulation"
 docroot: /dlputils/docs
 template: manpage
 ---

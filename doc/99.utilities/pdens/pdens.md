@@ -1,8 +1,10 @@
 ---
 title: pdens
 brief: Calculate three-dimensional (spatial) probability densities
+visible: true
 taxonomy:
   category: docs
+  classification: "Spatial Probability Densities"
 docroot: /dlputils/docs
 template: manpage
 ---

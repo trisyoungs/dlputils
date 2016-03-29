@@ -108,6 +108,7 @@
 
 	subroutine calc_icell()
 	use dlprw; implicit none
+	if (has_icell) return
 	icell = cell
 	call gaussj(icell,3,3)
 	has_icell = .true.
