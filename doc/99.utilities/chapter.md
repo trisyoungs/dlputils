@@ -8,6 +8,7 @@ sectionindex: classifications
 classifications:
   - "History File Conversion / Manipulation"
   - "Radial Distribution Functions"
+  - "Other Distribution Functions"
   - "Intramolecular (Bound) Geometry"
   - "Spatial Probability Densities"
   - "Correlation Functions"
