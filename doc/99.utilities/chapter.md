@@ -1,5 +1,5 @@
 ---
-title: Reference
+title: Utilities Reference
 brief: Guides for each utility that is part of <strong>dlputils</strong>
 taxonomy:
   category: docs
