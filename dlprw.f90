@@ -367,10 +367,11 @@
 !	/\/\/\/\/\\/\
 !	Subroutine to read molecule type and species info from a DL_POLY OUT file.
 	integer function outinfo(fname,verbosity)
+	use parse
 !	verbosity = Verbosity level: 0 = Quiet, 1 = Full.
 	implicit none
 	character*80 :: fname,discard,discard2
-	integer :: s,discardn,verbosity,n
+	integer :: s,discardn,verbosity,n,i
 
 	dlpfn_out = fname
 	dlpun_out=19
@@ -404,13 +405,13 @@
 	end if
 	! Analyse the OUT file: Acquire the molecular data.
 	! Allocate arrays as we go along...
-50	read(dlpun_out,"(A21)",ERR=91) discard
-	if (discard(1:20).eq."SYSTEM SPECIFICATION") goto 51
-	if (discard(1:20).eq." SYSTEM SPECIFICATIO") goto 51
+50	if (.not.readline(dlpun_out)) goto 91
+	if (arg(1).eq."SYSTEM".and.arg(2).eq."SPECIFICATION") goto 51
+	!if (arg(1)(1:6).eq."SYSTEM".and.arg(2)(1:13).eq."SPECIFICATION") goto 51
 	goto 50
-51	read(dlpun_out,"(A30,I20)",end=91) discard,discardn
-	if (discard(1:27).NE." number of molecular types") goto 51
-	nspecies=discardn
+51	if (.not.readline(dlpun_out)) goto 91
+	if (arg(1).ne."number".and.arg(3).ne."molecular".and.arg(4).ne."types") goto 51
+	nspecies=argi(5)
 	if (verbosity.EQ.1) write(0,*) "Number of molecular species in simulation : ",nspecies
 	allocate(s_name(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_name>"
 	allocate(s_nmols(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_nmols>"
@@ -418,20 +419,23 @@
 	allocate(s_start(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_start>"
 	allocate(s_molstart(nspecies),stat=s); if (s.NE.0) stop "Allocation error <s_molstart>"
 	do n=1,nspecies
-52	  read(dlpun_out,"(A30,A20)",end=91) discard, discard2
-	  if (discard(1:17).NE." name of species:") goto 52
+52	  if (.not.readline(dlpun_out)) goto 91
+	  if (arg(1).ne."name".and.arg(3).ne."species:") goto 52
 	  ! Get the information about this molecular species....
-	  s_name(n)=discard2(1:20)
+	  s_name(n) = arg(4)
+	  do i=5,nargsparsed
+	    s_name(n) = trim(s_name(n))//" "//trim(arg(i))
+	  end do
 	  write(0,*) "Found: ",s_name(n)
-53	  read(dlpun_out,"(A31,I20)",end=91) discard, discardn
-	  if (discard(1:20).NE." number of molecules") goto 53
-	  if (verbosity.EQ.1) write(0,*) "-- Number of molecules: ",discardn
-	  s_nmols(n)=discardn
+53	  if (.not.readline(dlpun_out)) goto 91
+	  if (arg(1).ne."number".and.arg(3).ne."molecules") goto 53
+	  s_nmols(n)=argi(4)
+	  if (verbosity.EQ.1) write(0,*) "-- Number of molecules: ", s_nmols(n)
 	  if (s_nmols(n).GT.maxmols) maxmols = s_nmols(n)
-54	  read(dlpun_out,"(A31,I20)",end=91) discard, discardn
-	  if (discard(1:22).NE." number of atoms/sites") goto 54
-	  if (verbosity.EQ.1) write(0,*) "-- Number of atoms/sites: ",discardn
-	  s_natoms(n)=discardn
+54	  if (.not.readline(dlpun_out)) goto 91
+	  if (arg(1).ne."number".and.arg(3).ne."atoms/sites") goto 54
+	  s_natoms(n)=argi(4)
+	  if (verbosity.EQ.1) write(0,*) "-- Number of atoms/sites: ", s_natoms(n)
 	end do
 	close(dlpun_out)
 
