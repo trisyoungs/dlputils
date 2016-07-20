@@ -1,5 +1,5 @@
 bin_PROGRAMS = dlp2xyzf dlp2xyzs catdlp dlp2dlp addheader editconfig dlpfilter dlp2config dlp2dlpflipz dlp2dlpshift dlpreorder chunkdlp xyz2his
-bin_PROGRAMS += cdf dist2 ardf orientrdf rdf rdfsum rdfaa rdfaainter rdfss rdfdep zdens
+bin_PROGRAMS += cdf codf dist2 ardf orientrdf rdf rdfsum rdfaa rdfaainter rdfss rdfdep zdens
 bin_PROGRAMS += acfcat acfprep acfsum angle cagecor2 cn counthb geom getcell intertorsion intratorsion intratorsion2 lifehb moldist msd msd2 vac vac2
 bin_PROGRAMS += bident2 bident2anal bident3 bident4 cluster clusterab cryscomp dahist legendre ringconf zangle
 bin_PROGRAMS += glucanal glucgeom gluchb gluchbeach
@@ -55,6 +55,7 @@ xyz2his_SOURCES = ${PARSE} ${DLPRW} xyz2his.f90
 
 # RDF
 cdf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} cdf.f90
+codf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${ILIST} codf.f90
 dist2_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} dist2.f90
 ardf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${ILIST} ardf.f90
 orientrdf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${ILIST} orientrdf.f90
