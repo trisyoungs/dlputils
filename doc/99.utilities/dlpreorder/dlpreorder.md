@@ -18,9 +18,9 @@ dlpreorder <inputHISTORYfile> <outputHISTORYfile> <species list>
 ```
 
 Where:
-`<inputHISTORYfile>` is the name of the source HISTORY file
-`<outputHISTORYfile>` is the target name of the new HIStory file
-`<species list>` is a space-separated list of species indices that are to appear in the new file, in the order in which they are given
++ `<inputHISTORYfile>` is the name of the source HISTORY file
++ `<outputHISTORYfile>` is the target name of the new HIStory file
++ `<species list>` is a space-separated list of species indices that are to appear in the new file, in the order in which they are given
 
 ## Switches
 

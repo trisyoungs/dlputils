@@ -18,7 +18,7 @@ dlpsize <HISTORYfile>
 ```
 
 Where:
-`<HISTORYfile>` is the target name of the DL_POLY HISTORY file to be written
++ `<HISTORYfile>` is the target name of the DL_POLY HISTORY file to be written
 
 ## Switches
 

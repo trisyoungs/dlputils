@@ -18,8 +18,8 @@ dlp2dlp <HISTORYfile> <format> [nframes]
 ```
 
 Where:
-`<HISTORYfile>` is the target name of the DL_POLY HISTORY file to be written
-`<format>` is the desired format of the output file, _0_ for unformatted, or _1_ for formatted
++ `<HISTORYfile>` is the target name of the DL_POLY HISTORY file to be written
++ `<format>` is the desired format of the output file, _0_ for unformatted, or _1_ for formatted
 `[nframes]` (optional) is the number of frames to convert (default = all)
 
 ## Switches

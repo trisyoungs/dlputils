@@ -18,7 +18,7 @@ genlj <PARAMfile>
 ```
 
 Where:
-`<PARAMfile>` is the name of the file containing atomtype name, epsilon, and sigma values, separated by spaces
++ `<PARAMfile>` is the name of the file containing atomtype name, epsilon, and sigma values, separated by spaces
 
 ## Switches
 

@@ -18,7 +18,7 @@ The applied function is a typical 3-dimensional Gaussian of the form:
 </figure>
 
 Related programs:
-To calculate probability densities, see [**pdens**](/dlputils/docs/pdens).
+To calculate probability densities, see [**pdens**](/dlputils/docs/utilities/pdens).
 
 ## Basic Usage
 
@@ -27,16 +27,18 @@ pdensgauss <PDENSfile> <newPDENSfile> <sigma>
 ```
 
 Where:
-`<PDENSfile>` is the name of the existing PDENS file
-`<newPDENSile>` is the name of the new PDENS file to be generated
-`<sigma>` is a parameter controlling the width of the Gaussian used in the smoothing
++ `<PDENSfile>` is the name of the existing PDENS file
++ `<newPDENSile>` is the name of the new PDENS file to be generated
++ `<sigma>` is a parameter controlling the width of the Gaussian used in the smoothing
 
 ## Switches
 
 `-min` _value_
+
 Prune the input pdens grid, removing all voxel values below the specified value.
 
 `-max` _value_
+
 Prune the input pdens grid, removing all voxel values above the specified value.
 
 ## Usage

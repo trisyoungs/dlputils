@@ -18,9 +18,9 @@ addheader <HEADERfile> <input HISTORYfile> <output HISTORYfile>
 ```
 
 Where:
-`<HEADERfile>` is the name of the DL_POLY HISTORY file from which the header is to be copied
-`<input HISTORYfile>` is the name of the DL_POLY HISTORY file which is missing its header
-`<output HISTORYfile>` is the name of the new DL_POLY HISTORY file to write
++ + `<HEADERfile>` is the name of the DL_POLY HISTORY file from which the header is to be copied
++ + `<input HISTORYfile>` is the name of the DL_POLY HISTORY file which is missing its header
++ + `<output HISTORYfile>` is the name of the new DL_POLY HISTORY file to write
 
 ## Switches
 

@@ -16,7 +16,7 @@ getcell <HISTORYfile>
 ```
 
 Where:
-`<HISTORYfile>` is the name of the target HISTORY file
++ `<HISTORYfile>` is the name of the target HISTORY file
 
 ## Switches
 

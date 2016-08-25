@@ -18,18 +18,23 @@ xyz2his <XYZfile> <HISTORYfile>
 ```
 
 Where:
-`<XYZfile>` is the name of the XYZ file containing the source frames
-`<HISTORYfile>` is the target name of the DL_POLY HISTORY file to be written
++ `<XYZfile>` is the name of the XYZ file containing the source frames
++ `<HISTORYfile>` is the target name of the DL_POLY HISTORY file to be written
 
 ## Switches
 
 `-cell` _ax_ _ay_ _az_ _bx_ _by_ _bz_ _cx_ _cy_ _cz_
+
 Specify the unit cell of the system by providing a full 3x3 matrix. Either this or `-cubic` should be used.
 
+
 `-cubic` _a_
+
 Specify a cubic unit cell for the system by providing the side length _a_. Either this or `-cell` should be used.
 
+
 `-extraline`
+
 Indicates that the xyz trajectory has a blank line between consecutive frames.
 
 ## XYZ File Format
@@ -50,9 +55,11 @@ H             0.746772     0.022545     0.590150
 
 The first line of each frame contains the number of atoms to follow, and which must be the same for each and every subsequent frame. The second line contains the title of the frame, but may simply be a blank line if necessary. What follow is then the atom elements/names and their coordinates, one per line. The spacing between the data on the lines is not important. This is the standard format expected by the **xyz2his** program, but some programs write an extra blank line between frames (EPSR for example). If this is the case, you must give the `-extraline` option to **xyz2his**.
 
+
 ## Unit Cell Specification
 
 It is assumed that the primary purpose of **dlputils** is for the analysis of data from simulations of periodic systems - as such a unit cell must be provided (since the DL_POLY HISTORY file format contains one). Either the full 3x3 unit cell matrix can be specified with the `-cell` option, or a cubic cell can be specified with the `-cubic` option and the unit cell length.
+
 
 ## Performing the Conversion
 
