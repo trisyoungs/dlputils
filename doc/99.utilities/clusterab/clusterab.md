@@ -26,8 +26,10 @@ Where:
 + `<HISTORYfile>` is the name of the DL_POLY HISTORY file
 + `<OUTPUTfile>` is the name of the DL_POLY OUTPUT file
 + `<sp>` is the index of the central species, from which the cluster calculation begins
-+ `<othersp>` is a comma-separated list of indices to test use in the calculation of cluster sizes
++ `<othersp>` is a comma-separated list of species indices that paths/clusters may be formed from
 + `<maxdist>` is the maximum allowable distance between any A-B site pair for them to be considered 'interacting'.
+
+The provision of `<sp>` and `<othersp>` warrant a little explanation. The calculation of paths/clusters always begins from one species type (given as `<sp>`) and the species defined in `<othersp>` will determine exactly what the calculation probes. For instance, in a two-component system, setting both `<sp>` and `<othersp>` to a value of 1 will return information on clusters formed from molecules of species 1, completely ignoring species 2. Setting `<othersp>` to 2, on the other hand, will give the cluster size of molecules of species 2 around species 1, where there is at least one A-B contact between the central species 1 molecule and a surrounding species 2 molecule. Setting `<othersp>` to 1,2 means that the calculation permits clusters formed from both molecule types, beginning from a favourable A-B contact between a molecule of species 1 and either of the other two species.
 
 ## Switches
 
