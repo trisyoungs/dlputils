@@ -175,17 +175,17 @@
 	!write(9,"(a,i2,a,f10.4)") "# Species ",sp1," clusters with COM distance < ", maxdist
 
 	! Write data
-	write(9,"(a6,5(3x,a12))") "# Size", "NClusters", "NMolecules", "%Clusters", "%Molecules", "Sum(S*N)"
+	write(9,"(a10,5(3x,a12))") "# Size", "NClusters", "NMolecules", "%Clusters", "%Molecules", "Sum(S*N)"
 	sumtotal = 0.0
 	if (notSelf) then
 	  do n=1,s_nmols(sp1)
 	    sumtotal = sumtotal + (n-1)*clusters(n)
-	    write(9,"(i6,5(3x,e12.8))") n-1, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1), sumtotal
+	    write(9,"(i10,5(3x,es12.8))") n-1, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1), sumtotal
 	  end do
 	else
 	  do n=1,s_nmols(sp1)
 	    sumtotal = sumtotal + n*clusters(n)
-	    write(9,"(i6,5(3x,e12.8))") n, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1), sumtotal
+	    write(9,"(i10,5(3x,es12.8))") n, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1), sumtotal
 	  end do
 	end if
 	close(9)

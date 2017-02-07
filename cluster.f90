@@ -178,9 +178,9 @@
 	clusters = clusters / framesdone
 
 	! Write data
-	write(9,"(a6,4(3x,a12))") "# Size", "NClusters", "NMolecules", "%Clusters", "%Molecules"
+	write(9,"(a10,4(3x,a12))") "# Size", "NClusters", "NMolecules", "%Clusters", "%Molecules"
 	do n=1,s_nmols(sp1)
-	  write(9,"(i6,4(3x,F12.8))") n, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1)
+	  write(9,"(i10,4(3x,es12.8))") n, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1)
 	end do
 	close(9)
 	write(0,*) "Finished."
