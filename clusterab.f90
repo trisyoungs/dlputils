@@ -180,12 +180,12 @@
 	if (notSelf) then
 	  do n=1,s_nmols(sp1)
 	    sumtotal = sumtotal + (n-1)*clusters(n)
-	    write(9,"(i10,5(3x,es12.8))") n-1, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1), sumtotal
+	    write(9,"(i10,5(3x,es12.6))") n-1, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1), sumtotal
 	  end do
 	else
 	  do n=1,s_nmols(sp1)
 	    sumtotal = sumtotal + n*clusters(n)
-	    write(9,"(i10,5(3x,es12.8))") n, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1), sumtotal
+	    write(9,"(i10,5(3x,es12.6))") n, clusters(n), n*clusters(n), 100.0*real(clusters(n))/sum(clusters), 100.0*n*clusters(n)/s_nmols(sp1), sumtotal
 	  end do
 	end if
 	close(9)
