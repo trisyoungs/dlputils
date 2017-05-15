@@ -4,11 +4,11 @@
 #define MyAppName "dlputils"
 #define MyAppVersion "1.4.3"
 #define MyAppPublisher "Tristan Youngs"
-#define MyAppURL "http://www.projectaten.net"
+#define MyAppURL "https://www.projectaten.com"
 #define MyAppExeName "dlputils.exe"
 
-; Locations of bin directories of Qt, GnuWin(32), and MinGW(32)
-#define MinGWDir "C:\MinGW32"
+; Locations of bin directories of MinGW(32)
+#define MinGWDir "C:\Qt\Tools\mingw530_32"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
