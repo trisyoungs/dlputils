@@ -188,7 +188,7 @@
 	      dp = vec3DotProduct(t1, axesA(sp,m1,1:3))
 	      angle = acos(dp) * radcon
 	      angleBin = INT( angle / angleBinWidth) + 1
-		write(0,*) sp, m1, dist, dp, angleBin
+	!write(0,*) sp, m1, dist, dp, angleBin
 	      cdf(n,distBin,1) = cdf(n,distBin,1) + dp
 	      cdf(n,distBin,4) = cdf(n,distBin,4) + dabs(dp)
 	      cdfangles(n,1,distBin,angleBin) = cdfangles(n,1,distBin,angleBin) + 1.0
@@ -257,8 +257,10 @@
 	  else
 	    write(9,"(a,i2,a,i3,i3)") "# Species ",sp," calculated using two atoms for COM: ", compairs(sp,1), compairs(sp,2)
 	  end if
+
 	  do i=1,nDistBins
-	    write(9,"(F10.4,6(3x,F12.8),3x,e12.5)") (i-0.5)*distBinWidth, (cdf(n,i,m)/cdf(n,i,0), m=1,6), cdf(n,i,0)
+	    if (cdf(n,i,0).gt.0.5) cdf(n,i,1:6) = cdf(n,i,1:6) / cdf(n,i,0)
+	    write(9,"(F10.4,6(3x,F12.8),3x,e12.5)") (i-0.5)*distBinWidth, (cdf(n,i,m), m=1,6), cdf(n,i,0)
 	  end do
 	  close(9)
 
