@@ -108,7 +108,12 @@
 	    read(dlpun_his,end=102,ERR=102) (zfor(n),n=1,natms)
 	  end if
 	else     ! Read formatted history file....
-          read(dlpun_his,"(8X,4I10,F12.6)",end=91,ERR=103) nstep, natms, keytrj, imcon, tstep
+          !read(dlpun_his,"(8X,4I10,F12.6)",end=91,ERR=103) nstep, natms, keytrj, imcon, tstep
+	  if (.not.readline(dlpun_his)) goto 105
+	  nstep = argi(2)
+	  natms = argi(3)
+	  keytrj = argi(4)
+	  imcon = argi(5)
 	  !write(0,*) nstep, natms, keytrj, imcon, tstep
           if (imcon.GT.0) then     ! Read in the cell coords if necessary
 	    !write(0,*) imcon
@@ -213,7 +218,12 @@
 	    read(dlpun_his,"(2I10)",ERR=104,end=104) keytrj,imcon
 	  end if
 	  ! Cell params
-	  read(dlpun_his,"(8X,4I10,F12.6)",ERR=105,end=105) nstep, natms, keytrj, imcon, tstep
+	  !read(dlpun_his,"(8X,4I10,F12.6)",ERR=105,end=105) nstep, natms, keytrj, imcon, tstep
+	  if (.not.readline(dlpun_his)) goto 105
+	  nstep = argi(2)
+	  natms = argi(3)
+	  keytrj = argi(4)
+	  imcon = argi(5)
 	  ! Read in the cell coords if necessary
 	  if (imcon.GT.0) then
 	    !read(dlpun_his,12,ERR=106,end=106) cell
