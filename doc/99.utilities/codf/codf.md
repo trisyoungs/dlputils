@@ -11,7 +11,7 @@ template: manpage
 
 **codf** acts in a similar manner to [**cdf**](/dlputils/docs/utilities/cdf), calculating cylindrical distribution functions of molecules. However, instead of the normalised 2D equivalent to the [**rdf**](/dlputils/docs/utilities/rdf), **codf** gives information on the orientation of species as a function of distance from the defining vector, given defining sets of axes on the individual species.
 
-A vector describing the direction along which the cylinder lays is input, along with a point on which this vector lays. For each molecule the minimum distance (i.e. the perpendicular distance) between its centre-of-mass and the defining vector is calculated and the dot product between the perpendicular vector and each axis of the molecule is summed into distance bins. The resulting output is the average of the dot product of each molecular axis as a function of distance from the defining vector.
+A vector describing the direction along which the cylinder lays is input, along with a point on which this vector lays. For each molecule the minimum distance (i.e. the perpendicular distance) between its centre-of-mass and the defining vector is calculated and the dot product between the perpendicular vector and each axis of the molecule is summed into distance bins. The resulting output is the average of the dot product of each molecular axis as a function of distance from the defining vector, along with the 2D maps of angle vs distance for each of the three angles formed between the perpendicular vector and the molecule axes.
 
 Related programs:
 + To calculate standard cylindrical distribution functions, see [**cdf**](/dlputils/docs/utilities/cdf).
@@ -31,13 +31,17 @@ Where:
 
 ## Switches
 
+`-anglebin` _width_
+
+Specify the angle histogram bin _width_ to use in the calculation (default = 1.0).
+
 `-axis` _sp_ _x1_ _x2_ _y1_ _y2_
 
 Define the axis system for species index _sp_ from the four supplied atom indices. Axes must be defined for each + `<targetsp>` listed. See the [**pdens** manual](/dlputils/docs/utilities/pdens#axes) for more information on defining axes.
 
 `-bin` _width_
 
-Specify the histogram bin _width_ to use in the calculation (default = 0.1).
+Specify the distance histogram bin _width_ to use in the calculation (default = 0.1).
 
 `-compair` _sp_ _i_ _j_
 
@@ -59,5 +63,6 @@ Read in trajectory header from the specified DL_POLY HIStory _file_. Useful when
 
 Given an input HISTORY file `results.HISu`, then output files are as follows:
 `results.codfNN` : Cylindrical orientation distribution function for species NN about the defining vector (columns 2-4 are standard averages, columns 5-7 are averages of the absolute dot products, column 8 is the number of molecules used in the average)
+`results.codfNNAA` : Distance / angle map for axis AA of species NN
 
 

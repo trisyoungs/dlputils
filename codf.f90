@@ -7,18 +7,21 @@
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
 	character*20 :: temp
+	real*8, parameter :: radcon = 57.29577951d0
 	logical :: altheader = .FALSE.
-	integer :: nbins,i,n,m,a1,sp,m1,baselen,bin,nframes,success,nargs,numadded,framestodo = -1,framestodiscard = 0,framesdone, compairs(10,2)
+	integer :: i,n,m,a1,sp,m1,baselen,bin,nframes,success,nargs,numadded,framestodo = -1,framestodiscard = 0,framesdone, compairs(10,2)
+	integer :: nDistBins, nAngleBins, distBin, angleBin, axis
 	integer :: iargc
-	real*8 :: dist,pos(3),integral,origin(3),vector(3),t1(3),t2(3)
-	real*8 :: binwidth, xyyx, xzzx, yzzy, denom, numdens, shellvol
+	real*8 :: dist,pos(3),origin(3),vector(3),t1(3),t2(3),dp,angle,total
+	real*8 :: distBinWidth, angleBinWidth, xyyx, xzzx, yzzy, denom, numdens, shellvol
 	type(IntegerList) :: targetsp
-	real*8, allocatable :: cdf(:,:,:)
+	real*8, allocatable :: cdf(:,:,:), cdfangles(:,:,:,:)
 
-	binwidth=0.1   ! In Angstroms
+	distBinWidth=0.1   ! In Angstroms
+	angleBinWidth = 1.0
 	compairs = 0
 	nargs = iargc()
-	if (nargs.LT.8) stop "Usage : codf <HISTORYfile> <OUTPUTfile> <ox> <oy> <oz> <vx> <vy> <vz> <targetsp> [-bin width] [-header hisfile] [-frames n] [-discard n] [-axis x1 x2 y1 y2] [-compair i j]"
+	if (nargs.LT.8) stop "Usage : codf <HISTORYfile> <OUTPUTfile> <ox> <oy> <oz> <vx> <vy> <vz> <targetsp> [-bin width] [-anglebin width] [-header hisfile] [-frames n] [-discard n] [-axis x1 x2 y1 y2] [-compair i j]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	origin(1) = getargr(3)
@@ -46,6 +49,9 @@
 	  n = n + 1; if (n.GT.nargs) exit
 	  call getarg(n,temp)
 	  select case (temp)
+	    case ("-anglebin")
+	      n = n + 1; call getarg(n,temp); read(temp,"(F10.4)") angleBinWidth
+	      write(0,"(A,f6.2)") "Angle binwidth set to ", angleBinWidth
 	    case ("-axis") 
 	      n = n + 1; sp = getargi(n)
 	      n = n + 1; axesAatoms(sp,1) = getargi(n)
@@ -59,8 +65,8 @@
 	      end do
 	      axesAdefined(sp) = .true.
 	    case ("-bin")
-	      n = n + 1; call getarg(n,temp); read(temp,"(F10.4)") binwidth
-	      write(0,"(A,f6.2)") "Binwidth set to ",binwidth
+	      n = n + 1; call getarg(n,temp); read(temp,"(F10.4)") distBinWidth
+	      write(0,"(A,f6.2)") "Distance binwidth set to ", distBinWidth
 	    case ("-compair")
 	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") sp
 	      n = n + 1; call getarg(n,temp); read(temp,"(I6)") compairs(sp,1)
@@ -111,10 +117,14 @@
 	  end if
 	end if
 
-	nbins = maxval(cell) / binwidth + 1
-	write(0,"(A,I5,A,F6.3,A)") "There will be ",nbins," histogram bins of ",binwidth," Angstroms."
-	allocate(cdf(nspecies,nbins,0:6))
+	nAngleBins = 180.0 / angleBinWidth + 1
+	nDistBins = maxval(cell) / distBinWidth + 1
+	write(0,"(A,I5,A,F6.3,A)") "There will be ",nDistBins," distance histogram bins of ", distBinWidth," Angstroms."
+	write(0,"(A,I5,A,F6.3,A)") "There will be ",nAngleBins," angle histogram bins of ", angleBinWidth," degrees."
+	allocate(cdfangles(targetsp%n,3,nDistBins,nAngleBins))
+	allocate(cdf(targetsp%n,nDistBins,0:6))
 	cdf = 0.0
+	cdfangles = 0.0
 
 	! XXXX
 	! XXXX Main RDF routine....
@@ -169,15 +179,35 @@
 	    t1 = t1 / sqrt(sum(t1*t1))
 
 	    ! Accumulate vector dot-products with distance vector (perpendicular to reference vector)
-	    bin=INT(dist/binwidth)+1
-	    if (bin.lt.nbins) then
-	      cdf(sp,bin,0) = cdf(sp,bin,0) + 1.0
-	      cdf(sp,bin,1) = cdf(sp,bin,1) + t1(1)*axesA(sp,m1,1) + t1(2)*axesA(sp,m1,2) + t1(3)*axesA(sp,m1,3)
-	      cdf(sp,bin,2) = cdf(sp,bin,2) + t1(1)*axesA(sp,m1,4) + t1(2)*axesA(sp,m1,5) + t1(3)*axesA(sp,m1,6)
-	      cdf(sp,bin,3) = cdf(sp,bin,3) + t1(1)*axesA(sp,m1,7) + t1(2)*axesA(sp,m1,8) + t1(3)*axesA(sp,m1,9)
-	      cdf(sp,bin,4) = cdf(sp,bin,4) + dabs(t1(1)*axesA(sp,m1,1) + t1(2)*axesA(sp,m1,2) + t1(3)*axesA(sp,m1,3))
-	      cdf(sp,bin,5) = cdf(sp,bin,5) + dabs(t1(1)*axesA(sp,m1,4) + t1(2)*axesA(sp,m1,5) + t1(3)*axesA(sp,m1,6))
-	      cdf(sp,bin,6) = cdf(sp,bin,6) + dabs(t1(1)*axesA(sp,m1,7) + t1(2)*axesA(sp,m1,8) + t1(3)*axesA(sp,m1,9))
+	    ! Calculate angles between distance vector (perpendicular to reference vector) and molecule axes
+	    distBin=INT(dist/distBinWidth)+1
+	    if (distBin.lt.nDistBins) then
+	      cdf(n,distBin,0) = cdf(n,distBin,0) + 1.0
+
+	      ! -- X
+	      dp = vec3DotProduct(t1, axesA(sp,m1,1:3))
+	      angle = acos(dp) * radcon
+	      angleBin = INT( angle / angleBinWidth) + 1
+	!write(0,*) sp, m1, dist, dp, angleBin
+	      cdf(n,distBin,1) = cdf(n,distBin,1) + dp
+	      cdf(n,distBin,4) = cdf(n,distBin,4) + dabs(dp)
+	      cdfangles(n,1,distBin,angleBin) = cdfangles(n,1,distBin,angleBin) + 1.0
+
+	      ! -- Y
+	      dp = vec3DotProduct(t1, axesA(sp,m1,4:6))
+	      angle = acos(dp) * radcon
+	      angleBin = INT( angle / angleBinWidth) + 1
+	      cdf(n,distBin,2) = cdf(n,distBin,2) + dp
+	      cdf(n,distBin,5) = cdf(n,distBin,5) + dabs(dp)
+	      cdfangles(n,2,distBin,angleBin) = cdfangles(n,2,distBin,angleBin) + 1.0
+
+	      ! -- Z
+	      dp = vec3DotProduct(t1, axesA(sp,m1,7:9))
+	      angle = acos(dp) * radcon
+	      angleBin = INT( angle / angleBinWidth) + 1
+	      cdf(n,distBin,3) = cdf(n,distBin,3) + dp
+	      cdf(n,distBin,6) = cdf(n,distBin,6) + dabs(dp)
+	      cdfangles(n,3,distBin,angleBin) = cdfangles(n,3,distBin,angleBin) + 1.0
 	    end if
 	  end do
 	end do
@@ -215,6 +245,8 @@
 
 	do n=1,targetsp%n
 	  sp = targetsp%items(n)
+
+	  ! Dot product histograms
 	  resfile=basename(1:baselen)//"codf"//CHAR(48+sp)
 	  open(unit=9,file=resfile,form="formatted")
 	  write(9,"('# Origin / Vector = ',6f10.4)") origin, vector
@@ -225,11 +257,42 @@
 	  else
 	    write(9,"(a,i2,a,i3,i3)") "# Species ",sp," calculated using two atoms for COM: ", compairs(sp,1), compairs(sp,2)
 	  end if
-	  integral = 0.0
-	  do i=1,nbins
-	    write(9,"(F10.4,6(3x,F12.8),3x,e12.5)") (i-0.5)*binwidth, (cdf(sp,i,m)/cdf(sp,i,0), m=1,6), cdf(sp,i,0)
+
+	  do i=1,nDistBins
+	    if (cdf(n,i,0).gt.0.5) cdf(n,i,1:6) = cdf(n,i,1:6) / cdf(n,i,0)
+	    write(9,"(F10.4,6(3x,F12.8),3x,e12.5)") (i-0.5)*distBinWidth, (cdf(n,i,m), m=1,6), cdf(n,i,0)
 	  end do
 	  close(9)
+
+	  do axis=1,3
+
+	    resfile=basename(1:baselen)//"codf"//CHAR(48+sp)//CHAR(119+axis)
+	    open(unit=9,file=resfile,form="formatted")
+	    write(9,"('# Origin / Vector = ',6f10.4)") origin, vector
+	    write(9,"('# RDelta / RNBins = ',f10.4,i5)") distBinWidth, nDistBins
+	    write(9,"('# AngDelta / AngNBins = ',f10.4,i5)") angleBinWidth, nAngleBins
+	    write(9,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "# Local axes for species ",sp," calculated from: X=",axesAatoms(sp,1),"->", &
+	      & axesAatoms(sp,2),", Y=0.5X->0.5(r(",axesAatoms(sp,3),")->r(",axesAatoms(sp,4),"))"
+	    if (compairs(sp,1).eq.0) then
+	      write(9,"(a,i2,a)") "# Species ",sp," calculated using all atoms for COM."
+	    else
+	      write(9,"(a,i2,a,i3,i3)") "# Species ",sp," calculated using two atoms for COM: ", compairs(sp,1), compairs(sp,2)
+	    end if
+
+	    do i=1,nDistBins
+	      ! Normalise histograms (per distance)
+	      total = sum(cdfangles(n,axis,i,:))
+	      if (total > 0.5) cdfangles(n,axis,i,:) = cdfangles(n,axis,i,:) / total
+	    
+	      do m=1,nAngleBins
+	        write(9,"(F10.4,3x,F12.8)") (m-0.5)*angleBinWidth, cdfangles(n,axis,i,m)
+	      end do
+	      write(9,*) ""
+	    end do
+	    close(9)
+
+	  end do
+	
 	end do
 
 	write(0,*) "Finished."
