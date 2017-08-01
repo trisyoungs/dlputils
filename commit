@@ -38,13 +38,13 @@ then
   exit 0
 fi
 
-# Bump version if requested
-#if [ "$BUMP" = "true" ]
-#then
-#  ./changeversion bump
-#else
-#  ./changeversion
-#fi
+ Bump version if requested
+if [ "$BUMP" = "true" ]
+then
+  ./changeversion bump
+else
+  ./changeversion
+fi
 
 # Commit changes
 if [ "$COMMITTYPE" = "file" ]
