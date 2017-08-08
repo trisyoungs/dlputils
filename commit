@@ -38,7 +38,7 @@ then
   exit 0
 fi
 
- Bump version if requested
+# Bump version if requested
 if [ "$BUMP" = "true" ]
 then
   ./changeversion bump
