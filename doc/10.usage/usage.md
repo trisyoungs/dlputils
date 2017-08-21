@@ -21,5 +21,5 @@ In most cases one of more output files are generated, rather than results being 
 
 ## Not Using DL_POLY?
 
-Although specific read-write routines for DL_POLY trjectories are the only ones currently implemented, that does not necessarily mean you can't use **dlputils** to analyse your data. As long as you know the unit cell parameters and a standard xyz trajectory, this can be converted to a DL_POLY history file. A suitable OUT file (which is used to describe the frame contents in terms of species, molecules, and atoms) can also be constructed quite easily. See [**xyz2his**](/dlputils/docs/xyz2his) for specific instructions.
+Although specific read-write routines for DL_POLY trjectories are the only ones currently implemented, that does not necessarily mean you can't use **dlputils** to analyse your data. As long as you know the unit cell parameters and a standard xyz trajectory, this can be converted to a DL_POLY history file. A suitable OUT file (which is used to describe the frame contents in terms of species, molecules, and atoms) can also be constructed quite easily. See [**xyz2his**](/dlputils/docs/utilities/xyz2his) for specific instructions.
 
