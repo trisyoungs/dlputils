@@ -314,7 +314,7 @@
 	      ! Normalise to cylindrical shell volume, assuming unit cell C is cylinder length
 	      norm = 2*pi*cell(9)*((i+1)*distBinWidth)**2 - 2*pi*cell(9)*(i*distBinWidth)**2
 	      !total = sum(cdfangles(n,axis,i,:))
-	      cdfangles(n,axis,i,:) = cdfangles(n,axis,i,:) / norm
+	      cdfangles(n,axis,i,:) = cdfangles(n,axis,i,:) / norm / framesdone
 	    
 	      do m=1,nAngleBins
 	        write(9,"(F10.4,3x,F12.8)") (m-0.5)*angleBinWidth, cdfangles(n,axis,i,m) / dsin(((m-0.5)*angleBinWidth)/RADCON)
