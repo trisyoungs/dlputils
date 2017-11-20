@@ -285,7 +285,7 @@
 	      if (total > 0.5) cdfangles(n,axis,i,:) = cdfangles(n,axis,i,:) / total
 	    
 	      do m=1,nAngleBins
-	        write(9,"(F10.4,3x,F12.8)") (m-0.5)*angleBinWidth, cdfangles(n,axis,i,m) / dsin((m-0.5)*angleBinWidth)
+	        write(9,"(F10.4,3x,F12.8)") (m-0.5)*angleBinWidth, cdfangles(n,axis,i,m) / dsin(((m-0.5)*angleBinWidth)/RADCON)
 	      end do
 	      write(9,*) ""
 	    end do
