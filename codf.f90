@@ -12,7 +12,7 @@
 	integer :: i,n,m,a1,sp,m1,baselen,bin,nframes,success,nargs,numadded,framestodo = -1,framestodiscard = 0,framesdone, compairs(10,2)
 	integer :: nDistBins, nAngleBins, distBin, angleBin, axis
 	integer :: iargc
-	real*8 :: dist,pos(3),origin(3),vector(3),t1(3),t2(3),dp,angle,total
+	real*8 :: dist,pos(3),origin(3),vector(3),t1(3),t2(3),dp,angle,norm
 	real*8 :: distBinWidth, angleBinWidth, xyyx, xzzx, yzzy, denom, numdens, shellvol
 	type(IntegerList) :: targetsp
 	real*8, allocatable :: cdf(:,:,:), cdfangles(:,:,:,:)
@@ -266,6 +266,8 @@
 
 	  do axis=1,3
 
+	    ! Normalised histograms (sum to 1.0)
+
 	    resfile=basename(1:baselen)//"codf"//CHAR(48+sp)//CHAR(119+axis)
 	    open(unit=9,file=resfile,form="formatted")
 	    write(9,"('# Origin / Vector = ',6f10.4)") origin, vector
@@ -281,8 +283,37 @@
 
 	    do i=1,nDistBins
 	      ! Normalise histograms (per distance)
-	      total = sum(cdfangles(n,axis,i,:))
-	      if (total > 0.5) cdfangles(n,axis,i,:) = cdfangles(n,axis,i,:) / total
+	      norm = sum(cdfangles(n,axis,i,:))
+	      if (norm > 0.5) cdfangles(n,axis,i,:) = cdfangles(n,axis,i,:) / norm
+	    
+	      do m=1,nAngleBins
+	        write(9,"(F10.4,3x,F12.8)") (m-0.5)*angleBinWidth, cdfangles(n,axis,i,m) / dsin(((m-0.5)*angleBinWidth)/RADCON)
+	      end do
+	      write(9,*) ""
+	    end do
+	    close(9)
+
+	    ! Histograms normalised to cylindrical shell volume
+	    ! Assumes length of cylinder is same as unit cell C length
+
+	    resfile=basename(1:baselen)//"codf_cylnorm"//CHAR(48+sp)//CHAR(119+axis)
+	    open(unit=9,file=resfile,form="formatted")
+	    write(9,"('# Origin / Vector = ',6f10.4)") origin, vector
+	    write(9,"('# RDelta / RNBins = ',f10.4,i5)") distBinWidth, nDistBins
+	    write(9,"('# AngDelta / AngNBins = ',f10.4,i5)") angleBinWidth, nAngleBins
+	    write(9,"(A,I1,A,I2,A,I2,A,I2,A,I2,A)") "# Local axes for species ",sp," calculated from: X=",axesAatoms(sp,1),"->", &
+	      & axesAatoms(sp,2),", Y=0.5X->0.5(r(",axesAatoms(sp,3),")->r(",axesAatoms(sp,4),"))"
+	    if (compairs(sp,1).eq.0) then
+	      write(9,"(a,i2,a)") "# Species ",sp," calculated using all atoms for COM."
+	    else
+	      write(9,"(a,i2,a,i3,i3)") "# Species ",sp," calculated using two atoms for COM: ", compairs(sp,1), compairs(sp,2)
+	    end if
+
+	    do i=1,nDistBins
+	      ! Normalise to cylindrical shell volume, assuming unit cell C is cylinder length
+	      norm = 2*PI*cell(9)*((i+1)*distBinWidth)**2 - 2*PI*cell(9)*(i*distBinWidth)**2
+	      !total = sum(cdfangles(n,axis,i,:))
+	      cdfangles(n,axis,i,:) = cdfangles(n,axis,i,:) / total
 	    
 	      do m=1,nAngleBins
 	        write(9,"(F10.4,3x,F12.8)") (m-0.5)*angleBinWidth, cdfangles(n,axis,i,m) / dsin(((m-0.5)*angleBinWidth)/RADCON)
