@@ -7,6 +7,7 @@
 	implicit none
 	character*80 :: hisfile,dlpoutfile,basename,resfile,altheaderfile
 	character*20 :: temp
+	real*8, parameter :: pi = 3.14159265358979d0
 	real*8, parameter :: radcon = 57.29577951d0
 	logical :: altheader = .FALSE.
 	integer :: i,n,m,a1,sp,m1,baselen,bin,nframes,success,nargs,numadded,framestodo = -1,framestodiscard = 0,framesdone, compairs(10,2)
@@ -311,7 +312,7 @@
 
 	    do i=1,nDistBins
 	      ! Normalise to cylindrical shell volume, assuming unit cell C is cylinder length
-	      norm = 2*PI*cell(9)*((i+1)*distBinWidth)**2 - 2*PI*cell(9)*(i*distBinWidth)**2
+	      norm = 2*pi*cell(9)*((i+1)*distBinWidth)**2 - 2*pi*cell(9)*(i*distBinWidth)**2
 	      !total = sum(cdfangles(n,axis,i,:))
 	      cdfangles(n,axis,i,:) = cdfangles(n,axis,i,:) / total
 	    
