@@ -3,7 +3,7 @@
 AC_PREREQ(2.60)
 
 # Set program name, version, bug-address and source directory
-m4_define([DLPUTILS_VERSION],[1.4.4])
+m4_define([DLPUTILS_VERSION],[1.4.5])
 AC_INIT(dlputils,DLPUTILS_VERSION,tristan.youngs@stfc.ac.uk)
 AC_CONFIG_SRCDIR([dlprw.f90])
 

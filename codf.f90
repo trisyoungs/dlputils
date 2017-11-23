@@ -22,7 +22,7 @@
 	angleBinWidth = 1.0
 	compairs = 0
 	nargs = iargc()
-	if (nargs.LT.8) stop "Usage : codf <HISTORYfile> <OUTPUTfile> <ox> <oy> <oz> <vx> <vy> <vz> <targetsp> [-bin width] [-anglebin width] [-header hisfile] [-frames n] [-discard n] [-axis x1 x2 y1 y2] [-compair i j]"
+	if (nargs.LT.8) stop "Usage : codf <HISTORYfile> <OUTPUTfile> <ox> <oy> <oz> <vx> <vy> <vz> <targetsp> [-bin width] [-anglebin width] [-header hisfile] [-frames n] [-discard n] [-axis sp x1 x2 y1 y2] [-compair i j]"
 	call getarg(1,hisfile)
 	call getarg(2,dlpoutfile)
 	origin(1) = getargr(3)
@@ -312,9 +312,8 @@
 
 	    do i=1,nDistBins
 	      ! Normalise to cylindrical shell volume, assuming unit cell C is cylinder length
-	      norm = 2*pi*cell(9)*((i+1)*distBinWidth)**2 - 2*pi*cell(9)*(i*distBinWidth)**2
-	      !total = sum(cdfangles(n,axis,i,:))
-	      cdfangles(n,axis,i,:) = cdfangles(n,axis,i,:) / norm / framesdone
+	      norm = (3.141592654d0*distBinWidth*distBinWidth*( n*n - (n-1)*(n-1) ) * cell(9)) * (s_nmols(sp) / volume(cell))
+	      cdfangles(n,axis,i,:) = (cdfangles(n,axis,i,:) / framesdone) / norm
 	    
 	      do m=1,nAngleBins
 	        write(9,"(F10.4,3x,F12.8)") (m-0.5)*angleBinWidth, cdfangles(n,axis,i,m) / dsin(((m-0.5)*angleBinWidth)/RADCON)
