@@ -82,11 +82,11 @@
 	read(15,"(a80)") header
 	do n=1,natms
 	  if (.not.readline(15)) then
-	    write(0,*) "Error reading frame at atom ", n, "(premature end of file?)"
+	    write(0,*) "Error reading frame ", nframes+1, " at atom ", n, "(premature end of file?)"
 	    goto 999
 	  end if
-	  if (nargsparsed.lt.3) then
-	    write(0,*) "Error reading frame at atom ", n, "(less than three items on line)"
+	  if (nargsparsed.lt.4) then
+	    write(0,*) "Error reading frame ", nframes+1, " at atom ", n, "(less than three numbers follow the atom name)"
 	    write(0,*) "Number of args read = ", nargsparsed
 	    write(0,"(i4,2x,a80)") (m, arg(m), m=1,nargsparsed)
 	    goto 999
