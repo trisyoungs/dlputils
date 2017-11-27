@@ -47,7 +47,7 @@ add_library(external "parse.f90" "dlprw.f90" "utility.f90" "pdensrw.f90" "intege
 set (PROGRAMS 
   "acfcat" "acfprep" "acfsum" "addheader" "angle" "ardf" "avgconfig"
   "bident2" "bident2anal" "bident3" "bident4" 
-  "cagecor2" "catdlp" "cdf" "chunkdlp" "cluster" "clusterab" "cn" "codf" "counthb" "cryscomp"
+  "cagecor2" "catdlp" "cdf" "cdf2" "chunkdlp" "cluster" "clusterab" "cn" "codf" "counthb" "cryscomp"
   "dahist" "dist2" "dlp2config" "dlp2dlp" "dlp2dlpflipz" "dlp2dlpshift" "dlp2xyzf" "dlp2xyzs" "dlpreorder"  "dlpsize"
   "editconfig" 
   "dlpfilter"
