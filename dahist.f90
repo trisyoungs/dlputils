@@ -12,7 +12,7 @@
 	integer :: nbins,aoff1,aoff2,n,m,s1,s2,bin,angbin,nframes,numadded,sp1,sp2,a1(maxtriplets),a2(maxtriplets),a3(maxtriplets)
 	integer :: iargc,p,framestodo,ntriplets
 	real*8 :: r1(3), r2(3), r3(3), r12(3), r23(3), dist, binwidth, mindist, maxdist, angle, integral
-	real*8, allocatable :: hist(:), anglemap(:,:)
+	real*8, allocatable :: hist(:), anglehist(:), anglemap(:,:)
 
 	binwidth=0.01   ! In Angstroms
 	framestodo=-1
@@ -66,10 +66,12 @@
 	write(0,"(20(i3,'/ (',i3,',',i3,')'))") (a1(n),a2(n),a3(n),n=1,ntriplets)
 	
 	allocate(hist(nbins),stat=status); if (status.GT.0) stop "Allocation error for hist ()"
+	allocate(anglehist(180),stat=status); if (status.GT.0) stop "Allocation error for anglehist ()"
 	allocate(anglemap(nbins,180),stat=status); if (status.GT.0) stop "Allocation error for angle()"
 
 	! Initialise the arrays...
 	hist = 0.0
+        anglehist = 0.0
 	anglemap = 0.0
 
 	! XXXX
@@ -91,6 +93,9 @@
 	  do s2 = 1,s_nmols(sp2)     ! Loop over all molecules of species 2
 
 	    do n = 1,ntriplets
+
+              ! Make sure to exclude i == k
+              if ((aoff1+a1(n)).eq.(aoff2+a3(n))) cycle
 
 	      ! Grab coordinates of what will be the central atom
 	      r2(1) = xpos(aoff2+a2(n)-1)
@@ -116,6 +121,8 @@
 	        angle = acos( sum(r12*r23) ) * RADCON
 
 	        angbin = int(angle)+1
+	        anglehist(angbin) = anglehist(angbin)+1.0
+
 	        anglemap(bin,angbin) = anglemap(bin,angbin) + 1.0
 
 	        numadded = numadded+1
@@ -157,13 +164,20 @@
 
 	! Normalise data
 	hist = hist / (nframes * s_nmols(sp1))
+        anglehist = anglehist / sum(anglehist)
 	anglemap = anglemap / (nframes * s_nmols(sp1))
 
 	resfile=outputFileName(hisfile, "dahist", "dahist"//stringNMM(sp1,a1(1))//"_"//stringNMMOO(sp2,a2(1),a3(1))//".hist")
 	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
-	! Normalise RDF with respect to the number of frames.
 	do n=1,nbins
 	  write(9,"(f6.3,3x,e16.8)") (n*binwidth+mindist)-binwidth/2.0,hist(n)
+	end do
+	close(9)
+
+	resfile=outputFileName(hisfile, "dahist", "dahist"//stringNMM(sp1,a1(1))//"_"//stringNMMOO(sp2,a2(1),a3(1))//".angle")
+	OPEN(UNIT=9,file=resfile,FORM="FORMATTED")
+	do n=1,180
+	  write(9,"(f6.1,3x,e16.8)") n-0.5,anglehist(n)
 	end do
 	close(9)
 
@@ -175,7 +189,7 @@
 	!write(9,*) "yxz"
 	do m=1,180
 	  do n=1,nbins
-	    write(9,"(3f16.8)") (n-0.5)*binwidth+mindist, m*1.0, anglemap(n,m)
+	    write(9,"(3f16.8)") (n-0.5)*binwidth+mindist, (m-0.5)*1.0, anglemap(n,m)
 	  end do
 	  write(9,*) ""
 	end do
