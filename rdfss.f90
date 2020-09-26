@@ -84,17 +84,17 @@
 	
 	call calc_com
 	if (compair(1).ne.0) then
-	  do m2=1,s_nmols(s2)
-	    c1x = xpos(s_start(s2)+(m2-1)*s_natoms(s2)+compair(1)-1)
-	    c1y = ypos(s_start(s2)+(m2-1)*s_natoms(s2)+compair(1)-1)
-	    c1z = zpos(s_start(s2)+(m2-1)*s_natoms(s2)+compair(1)-1)
-	    c2x = xpos(s_start(s2)+(m2-1)*s_natoms(s2)+compair(2)-1)
-	    c2y = ypos(s_start(s2)+(m2-1)*s_natoms(s2)+compair(2)-1)
-	    c2z = zpos(s_start(s2)+(m2-1)*s_natoms(s2)+compair(2)-1)
+	  do m2=1,s_nmols(sp2)
+	    c1x = xpos(s_start(sp2)+(m2-1)*s_natoms(sp2)+compair(1)-1)
+	    c1y = ypos(s_start(sp2)+(m2-1)*s_natoms(sp2)+compair(1)-1)
+	    c1z = zpos(s_start(sp2)+(m2-1)*s_natoms(sp2)+compair(1)-1)
+	    c2x = xpos(s_start(sp2)+(m2-1)*s_natoms(sp2)+compair(2)-1)
+	    c2y = ypos(s_start(sp2)+(m2-1)*s_natoms(sp2)+compair(2)-1)
+	    c2z = zpos(s_start(sp2)+(m2-1)*s_natoms(sp2)+compair(2)-1)
 	    call pbc(c2x,c2y,c2z,c1x,c1y,c1z,tx,ty,tz)
-	    comx(s2,m2) = (c1x+tx)*0.5
-	    comy(s2,m2) = (c1y+ty)*0.5
-	    comz(s2,m2) = (c1z+tz)*0.5
+	    comx(sp2,m2) = (c1x+tx)*0.5
+	    comy(sp2,m2) = (c1y+ty)*0.5
+	    comz(sp2,m2) = (c1z+tz)*0.5
 	  end do
 	end if
 
