@@ -2,13 +2,13 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "dlputils"
-#define MyAppVersion "1.4.5"
+#define MyAppVersion "1.4.6"
 #define MyAppPublisher "Tristan Youngs"
 #define MyAppURL "https://www.projectaten.com"
 #define MyAppExeName "dlputils.exe"
 
-; Locations of bin directories of MinGW(32)
-#define MinGWDir "C:\Qt\Tools\mingw530_32"
+; Locations of bin directories of MinGW(64)
+#define MinGWDir "C:\Qt\Tools\mingw730_64"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -27,7 +27,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes          
 LicenseFile=..\..\COPYING
 SetupIconFile=.\dlputils.ico
-OutputBaseFilename=dlputils-1.4.5
+OutputBaseFilename=dlputils-1.4.6
 Compression=lzma
 SolidCompression=yes
 ChangesEnvironment=true
@@ -38,8 +38,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "..\..\build\*.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\dlputils.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MinGWDir}\bin\libgcc_s_dw2-1.dll"; DestDir: "{app}"
-Source: "{#MinGWDir}\bin\libgfortran-3.dll"; DestDir: "{app}"
+Source: "{#MinGWDir}\bin\libgfortran-4.dll"; DestDir: "{app}"
 Source: "{#MinGWDir}\bin\libquadmath-0.dll"; DestDir: "{app}"
 Source: "{#MinGWDir}\bin\libwinpthread-1.dll"; DestDir: "{app}"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
