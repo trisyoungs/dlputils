@@ -38,6 +38,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "..\..\build\*.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\dlputils.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MinGWDir}\bin\libgcc_s_seh-1.dll"; DestDir: "{app}"
 Source: "{#MinGWDir}\bin\libgfortran-4.dll"; DestDir: "{app}"
 Source: "{#MinGWDir}\bin\libquadmath-0.dll"; DestDir: "{app}"
 Source: "{#MinGWDir}\bin\libwinpthread-1.dll"; DestDir: "{app}"
