@@ -6,7 +6,7 @@ bin_PROGRAMS += glucanal glucgeom gluchb gluchbeach
 bin_PROGRAMS += pdens pdensinfo pdensint pdensmirror pdenstrim pdensgauss
 bin_PROGRAMS += avgconfig dlpsize genlb gengg pairs probedlp
 bin_PROGRAMS += partials2sq
-#bin_PROGRAMS += acf dacf sq totalgr
+bin_PROGRAMS += acf dacf sq totalgr
 
 EXTRA_DIST = acf.f90 dacf.f90 sq.f90 totalgr.f90 ringconf_test.tors
 
