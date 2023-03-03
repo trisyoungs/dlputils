@@ -52,7 +52,7 @@ set (PROGRAMS
   "editconfig" 
   "dlpfilter"
   "getcell" "genlb" "gengg" "geom" "glucanal" "glucgeom" "gluchb" "gluchbeach"
-  "intertorsion" "intratorsion" "intratorsion2" 
+  "intraangle" "intradist" "intertorsion" "intratorsion" "intratorsion2"
   "legendre" "lifehb"
   "moldist" "msd" "msd2"
   "orientrdf"
