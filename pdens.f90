@@ -55,7 +55,7 @@
 	integer :: n, nframes, o, i, sp2index
 	real*8 :: px, py, pz, mindistsq, maxdistsq, distsq, tx, ty, tz, v(3), origin(3)
 	real*8 :: angdelta, ax
-	integer :: sp1,m1,sp2,m2,p1,p2,nx,ny,nz,refnx,refny,refnz
+	integer :: sp1,m1,sp2,m2,p1,p2,nx,ny,nz,refnx,refny,refnz,maptot, mapint
 	logical :: failed, getbin
 	integer :: iargc
 
@@ -316,11 +316,28 @@
 	nframes = 0
 	nframesused = 0
 	nmapframes = 0
-	sp1 = centresp
+        sp1=centresp
+	!if (molmap) molflags(:) = 0
 	! If we're using a mapfile, read it here
+        ! TFH EDITS HERE - YOU HAVE BEEN WARNED
+        ! reads molmap file line until a "-1" is reached 
 101	if (molmap) then
-	  read(20,"(I5,1x,40(I2,1x))",end=118,err=117) m1,(molflags(m2),m2=1,s_nmols(centresp))
-	  ! if (m1.NE.nframes) stop "Mapfile missed a frame number!"
+          molflags(:) = 0
+	  read(20,"(I5)",advance="no",end=118,err=117) m1 !,(molflags(m2),m2=1,s_nmols(centresp))
+	  if (m1.NE.(nframes+1)) stop "Mapfile missed a frame number!"
+          do m2=1,s_nmols(centresp)
+             read(20,"(1x,I5)",advance="no") mapint  !molflags(m2)
+             !write(0,*) mapint
+ 	     if (mapint.GT.0) then
+	        molflags(mapint)=1
+             elseif (mapint.EQ.-1) then 
+               exit
+             else
+               stop "Error in mapfile"
+             endif               
+          enddo
+          read(20,*)
+          !write(0,*) "for frame ,", m1, " molflags = ", molflags(:)!,m2=1,s_nmols(centresp))
 	end if
 102	success=readframe()
 	IF (success.eq.1) goto 120  ! End of file encountered....
@@ -350,6 +367,7 @@
 	  ! If we're using a mapfile, decide whether to include this molecule
 	  if (molmap) then
 	    if (molflags(m1).eq.0) cycle 
+            !write(0,*) 'USing molecule ', m1, 'molflag = ', molflags(m1)
 	  end if
 	  npdenscentres = npdenscentres + 1	! Normalisation counter
 
@@ -477,6 +495,14 @@
 	    origin(1) = tx*axesA(sp1,m1,1) + ty*axesA(sp1,m1,2) + tz*axesA(sp1,m1,3)
 	    origin(2) = tx*axesA(sp1,m1,4) + ty*axesA(sp1,m1,5) + tz*axesA(sp1,m1,6)
 	    origin(3) = tx*axesA(sp1,m1,7) + ty*axesA(sp1,m1,8) + tz*axesA(sp1,m1,9)
+            
+           ! if (m1.EQ.1) then
+		!write(*,*) origin
+                !write(*,*) axesAorigin(sp1,m1,:)
+	   ! end if
+
+  
+	  
 	  end if
 
 	  ! Loop over atoms
@@ -487,14 +513,20 @@
 	  	& axesAorigin(sp1,m1,2),axesAorigin(sp1,m1,3),tx,ty,tz)
 
 	    ! 'Zero' its position with respect to the axis centre...
-	    tx=tx-axesAorigin(sp1,m1,1)
-	    ty=ty-axesAorigin(sp1,m1,2)
-	    tz=tz-axesAorigin(sp1,m1,3)
+	    tx=tx-axesAorigin(sp1,m1,1)+origin(1)
+	    ty=ty-axesAorigin(sp1,m1,2)+origin(2)
+	    tz=tz-axesAorigin(sp1,m1,3)+origin(3)
 
 	    ! Transform the coordinate into the reference frame
 	    px=tx*axesA(sp1,m1,1) + ty*axesA(sp1,m1,2) + tz*axesA(sp1,m1,3)
 	    py=tx*axesA(sp1,m1,4) + ty*axesA(sp1,m1,5) + tz*axesA(sp1,m1,6)
 	    pz=tx*axesA(sp1,m1,7) + ty*axesA(sp1,m1,8) + tz*axesA(sp1,m1,9)
+
+	    !Add on origin offset
+            ! TFH EDIT 08/10/2018 to "fix" that average molecule orgin not in the correct position if using -origin
+            px=px-origin(1)
+            py=py-origin(2)
+            pz=pz-origin(3)
 
 	    ! Accumulate the position....
 	    avggeom(n,1) = avggeom(n,1)+px
