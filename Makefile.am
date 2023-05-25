@@ -7,7 +7,7 @@ bin_PROGRAMS += pdens pdensinfo pdensint pdensmirror pdenstrim pdensgauss
 bin_PROGRAMS += avgconfig dlpsize genlb gengg pairs probedlp
 bin_PROGRAMS += partials2sq
 bin_PROGRAMS += acf dacf sq totalgr
-bin_PROGRAMS += ardf_molmap cdf_mol_map dlp2xyz pdens_2d
+bin_PROGRAMS += cdf_mol_map dlp2xyz pdens_2d
 
 EXTRA_DIST = acf.f90 dacf.f90 sq.f90 totalgr.f90 ringconf_test.tors
 
@@ -70,7 +70,6 @@ rdfss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdfss.f90
 rdfdep_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${ILIST} rdfdep.f90
 zdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} zdens.f90
 cdf_mol_map_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} cdf_mol_map.f90
-ardf_molmap_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${ILIST} ardf_molmap.f90
 
 # SQ
 partials2sq_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} partials2sq.f90
