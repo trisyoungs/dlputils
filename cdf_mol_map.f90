@@ -168,5 +168,5 @@
 999	close(10)
 	close(13)
         close(9)
-	end program cyldf
+	end program cyldf_molmap
 

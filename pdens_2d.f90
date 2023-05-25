@@ -33,10 +33,10 @@
 		write(0,*) temp, "unrecognised option for 2d slice, choose either xy|xz|yz"
 		stop
 	    endif
-	    case ("-int")
-		intr = .true.
-	      write(0,*) "2d slices based on integral over all of other axes [NOT CURRENTLY WORKING]"
-		stop		
+	    !case ("-int")
+		!intr = .true.
+	      !write(0,*) "2d slices based on integral over all of other axes [NOT CURRENTLY WORKING]"
+		!stop		
 	    case default
 	      write(0,*) "Unrecognised argument :",temp
 	      stop
