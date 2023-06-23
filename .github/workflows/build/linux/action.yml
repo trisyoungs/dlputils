@@ -22,7 +22,7 @@ runs:
       mkdir build
       cd build
       cmake ../ -G Ninja -DCMAKE_INSTALL_PREFIX=`pwd`
-      ninja
+      ninja && ninja install
 
   - name: Create Zip
     shell: bash

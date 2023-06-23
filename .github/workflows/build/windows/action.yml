@@ -13,6 +13,7 @@ runs:
       cd build
       cmake ../ -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=`pwd`
       cmake --build . --config Release
+      cmake --install . --config Release
 
   - name: Create Zip
     shell: bash
