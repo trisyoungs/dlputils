@@ -18,7 +18,7 @@ runs:
       set -ex
       mkdir build
       cd build
-      cmake ../ -G Ninja -DCMAKE_INSTALL_PREFIX=`pwd`/bin
+      cmake ../ -G Ninja -DCMAKE_Fortran_COMPILER=gfortran-11 -DCMAKE_INSTALL_PREFIX=`pwd`/bin
       cmake --build .
       cmake --install .
 
