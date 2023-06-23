@@ -41,7 +41,7 @@ else (Fortran_COMPILER_NAME MATCHES "gfortran.*")
 endif (Fortran_COMPILER_NAME MATCHES "gfortran.*")
 
 # Setup function library build
-add_library(external "parse.f90" "dlprw.f90" "utility.f90" "pdensrw.f90" "integerlist.f90" "reallist.f90")
+add_library(external "parse.f90" "dlprw.f90" "utility.f90" "pdensrw.f90" "integerlist.f90" "reallist.f90" "ptable.f90")
 
 # Setup binary builds
 set (PROGRAMS 
