@@ -3,13 +3,14 @@
 	! #####################
 
 	program xyz2his
-	use dlprw; use parse
+	use dlprw; use parse; use ptable
 	implicit none
 	character*80 :: xyzfile,temp,outfile,header
 	real*8 :: a
 	integer :: nargs,n,i,m,success,nframes,destfmt
-	integer :: iargc
-	logical :: hascell = .FALSE., extraline = .FALSE.
+	integer :: iargc, nAssignedMasses = 0
+	logical :: hascell = .FALSE., extraline = .FALSE., found
+	character*8, allocatable :: assignedMasses(:)
 
 	nargs = iargc()
 	if (nargs.lt.2) stop " Usage: xyz2his <xyz file> <output.HISu> [-cell ax ay az bx by bz cx cy cz] [-extraline] [-cubic a]"
@@ -67,6 +68,26 @@
 	  if (nargsparsed.eq.10) keytrj = 2
 	end do
 	rewind(15)
+
+	! Handle atomic masses
+	allocate(assignedMasses(1:natms))
+	do n=1,natms
+	  ! Assign mass for the current atom name
+	  mass(n) = getMass(atmname(n))
+	  ! If we haven't already assigned this atom name, add it to our array
+	  found = .FALSE.
+	  do m=1,nAssignedMasses
+	    if (assignedMasses(m).eq.atmname(n)) then
+	      found = .TRUE.
+	      exit
+	    end if
+	  end do
+	  if (.not.found) then
+	    nAssignedMasses = nAssignedMasses + 1
+	    assignedMasses(nAssignedMasses) = atmname(n)
+	    write(6,*) " -- Atom name ", atmname(n), "assigned mass of ", mass(n)
+	  end if
+	end do
 
 	nframes = 0
 	write(0,*) "Writing header of new file..."
