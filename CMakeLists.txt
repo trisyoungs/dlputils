@@ -2,6 +2,12 @@
 
 cmake_minimum_required (VERSION 2.6)
 project (dlputils)
+set(DESCRIPTION "dlputils - Programs for analysis of DL_POLY trajectories")
+set(AUTHOR "Tristan Youngs")
+set(VERSION_MAJOR "1")
+set(VERSION_MINOR "5")
+set(VERSION_PATCH "0")
+
 enable_language (Fortran)
 
 # make sure that the default is a RELEASE
