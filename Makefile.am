@@ -7,6 +7,7 @@ bin_PROGRAMS += pdens pdensinfo pdensint pdensmirror pdenstrim pdensgauss
 bin_PROGRAMS += avgconfig dlpsize genlb gengg pairs probedlp
 bin_PROGRAMS += partials2sq
 bin_PROGRAMS += acf dacf sq totalgr
+bin_PROGRAMS += cdf_mol_map dlp2xyz pdens_2d
 
 EXTRA_DIST = acf.f90 dacf.f90 sq.f90 totalgr.f90 ringconf_test.tors
 
@@ -52,6 +53,7 @@ dlpreorder_SOURCES = ${PARSE} ${DLPRW} dlpreorder.f90
 editconfig_SOURCES = ${PARSE} ${DLPRW} editconfig.f90
 dlpfilter_SOURCES = ${PARSE} ${DLPRW} dlpfilter.f90
 xyz2his_SOURCES = ${PARSE} ${DLPRW} xyz2his.f90
+dlp2xyz_SOURCES = ${PARSE} ${DLPRW} dlp2xyz.f90
 
 # RDF
 cdf_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} cdf.f90
@@ -67,6 +69,7 @@ rdfaainter_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdfaainter.f90
 rdfss_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} rdfss.f90
 rdfdep_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${ILIST} rdfdep.f90
 zdens_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} zdens.f90
+cdf_mol_map_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} cdf_mol_map.f90
 
 # SQ
 partials2sq_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} partials2sq.f90
@@ -121,6 +124,7 @@ pdensinfo_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensinfo.f90
 pdensint_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensint.f90
 pdensmirror_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdensmirror.f90
 pdenstrim_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdenstrim.f90
+pdens_2d_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} ${PDENSRW} pdens_2d.f90
 
 # Misc
 avgconfig_SOURCES = ${PARSE} ${DLPRW} ${UTILITY} avgconfig.f90

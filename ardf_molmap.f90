@@ -5,22 +5,23 @@
 	use dlprw; use utility; use IList; use parse
 	implicit none
 	real*8, parameter :: pi = 3.14159265358979d0, radcon = 57.29577951d0
-	character*80 :: hisfile,outfile,basename,resfile,altheaderfile
+	character*80 :: hisfile,outfile,basename,resfile,altheaderfile,flagfile
 	character*20 :: temp
-	logical :: altheader = .FALSE., crossTerms = .FALSE.
-	integer :: n,m,sp,sp1,sp2,m1,m2,baselen,bin,nframes,success,nargs, framestodo = -1,frameskip = 0,framesdone
+	logical :: altheader = .FALSE., crossTerms = .FALSE., molmap=.FALSE.
+	integer :: n,m,sp,sp1,sp2,m1,m2,baselen,bin,nframes,success,nargs, framestodo = -1,frameskip = 0,framesdone,mapint, nardfcentres
 	integer :: iargc, nbins, nangbins, angbin, aoff1, aoff2, a1, a2, restrictAxis = 0, element
 	real*8 :: dist,i(3),j(3),jtemp(3), binwidth, angbinwidth, angles(9), ax, norm, gr, cn
-	real*8 :: angmin, angmax, distmin, distmax
+	real*8 :: angmin, angmax, distmin, distmax, nardfsum, nardfcentre_ave
 	type(IntegerList) :: sp1Site, sp2Site
 	integer, allocatable :: rdfxyz(:,:,:), sanityrdf(:,:)
 	real*8, allocatable :: angleNorm(:)
+        integer, allocatable :: molflags(:)		! Per-frame map of sp1 mols to include in averaging
 
 	binwidth=0.1   ! In Angstroms
 	angbinwidth = 5.0   ! In degrees
 	
 	nargs = iargc()
-	if (nargs.LT.4) stop "Usage : ardf <HISTORYfile> <OUTPUTfile> <sp1> <sp2> [-axis sp x1 x2 y1 y2] [-bin width] [-angbin width] [-header hisfile] [-frames n] [-discard n] [-sp1site atoms] [-sp2site atoms] [-restrict x|y|z angmin angmax distmin distmax] [-cross]"
+	if (nargs.LT.4) stop "Usage : ardf <HISTORYfile> <OUTPUTfile> <sp1> <sp2> [-axis sp x1 x2 y1 y2] [-bin width] [-angbin width] [-header hisfile] [-frames n] [-discard n] [-sp1site atoms] [-sp2site atoms] [-restrict x|y|z angmin angmax distmin distmax] [-cross] [-molmap flagfile]"
 	call getarg(1,hisfile)
 	call getarg(2,outfile)
 	sp1 = getargi(3)
@@ -84,6 +85,11 @@
 	      if (sp2Site%n.gt.0) stop "Definition of site specified twice for species 2"
 	      n = n + 1; call getarg(n,temp); if (.not.parseIntegerList(temp, sp2Site)) stop "Failed to parse atom list."
 	      write(0,"(i2,a,i2,a,20i4)") sp2Site%n, " atoms added as other sites for species ", sp, ": ", sp2Site%items(1:sp2Site%n)
+            case ("-molmap")
+	      n = n + 1; call getarg(n,flagfile)
+	      write(0,"(A,A)") "Using flags for species 1 molecules from : ",flagfile
+	      open(unit=20,file=flagfile,form="formatted",status="old")
+	      molmap = .TRUE.
 	    case default
 	      write(0,"(a,a)") "Unrecognised command line option:",temp
 	      stop
@@ -127,13 +133,45 @@
 	  end if
 	end do
 
+        ! Alocate molflags array
+	if (molmap) allocate(molflags(s_nmols(sp1)))
+
 	! XXXX
 	! XXXX Main RDF routine....
 	! XXXX
 	! Set up the vars...
 100	nframes=0
 	framesdone = 0
-101	success=readframe()
+
+	! If we're using a mapfile, read it here
+        ! TFH EDITS HERE - YOU HAVE BEEN WARNED
+        ! reads molmap file line until a "-1" is reached 
+	nardfsum = 0.0d0
+	nardfcentre_ave = 0.0d0
+
+101     if (molmap) then
+          molflags(:) = 0
+	  read(20,"(I5)",advance="no",end=118,err=117) m1 
+	  if (m1.NE.(nframes+1)) stop "Mapfile missed a frame number!"
+          do m2=1,s_nmols(sp1)
+             read(20,"(1x,I5)",advance="no") mapint  !molflags(m2)
+             !write(0,*) mapint
+ 	     if (mapint.GT.0) then
+	        molflags(mapint)=1
+             elseif (mapint.EQ.-1) then 
+               exit
+             else
+               stop "Error in mapfile"
+             endif               
+          enddo
+          read(20,*)
+          !write(0,*) "for frame ,", m1, " molflags = ", molflags(:)!,m2=1,s_nmols(centresp))
+	end if
+
+	
+
+
+	success=readframe()
 	if (success.EQ.1) goto 801  ! End of file encountered....
 	if (success.LT.0) goto 799  ! File error....
 	nframes=nframes+1
@@ -145,8 +183,18 @@
 	! Generate all molecular axes
 	call genaxes()
 
+	nardfcentres = 0
+
 	aoff1 = s_start(sp1) - 1
 	do m1=1,s_nmols(sp1)     ! Loop over all molecules of species 1...
+ 	 
+
+	! tfh molmap edit
+	   if (molmap) then
+	       if (molflags(m1).eq.0) goto 103 
+               !write(0,*) 'USing molecule ', m1, 'molflag = ', molflags(m1)
+	   end if
+	   nardfcentres = nardfcentres + 1	! Normalisation counter
 
 	  ! Grab coordinate for central species
 	  if (sp1Site%n.eq.0) then
@@ -234,13 +282,27 @@
 	  end do
 
 	  ! Increase atom offset
-	  aoff1 = aoff1 + s_natoms(sp1)
+103	  aoff1 = aoff1 + s_natoms(sp1)
+
+	  
 
 	end do
+
+	!mol_map_edit
+	nardfsum = nardfsum + nardfcentres
+	!write(6,*) "nardfsum = ", nardfsum
+	
 
 	if (framesdone.eq.framestodo) goto 801
 	! Next frame
 	goto 101
+
+117	write(6,*) "Error reading mapfile."
+	!write(6,*) "Selected ",nmapframes," from trajectory before error."
+	goto 801
+118	write(6,*) "Reached end of mapfile."
+	!write(6,*) "Selected ",nmapframes," from trajectory."
+	goto 801
 
 700	write(*,*) "INFILE and OUTFILE have the same name!!!"
 	goto 999
@@ -269,6 +331,9 @@
 	  basename=hisfile(1:baselen)
 	endif
 
+	!for mol_map
+	nardfcentre_ave = nardfsum / nframes
+
 	! Loop over axes
 	sanityrdf = 0.0
 	do a1=1,3
@@ -278,7 +343,7 @@
 
 	    element = (a1-1)*3 + a2
 
-	    resfile=basename(1:baselen)//"ardf"//CHAR(48+sp1)//CHAR(48+sp2)//CHAR(119+a1)//CHAR(119+a2)
+	    resfile=basename(1:baselen)//"ardf_molmap"//CHAR(48+sp1)//CHAR(48+sp2)//CHAR(119+a1)//CHAR(119+a2)
 	    open(unit=9,file=resfile,form="formatted")
 	    if (sp1Site%n.eq.0) then
 	      write(9,"(a,i2,a)") "# Species ",sp1," site is axis origin."
@@ -309,8 +374,12 @@
 	      cn = 0.0
 	      do n=1,nbins
 	        norm = (4.0/3.0) * pi * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * s_nmols(sp2) / volume(cell)
-	        gr = rdfxyz(element,n,m) / norm / nframes / s_nmols(sp1)
-		cn = cn + 1.0*rdfxyz(element,n,m) / nframes / s_nmols(sp1)
+	        !gr = rdfxyz(element,n,m) / norm / nframes / s_nmols(sp1)
+		!cn = cn + 1.0*rdfxyz(element,n,m) / nframes / s_nmols(sp1)
+		!Update for molmap
+   		gr = rdfxyz(element,n,m) / norm / nframes / nardfcentre_ave
+		cn = cn + 1.0*rdfxyz(element,n,m) / nframes / nardfcentre_ave
+
 	        if (n.eq.1) then
 		  write(9,"(F10.4,3(3x,F12.8),'   # Range ',2(1x,f10.4))") ((n-0.5)*binwidth), gr / angleNorm(m), gr, cn, (m-1)*angbinwidth, m*angbinwidth
 		else
@@ -324,10 +393,12 @@
 
 	    ! Normalise and write sanityrdf
 	    if (a1.eq.a2) then
-	      open(unit=9,file=resfile(1:baselen+7)//".sanity",form="formatted")
+	      open(unit=9,file=resfile(1:baselen+14)//".sanity",form="formatted")
 	      do n=1,nbins
 	        norm = (4.0/3.0) * pi * ((n*binwidth)**3 - ((n-1)*binwidth)**3) * s_nmols(sp2) / volume(cell)
-	        write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), sanityrdf(a1,n) / norm / nframes / s_nmols(sp1)
+	        !write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), sanityrdf(a1,n) / norm / nframes / s_nmols(sp1)
+		!Update for mol_map
+		write(9,"(F10.4,2(3x,F12.8))") ((n-0.5)*binwidth), sanityrdf(a1,n) / norm / nframes / nardfcentre_ave
 	      end do
 	      close(9)
 	    end if

@@ -1,5 +1,5 @@
 	! ################
-	! dlp2xyzf converter
+	! dlp2xyz converter ! changed by TFH to remove forces 30-9-21
 	! Assumes that the trajectory file contains successive frames from the simulation
 	! ################
 
@@ -44,7 +44,7 @@
 	  write(6,*) "Frame", count
 	  ! Write out the new 'frame' before storing the new forces....
 	  do n=1,natms
-	    write(6,"(a8,2x,6e16.7)") atmname(n), sx(n),sy(n),sz(n),xfor(n),yfor(n),zfor(n)
+	    write(6,"(a8,2x,6e16.7)") atmname(n), sx(n),sy(n),sz(n)!,xfor(n),yfor(n),zfor(n)
 	  end do
 	end if
 	! Store the current forces...
