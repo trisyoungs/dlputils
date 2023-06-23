@@ -17,12 +17,6 @@ if (NOT CMAKE_BUILD_TYPE)
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
 
-# default installation
-get_filename_component (default_prefix ".." ABSOLUTE)
-set (CMAKE_INSTALL_PREFIX ${default_prefix} CACHE STRING
-      "Choose the installation directory"
-      FORCE)
-
 # FFLAGS depend on the compiler
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
@@ -75,4 +69,4 @@ endforeach (p)
 
 # install executables and scripts
 install (TARGETS ${PROGRAMS} 
-         RUNTIME DESTINATION "bin")
+         RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
