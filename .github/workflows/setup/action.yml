@@ -8,9 +8,9 @@ runs:
     shell: bash
     run: |
       set -ex
-      VERSION_MAJOR=`grep VERSION_MAJOR ./CMakeLists.txt | sed -e 's/set(VERSION_MAJOR \"\([0-9a-z\.]\+\)\")/\1/g'`
-      VERSION_MINOR=`grep VERSION_MINOR ./CMakeLists.txt | sed -e 's/set(VERSION_MINOR \"\([0-9a-z\.]\+\)\")/\1/g'`
-      VERSION_PATCH=`grep VERSION_PATCH ./CMakeLists.txt | sed -e 's/set(VERSION_PATCH \"\([0-9a-z\.]\+\)\")/\1/g'`
+      VERSION_MAJOR=`grep VERSION_MAJOR ./CMakeLists.txt | sed -e 's/set(VERSION_MAJOR \"\([0-9a-z]\+\)\")/\1/g'`
+      VERSION_MINOR=`grep VERSION_MINOR ./CMakeLists.txt | sed -e 's/set(VERSION_MINOR \"\([0-9a-z]\+\)\")/\1/g'`
+      VERSION_PATCH=`grep VERSION_PATCH ./CMakeLists.txt | sed -e 's/set(VERSION_PATCH \"\([0-9a-z]\+\)\")/\1/g'`
       DLPUTILSVERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
       echo "dlputilsVersion=${DLPUTILSVERSION}" >> ${GITHUB_ENV}
 
