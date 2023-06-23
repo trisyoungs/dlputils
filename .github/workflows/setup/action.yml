@@ -1,0 +1,16 @@
+name: Set Environment
+
+runs:
+  using: "composite"
+  steps:
+
+  - name: Set Environment
+    shell: bash
+    run: |
+      set -ex
+      VERSION_MAJOR=`sed -e 's/set(VERSION_MAJOR \"\([0-9a-z\.]\+\)\")/\1/g' ./CMakeLists.txt`
+      VERSION_MINOR=`sed -e 's/set(VERSION_MINOR \"\([0-9a-z\.]\+\)\")/\1/g' ./CMakeLists.txt`
+      VERSION_PATCH=`sed -e 's/set(VERSION_PATCH \"\([0-9a-z\.]\+\)\")/\1/g' ./CMakeLists.txt`
+      DLPUTILSVERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
+      echo "dlputilsVersion=${DLPUTILSVERSION}" >> ${GITHUB_ENV}
+

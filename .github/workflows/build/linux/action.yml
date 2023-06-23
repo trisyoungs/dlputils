@@ -1,0 +1,40 @@
+name: Build
+description: Build Linux artifacts
+
+inputs:
+  gsltag:
+    default: gsl-2.7.1
+
+runs:
+  using: "composite"
+  steps:
+
+  - name: Install Prerequisites
+    shell: bash
+    run: |
+      sudo apt-get update -q
+      sudo apt-get install ninja-build
+
+  - name: Build
+    shell: bash
+    run: |
+      set -ex
+      mkdir build
+      cd build
+      cmake ../ -G Ninja -DCMAKE_INSTALL_PREFIX=`pwd`
+      ninja
+
+  - name: Create Zip
+    shell: bash
+    run: |
+      set -ex
+      mkdir packages
+      mkdir binaries-${{ env.dlputilsVersion }}-linux
+      cp build/bin/* binaries-${{ env.dlputilsVersion }}-linux/
+      zip -9rv packages/binaries-${{ env.dlputilsVersion }}-linux.zip binaries-${{ env.dlputilsVersion }}-linux/
+
+  - name: Upload Package Artifacts
+    uses: actions/upload-artifact@v3
+    with:
+      name: packages
+      path: ${{ github.workspace }}/packages

@@ -1,0 +1,37 @@
+name: Build
+description: Build OSX artifacts
+
+runs:
+  using: "composite"
+  steps:
+
+  - name: Install Prerequisites
+    shell: bash
+    run: |
+      set -ex
+      brew update-reset
+      brew install ninja
+
+  - name: Build
+    shell: bash
+    run: |
+      set -ex
+      mkdir build
+      cd build
+      cmake ../ -G Ninja -DCMAKE_INSTALL_PREFIX=`pwd`
+      ninja
+
+  - name: Create Zip
+    shell: bash
+    run: |
+      set -ex
+      mkdir packages
+      mkdir binaries-${{ env.dlputilsVersion }}-osx
+      cp build/bin/* binaries-${{ env.dlputilsVersion }}-osx/
+      zip -9rv packages/binaries-${{ env.dlputilsVersion }}-osx.zip binaries-${{ env.dlputilsVersion }}-osx/
+
+  - name: Upload Raw Build Artifacts
+    uses: actions/upload-artifact@v3
+    with:
+      name: packages
+      path: ${{ github.workspace }}/packages
