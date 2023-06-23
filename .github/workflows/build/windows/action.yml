@@ -11,7 +11,7 @@ runs:
       set -ex
       mkdir build
       cd build
-      cmake ../ -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=`pwd`
+      cmake ../ -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=`pwd`/bin
       cmake --build . --config Release
       cmake --install . --config Release
 

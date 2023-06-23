@@ -21,8 +21,9 @@ runs:
       set -ex
       mkdir build
       cd build
-      cmake ../ -G Ninja -DCMAKE_INSTALL_PREFIX=`pwd`
-      ninja && ninja install
+      cmake ../ -G Ninja -DCMAKE_INSTALL_PREFIX=`pwd`/bin
+      cmake --build .
+      cmake --install .
 
   - name: Create Zip
     shell: bash
