@@ -615,6 +615,7 @@
 !	\/\/\/\/\/\/\/\/\/\/\/
 !	** Misc Subroutines **
 !	/\/\/\/\/\/\/\/\/\/\/\
+!       Other bits and pieces
 	character*8 function s_atom(sp,i)
 	implicit none
 	integer :: sp, i
