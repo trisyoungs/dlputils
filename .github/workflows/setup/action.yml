@@ -4,8 +4,22 @@ runs:
   using: "composite"
   steps:
 
+  - name: Set Environment (OSX, because we have to)
+    shell: bash
+    if: runner.os == 'MacOS'
+    run: |
+      set -ex
+      brew update-reset
+      brew install gnu-sed
+      VERSION_MAJOR=`grep VERSION_MAJOR ./CMakeLists.txt | gsed 's/set(VERSION_MAJOR "\([0-9]\+\)")/\1/g'`
+      VERSION_MINOR=`grep VERSION_MINOR ./CMakeLists.txt | gsed 's/set(VERSION_MINOR "\([0-9]\+\)")/\1/g'`
+      VERSION_PATCH=`grep VERSION_PATCH ./CMakeLists.txt | gsed 's/set(VERSION_PATCH "\([0-9]\+\)")/\1/g'`
+      DLPUTILSVERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
+      echo "dlputilsVersion=${DLPUTILSVERSION}" >> ${GITHUB_ENV}
+
   - name: Set Environment
     shell: bash
+    if: runner.os != 'MacOS'
     run: |
       set -ex
       sed --version
