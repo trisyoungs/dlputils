@@ -19,13 +19,13 @@ runs:
     shell: bash
     run: |
       set -ex
-      mkdir packages
+      mkdir binaries
       mkdir binaries-${{ env.dlputilsVersion }}-windows
       cp build/bin/* binaries-${{ env.dlputilsVersion }}-windows/
-      7z a packages/binaries-${{ env.dlputilsVersion }}-windows.zip binaries-${{ env.dlputilsVersion }}-windows/
+      7z a binaries/binaries-${{ env.dlputilsVersion }}-windows.zip binaries-${{ env.dlputilsVersion }}-windows/
 
   - name: Upload Raw Build Artifacts
     uses: actions/upload-artifact@v3
     with:
-      name: packages
-      path: ${{ github.workspace }}/packages
+      name: binaries
+      path: ${{ github.workspace }}/binaries

@@ -1,10 +1,6 @@
 name: Build
 description: Build Linux artifacts
 
-inputs:
-  gsltag:
-    default: gsl-2.7.1
-
 runs:
   using: "composite"
   steps:
@@ -29,13 +25,13 @@ runs:
     shell: bash
     run: |
       set -ex
-      mkdir packages
+      mkdir binaries
       mkdir binaries-${{ env.dlputilsVersion }}-linux
       cp build/bin/* binaries-${{ env.dlputilsVersion }}-linux/
-      zip -9rv packages/binaries-${{ env.dlputilsVersion }}-linux.zip binaries-${{ env.dlputilsVersion }}-linux/
+      zip -9rv binaries/binaries-${{ env.dlputilsVersion }}-linux.zip binaries-${{ env.dlputilsVersion }}-linux/
 
-  - name: Upload Package Artifacts
+  - name: Upload Binary Artifacts
     uses: actions/upload-artifact@v3
     with:
-      name: packages
-      path: ${{ github.workspace }}/packages
+      name: binaries
+      path: ${{ github.workspace }}/binaries
