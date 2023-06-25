@@ -4,11 +4,13 @@
 #define MyAppName "dlputils"
 #define MyAppVersion "1.4.6"
 #define MyAppPublisher "Tristan Youngs"
-#define MyAppURL "https://www.projectaten.com"
+#define MyAppURL "https://www.projectdissolve.com"
 #define MyAppExeName "dlputils.exe"
 
 ; Locations of bin directories of MinGW(64)
-#define MinGWDir "C:\Qt\Tools\mingw730_64"
+#define DLPUtilsDir GetEnv('DLPUTILS_DIR')
+#define MinGWLibDir GetEnv('MINGW_LIB_DIR')
+#define DLPUtilsVersion GetEnv('DLPUTILS_VERSION')
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -27,7 +29,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes          
 LicenseFile=..\..\COPYING
 SetupIconFile=.\dlputils.ico
-OutputBaseFilename=dlputils-1.4.6
+OutputBaseFilename=dlputils-{#DLPUtilsVersion}
 Compression=lzma
 SolidCompression=yes
 ChangesEnvironment=true
@@ -36,12 +38,12 @@ ChangesEnvironment=true
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "..\..\build\*.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#DLPUTilsDir}\*.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\dlputils.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MinGWDir}\bin\libgcc_s_seh-1.dll"; DestDir: "{app}"
-Source: "{#MinGWDir}\bin\libgfortran-4.dll"; DestDir: "{app}"
-Source: "{#MinGWDir}\bin\libquadmath-0.dll"; DestDir: "{app}"
-Source: "{#MinGWDir}\bin\libwinpthread-1.dll"; DestDir: "{app}"
+Source: "{#MinGWLibDir}\libgcc_s_seh-1.dll"; DestDir: "{app}"
+Source: "{#MinGWLibDir}\libgfortran-5.dll"; DestDir: "{app}"
+Source: "{#MinGWLibDir}\libquadmath-0.dll"; DestDir: "{app}"
+Source: "{#MinGWLibDir}\libwinpthread-1.dll"; DestDir: "{app}"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
