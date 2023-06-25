@@ -35,5 +35,5 @@ runs:
       echo "Release tag will be: ${{ env.dlputilsVersion }}"
       echo "Release name will be: ${{ env.dlputilsVersion }}"
       export GITHUB_TOKEN=${{ github.token }}
-      ./update-release -r trisyoungs/dlputils -t ${{ env.dlputilsVersion }} -n "${{ env.dlputilsVersion }}" -f ReleaseNotes.md packages/* binaries/binaries-*-[lo]*.zip
+      ./update-release -r trisyoungs/dlputils -t ${{ env.dlputilsVersion }} -n "${{ env.dlputilsVersion }}" -e -f ReleaseNotes.md packages/* binaries/binaries-*-[lo]*.zip
 
