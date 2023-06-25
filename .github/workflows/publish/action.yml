@@ -1,0 +1,39 @@
+name: Publish
+description: Publish artifacts online
+
+inputs:
+  publish:
+    type: boolean
+    default: true
+
+runs:
+  using: "composite"
+  steps:
+
+  - name: Download Binary Artifacts
+    uses: actions/download-artifact@v3
+    with:
+      name: binaries
+      path: ${{ github.workspace }}/binaries
+
+  - name: Download Package Artifacts
+    uses: actions/download-artifact@v3
+    with:
+      name: packages
+      path: ${{ github.workspace }}/packages
+
+  - name: Download Prerequisites
+    shell: bash
+    run: |
+      wget https://raw.githubusercontent.com/disorderedmaterials/scripts/master/update-release
+      chmod u+x ./update-release
+
+  - name: Publish on GitHub (Release)
+    if: ${{ inputs.publish == 'true' }}
+    shell: bash
+    run: |
+      echo "Release tag will be: ${{ env.dlputilsVersion }}"
+      echo "Release name will be: ${{ env.dlputilsVersion }}"
+      export GITHUB_TOKEN=${{ github.token }}
+      ./update-release -r trisyoungs/dlputils -t ${{ env.dlputilsVersion }} -n "${{ env.dlputilsVersion }}" -f ReleaseNotes.md packages/* binaries/binaries-*-[lo]*.zip
+
