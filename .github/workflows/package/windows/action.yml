@@ -37,8 +37,8 @@ runs:
 
       # Setup environment
       export DLPUTILS_VERSION=${{ env.dlputilsVersion }}
-      export DLPUTILS_DIR=${GITHUB_WORKSPACE}\binaries\binaries-${{ env.dlputilsVersion }}-windows
-      export MINGW_LIB_DIR="C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin"
+      export DLPUTILS_DIR=${GITHUB_WORKSPACE}/binaries/binaries-${{ env.dlputilsVersion }}-windows
+      export MINGW_LIB_DIR="C:/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin"
 
       # Run Inno Setup Compiler
       iscc.exe -O./ ./ci/windows/dlputils.iss
