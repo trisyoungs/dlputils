@@ -8,6 +8,7 @@ on:
     - '.github/workflows/pr.yml'
     - '.github/workflows/release.yml'
     - 'README.md'
+    - 'docs/**'
 
 jobs:
 
