@@ -1,0 +1,31 @@
+name: Build
+description: Build Windows artifacts
+
+runs:
+  using: "composite"
+  steps:
+
+  - name: Build
+    shell: bash
+    run: |
+      set -ex
+      mkdir build
+      cd build
+      cmake ../ -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=`pwd`/bin
+      cmake --build . --config Release
+      cmake --install . --config Release
+
+  - name: Create Zip
+    shell: bash
+    run: |
+      set -ex
+      mkdir binaries
+      mkdir binaries-${{ env.dlputilsVersion }}-windows
+      cp build/bin/* binaries-${{ env.dlputilsVersion }}-windows/
+      7z a binaries/binaries-${{ env.dlputilsVersion }}-windows.zip binaries-${{ env.dlputilsVersion }}-windows/
+
+  - name: Upload Raw Build Artifacts
+    uses: actions/upload-artifact@v3
+    with:
+      name: binaries
+      path: ${{ github.workspace }}/binaries

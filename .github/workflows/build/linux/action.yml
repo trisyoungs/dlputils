@@ -1,0 +1,37 @@
+name: Build
+description: Build Linux artifacts
+
+runs:
+  using: "composite"
+  steps:
+
+  - name: Install Prerequisites
+    shell: bash
+    run: |
+      sudo apt-get update -q
+      sudo apt-get install ninja-build
+
+  - name: Build
+    shell: bash
+    run: |
+      set -ex
+      mkdir build
+      cd build
+      cmake ../ -G Ninja -DCMAKE_INSTALL_PREFIX=`pwd`/bin
+      cmake --build .
+      cmake --install .
+
+  - name: Create Zip
+    shell: bash
+    run: |
+      set -ex
+      mkdir binaries
+      mkdir binaries-${{ env.dlputilsVersion }}-linux
+      cp build/bin/* binaries-${{ env.dlputilsVersion }}-linux/
+      zip -9rv binaries/binaries-${{ env.dlputilsVersion }}-linux.zip binaries-${{ env.dlputilsVersion }}-linux/
+
+  - name: Upload Binary Artifacts
+    uses: actions/upload-artifact@v3
+    with:
+      name: binaries
+      path: ${{ github.workspace }}/binaries

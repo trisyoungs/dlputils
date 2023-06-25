@@ -1,0 +1,10 @@
+name: Package
+description: Stub action for package creation
+
+runs:
+  using: "composite"
+  steps:
+
+  - name: Package (Windows)
+    if: runner.os == 'Windows'
+    uses: "./.github/workflows/package/windows"

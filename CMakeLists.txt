@@ -2,6 +2,12 @@
 
 cmake_minimum_required (VERSION 2.6)
 project (dlputils)
+set(DESCRIPTION "dlputils - Programs for analysis of DL_POLY trajectories")
+set(AUTHOR "Tristan Youngs")
+set(VERSION_MAJOR "1")
+set(VERSION_MINOR "5")
+set(VERSION_PATCH "0")
+
 enable_language (Fortran)
 
 # make sure that the default is a RELEASE
@@ -10,12 +16,6 @@ if (NOT CMAKE_BUILD_TYPE)
       "Choose the type of build, options are: None Debug Release."
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
-
-# default installation
-get_filename_component (default_prefix ".." ABSOLUTE)
-set (CMAKE_INSTALL_PREFIX ${default_prefix} CACHE STRING
-      "Choose the installation directory"
-      FORCE)
 
 # FFLAGS depend on the compiler
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
@@ -69,4 +69,4 @@ endforeach (p)
 
 # install executables and scripts
 install (TARGETS ${PROGRAMS} 
-         RUNTIME DESTINATION "bin")
+         RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})

@@ -1,0 +1,65 @@
+name: Package
+description: Package Windows artifacts
+
+runs:
+  using: "composite"
+  steps:
+
+  #
+  # Setup / Install Dependencies
+  #
+
+  - name: Download Raw Build Artifacts
+    uses: actions/download-artifact@v3
+    with:
+      name: binaries
+      path: ${{ github.workspace }}/binaries
+
+  - name: Install Chocolatey Dependencies
+    shell: bash
+    run: choco install -y zip innoextract
+
+  #
+  # Create Packages
+  #
+
+  - name: Unzip Binary Artifacts
+    shell: bash
+    run: |
+      set -ex
+      cd binaries
+      unzip binaries-${{ env.dlputilsVersion }}-windows.zip
+
+  - name: Create Installers
+    shell: bash
+    run: |
+      set -ex
+
+      # Setup environment
+      export DLPUTILS_VERSION=${{ env.dlputilsVersion }}
+      export DLPUTILS_DIR=${GITHUB_WORKSPACE}/binaries/binaries-${{ env.dlputilsVersion }}-windows
+      export MINGW_LIB_DIR="C:/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin"
+
+      # Run Inno Setup Compiler
+      iscc.exe -O./ ./ci/windows/dlputils.iss
+      exe=`ls *.exe`
+      exeBase=`basename -s .exe $exe`
+      echo "Executable installer is $exe, basename is $exeBase"
+      
+      # Create Zip from Exe
+      innoextract.exe $exe -d $exeBase
+      mv ${exeBase}/app/* $exeBase
+      mv ${exeBase}/app ./
+      zipFile="${exeBase}.zip"
+      zip -r $zipFile $exeBase
+      
+      # Collect artifacts
+      mkdir packages
+      mv $zipFile packages
+      mv $exe packages
+
+  - name: Upload Package Artifacts
+    uses: actions/upload-artifact@v3
+    with:
+      name: packages
+      path: ${{ github.workspace }}\packages
