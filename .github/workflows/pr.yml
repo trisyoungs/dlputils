@@ -25,3 +25,18 @@ jobs:
     - name: "Build (${{ matrix.os }})"
       uses: "./.github/workflows/build"
 
+  Package:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+    needs: Build
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Set Environment Variables
+      uses: "./.github/workflows/setup"
+    - name: "Package (${{ matrix.os }})"
+      uses: "./.github/workflows/package"
+
