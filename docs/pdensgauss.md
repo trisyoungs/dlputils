@@ -16,7 +16,7 @@ The applied function is a typical 3-dimensional Gaussian of the form:
 </figure>
 
 Related programs:
-To calculate probability densities, see [**pdens**](/dlputils/docs/utilities/pdens).
+To calculate probability densities, see [`pdens`](pdens).
 
 ## Basic Usage
 

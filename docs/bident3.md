@@ -7,10 +7,10 @@ taxonomy:
 docroot: /dlputils/docs
 ---
 
-**bident3** calculates contact types (e.g. monodentate, bidentate etc.) between defined sites on two species, as described for [**bident2**](/dlputils/docs/utilities/bident2), but in addition outputs distance histograms and distance-angle maps for each site and contact type.
+**bident3** calculates contact types (e.g. monodentate, bidentate etc.) between defined sites on two species, as described for [`bident2`](bident2), but in addition outputs distance histograms and distance-angle maps for each site and contact type.
 
 ## Related Programs
-+ To calculate contact distributions, see [**bident2**](/dlputils/docs/utilities/bident2).
++ To calculate contact distributions, see [`bident2`](bident2).
 
 ## Basic Usage
 

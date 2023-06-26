@@ -10,10 +10,10 @@ docroot: /dlputils/docs
 **geom** calculates specific geometric parameters (i.e. bond distances, bond angles, and torsion angles) for a given species, reporting the average, minimum, and maximum values it finds, along with the standard deviation. It can be useful when a quick check on the 'rigidity' of the intramolecular structure is required. Either specific bonds, angles, and torsions may be specified on the command line, or a file containing the required data can be provided.
 
 Related programs:
-+ To calculate a single torsion angle histogram, see [**intratorsion**](/dlputils/docs/utilities/intratorsion).
-+ To calculate a torsion angle formed between two species, see [**intertorsion**](/dlputils/docs/utilities/intertorsion).
-+ To calculate a torsion angle map between two torsions, see [**intratorsion2**](/dlputils/docs/utilities/intratorsion2).
-+ To calculate average geometry parameters (not histograms), see [**geom**](/dlputils/docs/utilities/geom).
++ To calculate a single torsion angle histogram, see [`intratorsion`](intratorsion).
++ To calculate a torsion angle formed between two species, see [`intertorsion`](intertorsion).
++ To calculate a torsion angle map between two torsions, see [`intratorsion2`](intratorsion2).
++ To calculate average geometry parameters (not histograms), see [`geom`](geom).
 
 ## Basic Usage
 

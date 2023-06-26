@@ -10,9 +10,9 @@ docroot: /dlputils/docs
 **rdfss** calculates calculates atomic, partial radial distribution functions between all individual atoms of one species, to the centre-of-mass (or another specified point) of another).
 
 Related programs:
-+ To calculate centre-of-mass radial distribution functions between species, see [**rdf**](/dlputils/docs/utilities/rdf).
-+ To calculate individual atomic partials for one species, see [**rdfaa**](/dlputils/docs/utilities/rdfaa).
-+ To calculate site-site partials dependent on other sites, see [**rdfdep**](/dlputils/docs/utilities/rdfdep).
++ To calculate centre-of-mass radial distribution functions between species, see [`rdf`](rdf).
++ To calculate individual atomic partials for one species, see [`rdfaa`](rdfaa).
++ To calculate site-site partials dependent on other sites, see [`rdfdep`](rdfdep).
 
 ## Basic Usage
 

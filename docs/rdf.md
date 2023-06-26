@@ -10,9 +10,9 @@ docroot: /dlputils/docs
 **rdf** calculates, by default, the centre-of-mass radial distribution functions between all species in the system, although the options allow a point other than the centre-of-mass to be used in the calculation. In addition, for surrounding molecules a different point can be defined to the central molecule.
 
 Related programs:
-+ To calculate individual atomic partials for one species, see [**rdfaa**](/dlputils/docs/utilities/rdfaa).
-+ To calculate site-COM partials, see [**rdfss**](/dlputils/docs/utilities/rdfss).
-+ To calculate site-site partials dependent on other sites, see [**rdfdep**](/dlputils/docs/utilities/rdfdep).
++ To calculate individual atomic partials for one species, see [`rdfaa`](rdfaa).
++ To calculate site-COM partials, see [`rdfss`](rdfss).
++ To calculate site-site partials dependent on other sites, see [`rdfdep`](rdfdep).
 
 ## Basic Usage
 

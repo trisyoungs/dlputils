@@ -10,10 +10,10 @@ docroot: /dlputils/docs
 **dlp2config** converts a DL_POLY history file into one or more CONFIG files
 
 Related programs:
-+ To convert a history file into a single sequential XYZ trajectory, see [**dlp2xyzf**](/dlputils/docs/utilities/dlp2xyzf).
-+ To extract individual DL_POLY configurations from a history file, see [**dlp2config**](/dlputils/docs/utilities/dlp2config).
-+ To convert between formatted and unformatted history files, see [**dlp2dlp**](/dlputils/docs/utilities/dlp2dlp).
-+ To extract individual XYZ frames from a history file, see [**dlp2xyzs**](/dlputils/docs/utilities/dlp2xyzs).
++ To convert a history file into a single sequential XYZ trajectory, see [`dlp2xyzf`](dlp2xyzf).
++ To extract individual DL_POLY configurations from a history file, see [`dlp2config`](dlp2config).
++ To convert between formatted and unformatted history files, see [`dlp2dlp`](dlp2dlp).
++ To extract individual XYZ frames from a history file, see [`dlp2xyzs`](dlp2xyzs).
 
 ## Basic Usage
 

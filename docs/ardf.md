@@ -7,13 +7,13 @@ taxonomy:
 docroot: /dlputils/docs
 ---
 
-**ardf** calculates the radial distribution function of sites, binning the results by the angle defined by vectors on each target molecule. The result, then, is a standard [**rdf**](/dlputils/docs/utilities/rdf) split up into functions of individual vector angles. Such functions can be useful when studying, for instance, the variation in approach distance of planar molecules.
+**ardf** calculates the radial distribution function of sites, binning the results by the angle defined by vectors on each target molecule. The result, then, is a standard [`rdf`](rdf) split up into functions of individual vector angles. Such functions can be useful when studying, for instance, the variation in approach distance of planar molecules.
 
 Related programs:
-+ To calculate centre-of-mass radial distribution functions between species, see [**rdf**](/dlputils/docs/utilities/rdf).
-+ To calculate individual atomic partials for one species, see [**rdfaa**](/dlputils/docs/utilities/rdfaa).
-+ To calculate site-COM partials, see [**rdfss**](/dlputils/docs/utilities/rdfss).
-+ To calculate site-site partials dependent on other sites, see [**rdfdep**](/dlputils/docs/utilities/rdfdep).
++ To calculate centre-of-mass radial distribution functions between species, see [`rdf`](rdf).
++ To calculate individual atomic partials for one species, see [`rdfaa`](rdfaa).
++ To calculate site-COM partials, see [`rdfss`](rdfss).
++ To calculate site-site partials dependent on other sites, see [`rdfdep`](rdfdep).
 
 ## Basic Usage
 
@@ -27,7 +27,7 @@ Where:
 + `<sp1>` is the integer index of the species to consider as the central one
 + `<sp2>` is the integer index of the species to compare axes with and form the radial distribution function
 
-Although this is enough to run **ardf**, axis definitions for each of sp1 and sp2 must be provided (see the section on [**Defining Axes**](/dlputils/docs/utilities/pdens#axes) for the [**pdens**](/dlputils/docs/utilities/pdens) code).
+Although this is enough to run **ardf**, axis definitions for each of sp1 and sp2 must be provided (see the section on [**Defining Axes**](/dlputils/docs/utilities/pdens#axes) for the [`pdens`](pdens) code).
 
 ## Switches
 
@@ -37,7 +37,7 @@ Specify the angle histogram bin _width_ to use in the calculation (default = 5.0
 
 `-axis` _sp_ _x1_ _x2_ _y1_ _y2_
 
-Define the axis system for species index _sp_ from the four supplied atom indices. The atom indices are local atom indices for the species in question (i.e. range from 1 to the number of atoms in the molecule). See the section on [**Defining Axes**](/dlputils/docs/utilities/pdens#axes) for the [**pdens**](/dlputils/docs/utilities/pdens) code for more information.
+Define the axis system for species index _sp_ from the four supplied atom indices. The atom indices are local atom indices for the species in question (i.e. range from 1 to the number of atoms in the molecule). See the section on [**Defining Axes**](/dlputils/docs/utilities/pdens#axes) for the [`pdens`](pdens) code for more information.
 
 `-bin` _width_
 

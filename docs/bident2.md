@@ -14,7 +14,7 @@ The code analyses all contacts less than a specified distance, grouping them int
 The initial intention of **bident2** was to analyse hydrogen bonding contacts between acidic H sites of a cation and the bidentate oxygen moeity of an anion, but as already stated the code can be lightly 'abused'. Firstly, there is  no need for the two sites on the second species to be situated such that, together, they might be considered a potentially 'bidentate' binding site. The program will run just fine, but of course no bidentate (or likely any other multi-contact interactions) will be found, but the single contacts will be caught. In this way **bident2** can be used as a probe for contact numbers between individual binding sites.
 
 ## Related Programs
-+ To calculate contact distributions and output distance / angle maps, see [**bident3**](/dlputils/docs/utilities/bident3).
++ To calculate contact distributions and output distance / angle maps, see [`bident3`](bident3).
 
 ## Basic Usage
 

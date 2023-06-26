@@ -12,7 +12,7 @@ docroot: /dlputils/docs
 A vector describing the direction along which the cylinder lays is input, along with a point on which this vector lays. For each molecule the minimum distance (i.e. the perpendicular distance) between its centre-of-mass and the defining vector is calculated and binned in histogram form.
 
 Related programs:
-+ To calculate cylindrical orientational distribution functions, see [**codf**](/dlputils/docs/utilities/codf).
++ To calculate cylindrical orientational distribution functions, see [`codf`](codf).
 
 ## Basic Usage
 

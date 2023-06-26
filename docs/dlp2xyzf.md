@@ -10,9 +10,9 @@ docroot: /dlputils/docs
 **dlp2xyzf** converts a DL_POLY history file into a sequential XYZ file, with atomic positions and forces contained in the file.
 
 Related programs:
-+ To extract individual DL_POLY configurations from a history file, see [**dlp2config**](/dlputils/docs/utilities/dlp2config).
-+ To convert between formatted and unformatted history files, see [**dlp2dlp**](/dlputils/docs/utilities/dlp2dlp).
-+ To extract individual XYZ frames from a history file, see [**dlp2xyzs**](/dlputils/docs/utilities/dlp2xyzs).
++ To extract individual DL_POLY configurations from a history file, see [`dlp2config`](dlp2config).
++ To convert between formatted and unformatted history files, see [`dlp2dlp`](dlp2dlp).
++ To extract individual XYZ frames from a history file, see [`dlp2xyzs`](dlp2xyzs).
 
 ## Basic Usage
 

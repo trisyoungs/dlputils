@@ -10,9 +10,9 @@ docroot: /dlputils/docs
 **dlp2xyzs** converts a DL_POLY history file into a separate XYZ files.
 
 Related programs:
-+ To convert a history file into a single sequential XYZ trajectory, see [**dlp2xyzf**](/dlputils/docs/utilities/dlp2xyzf).
-+ To extract individual DL_POLY configurations from a history file, see [**dlp2config**](/dlputils/docs/utilities/dlp2config).
-+ To convert between formatted and unformatted history files, see [**dlp2dlp**](/dlputils/docs/utilities/dlp2dlp).
++ To convert a history file into a single sequential XYZ trajectory, see [`dlp2xyzf`](dlp2xyzf).
++ To extract individual DL_POLY configurations from a history file, see [`dlp2config`](dlp2config).
++ To convert between formatted and unformatted history files, see [`dlp2dlp`](dlp2dlp).
 
 ## Basic Usage
 

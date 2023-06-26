@@ -16,10 +16,10 @@ For the central species, a 3D histogram is constructed for each molecular specie
 If the probability of finding specific orientations of surrounding molecules is needed, this can be achieved by using the `-orient` keyword. This permits surrounding molecules to be excluded based on the angular difference between a specific axis on the central and surrounding molecules.
 
 
-Note that, since binning is performed in three dimensions, many more frames are required compared to [**rdf**](/dlputils/docs/utilities/rdf) in order to get good statistics (and hence better-looking surfaces). A post-processing utility to perform Gaussian smoothing of the data, [**pdensgauss**](/dlputils/docs/utilities/pdensgauss), is available.
+Note that, since binning is performed in three dimensions, many more frames are required compared to [`rdf`](rdf) in order to get good statistics (and hence better-looking surfaces). A post-processing utility to perform Gaussian smoothing of the data, [`pdensgauss`](pdensgauss), is available.
 
 Related programs:
-+ To apply a Gaussian smooth to an existing probability density, see [**pdensgauss**](/dlputils/docs/utilities/pdensgauss).
++ To apply a Gaussian smooth to an existing probability density, see [`pdensgauss`](pdensgauss).
 
 ## Basic Usage
 

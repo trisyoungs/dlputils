@@ -12,7 +12,7 @@ docroot: /dlputils/docs
 **NOTE**: zdens will not work correctly if the axes are not orthogonal.
 
 Related programs:
-+ To calculate radial distribution functions, see [**rdf**](/dlputils/docs/utilities/rdf).
++ To calculate radial distribution functions, see [`rdf`](rdf).
 
 ## Basic Usage
 

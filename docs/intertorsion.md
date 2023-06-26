@@ -10,9 +10,9 @@ docroot: /dlputils/docs
 **intertorsion** calculates a histogram of torsion angles, from -180 to +180, for a single torsion angle defined by two atoms on one species and two atoms on another (not necessarily different) species. As such, it provise the possibility to analyse torsion angles formed by, for instance, hydrogen bond donor and acceptor groups. As well as the full torsion histogram, histograms for the two angles and the inter-species distance are also provided, the latter in the form of a 2D map.
 
 Related programs:
-+ To calculate a single torsion angle histogram, see [**intratorsion**](/dlputils/docs/utilities/intratorsion).
-+ To calculate a torsion angle map between two torsions, see [**intratorsion2**](/dlputils/docs/utilities/intratorsion2).
-+ To calculate average geometry parameters (not histograms), see [**geom**](/dlputils/docs/utilities/geom).
++ To calculate a single torsion angle histogram, see [`intratorsion`](intratorsion).
++ To calculate a torsion angle map between two torsions, see [`intratorsion2`](intratorsion2).
++ To calculate average geometry parameters (not histograms), see [`geom`](geom).
 
 ## Basic Usage
 

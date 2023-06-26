@@ -10,9 +10,9 @@ docroot: /dlputils/docs
 **intratorsion** calculates a histogram of angles, from -180 to +180, for a single torsion angle in a given species.
 
 Related programs:
-+ To calculate a torsion angle formed between two species, see [**intertorsion**](/dlputils/docs/utilities/intertorsion).
-+ To calculate a torsion angle map between two torsions, see [**intratorsion2**](/dlputils/docs/utilities/intratorsion2).
-+ To calculate average geometry parameters (not histograms), see [**geom**](/dlputils/docs/utilities/geom).
++ To calculate a torsion angle formed between two species, see [`intertorsion`](intertorsion).
++ To calculate a torsion angle map between two torsions, see [`intratorsion2`](intratorsion2).
++ To calculate average geometry parameters (not histograms), see [`geom`](geom).
 
 ## Basic Usage
 

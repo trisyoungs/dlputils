@@ -7,12 +7,12 @@ taxonomy:
 docroot: /dlputils/docs
 ---
 
-**codf** acts in a similar manner to [**cdf**](/dlputils/docs/utilities/cdf), calculating cylindrical distribution functions of molecules. However, instead of the normalised 2D equivalent to the [**rdf**](/dlputils/docs/utilities/rdf), **codf** gives information on the orientation of species as a function of distance from the defining vector, given defining sets of axes on the individual species.
+**codf** acts in a similar manner to [`cdf`](cdf), calculating cylindrical distribution functions of molecules. However, instead of the normalised 2D equivalent to the [`rdf`](rdf), **codf** gives information on the orientation of species as a function of distance from the defining vector, given defining sets of axes on the individual species.
 
 A vector describing the direction along which the cylinder lays is input, along with a point on which this vector lays. For each molecule the minimum distance (i.e. the perpendicular distance) between its centre-of-mass and the defining vector is calculated and the dot product between the perpendicular vector and each axis of the molecule is summed into distance bins. The resulting output is the average of the dot product of each molecular axis as a function of distance from the defining vector, along with the 2D maps of angle vs distance for each of the three angles formed between the perpendicular vector and the molecule axes.
 
 Related programs:
-+ To calculate standard cylindrical distribution functions, see [**cdf**](/dlputils/docs/utilities/cdf).
++ To calculate standard cylindrical distribution functions, see [`cdf`](cdf).
 
 ## Basic Usage
 

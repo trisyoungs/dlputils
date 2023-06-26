@@ -9,7 +9,7 @@ docroot: /dlputils/docs
 **dahist** calculates a distance-angle map for an A...B-C interaction, giving both the A-B-C angle map and the A-B distance histrogram as output.
 
 Related programs:
-+ To calculate individual atomic partials for one species, see [**rdfaa**](/dlputils/docs/utilities/rdfaa).
++ To calculate individual atomic partials for one species, see [`rdfaa`](rdfaa).
 
 ## Basic Usage
 

@@ -10,9 +10,9 @@ docroot: /dlputils/docs
 **rdfdep** allows specific site-site RDFs between two species to be calculated, dependent on the distances of a number of additional specified pairs involving a third species. For instance, in an alcohol/water mixture one may wish to calculate the radial distribution function of those water molecules that are hydrogen bonding directly to the alcohol OH group.
 
 Related programs:
-+ To calculate individual atomic partials for one species, see [**rdfaa**](/dlputils/docs/utilities/rdfaa).
-+ To calculate site-COM partials, see [**rdfss**](/dlputils/docs/utilities/rdfss).
-+ To calculate centre-of-mass radial distribution functions between species, see [**rdf**](/dlputils/docs/utilities/rdf).
++ To calculate individual atomic partials for one species, see [`rdfaa`](rdfaa).
++ To calculate site-COM partials, see [`rdfss`](rdfss).
++ To calculate centre-of-mass radial distribution functions between species, see [`rdf`](rdf).
 
 ## Basic Usage
 

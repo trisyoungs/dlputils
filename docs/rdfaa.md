@@ -10,9 +10,9 @@ docroot: /dlputils/docs
 **rdfaa** calculates calculates atomic, partial radial distribution functions between specific atoms of a single species. Contributions from atom pairs in the same species are omitted, unless specifically requested.
 
 Related programs:
-+ To calculate centre-of-mass radial distribution functions between species, see [**rdf**](/dlputils/docs/utilities/rdf).
-+ To calculate site-COM partials, see [**rdfss**](/dlputils/docs/utilities/rdfss).
-+ To calculate site-site partials dependent on other sites, see [**rdfdep**](/dlputils/docs/utilities/rdfdep).
++ To calculate centre-of-mass radial distribution functions between species, see [`rdf`](rdf).
++ To calculate site-COM partials, see [`rdfss`](rdfss).
++ To calculate site-site partials dependent on other sites, see [`rdfdep`](rdfdep).
 
 ## Basic Usage
 
