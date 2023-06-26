@@ -1,12 +1,10 @@
 ---
 title: dlp2xyzs
 brief: Convert a history file into individual XYZ files
-visible: true
 taxonomy:
   category: docs
   classification: "History File Conversion / Manipulation"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **dlp2xyzs** converts a DL_POLY history file into a separate XYZ files.

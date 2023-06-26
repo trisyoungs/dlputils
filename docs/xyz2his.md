@@ -1,12 +1,10 @@
 ---
 title: xyz2his
 brief: Convert a sequence of xyz trajectory frames to an unformatted DL_POLY HISTORY file
-visible: true
 taxonomy:
   category: docs
   classification: "History File Conversion / Manipulation"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 The use of **dlputils** to analyse output from other codes is possible, provided that the relevant trajectory information is converted to DL_POLY format first. Probably the easiest way is to get your data of interest written as an appended sequence of xyz format frames in a single file, and then use **xyz2his** to convert the data.

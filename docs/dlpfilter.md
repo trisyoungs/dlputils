@@ -1,12 +1,10 @@
 ---
 title: dlpfilter
 brief: Prune frames from a HIStory file
-visible: true
 taxonomy:
   category: docs
   classification: "History File Conversion / Manipulation"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **dlpfilter** writes a new HIStory file containing a selection of frames from an input HIStory file. The frames to write out can be given either as a text file containing frame indices, one per line, or as a first/skip/last sequence.

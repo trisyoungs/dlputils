@@ -1,12 +1,10 @@
 ---
 title: intertorsion
 brief: Calculate torsion histogram for a single torsion defined over two species
-visible: true
 taxonomy:
   category: docs
   classification: "Intramolecular (Bound) Geometry"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **intertorsion** calculates a histogram of torsion angles, from -180 to +180, for a single torsion angle defined by two atoms on one species and two atoms on another (not necessarily different) species. As such, it provise the possibility to analyse torsion angles formed by, for instance, hydrogen bond donor and acceptor groups. As well as the full torsion histogram, histograms for the two angles and the inter-species distance are also provided, the latter in the form of a 2D map.

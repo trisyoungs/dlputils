@@ -1,12 +1,10 @@
 ---
 title: rdfdep
 brief: Calculate site-site radial distribution functions dependent on other contacts
-visible: true
 taxonomy:
   category: docs
   classification: "Radial Distribution Functions"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **rdfdep** allows specific site-site RDFs between two species to be calculated, dependent on the distances of a number of additional specified pairs involving a third species. For instance, in an alcohol/water mixture one may wish to calculate the radial distribution function of those water molecules that are hydrogen bonding directly to the alcohol OH group.

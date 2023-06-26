@@ -1,12 +1,10 @@
 ---
 title: bident2
 brief: Calculate contact types between sites on different molecules
-visible: true
 taxonomy:
   category: docs
   classification: "Coordination / Contact Numbers"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **bident2** calculates contact types (e.g. monodentate, bidentate etc.) between defined sites on two species. It came about initially because of the need to analyse simulations comprising acetate anions (hence the 'bident'-ate name of the program) where the type of binding between the acetate and acidis hydrogen sites on a second species was unknown. Because of this the code is quite specific, but can be 'abused' to analyse contact numbers for systems where the primary interaction site is not potentially bidentate.

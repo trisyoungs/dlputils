@@ -1,12 +1,10 @@
 ---
 title: rdfaa
 brief: Calculate atomic partial radial distribution functions involving a single species
-visible: true
 taxonomy:
   category: docs
   classification: "Radial Distribution Functions"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **rdfaa** calculates calculates atomic, partial radial distribution functions between specific atoms of a single species. Contributions from atom pairs in the same species are omitted, unless specifically requested.

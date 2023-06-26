@@ -1,12 +1,10 @@
 ---
 title: pdens
 brief: Calculate three-dimensional (spatial) probability densities
-visible: true
 taxonomy:
   category: docs
   classification: "Spatial Probability Densities"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **pdens** calculates the spatial probability densities of molecules around other molecules, and amounts to performing 3-dimensional histogram binning (into volume elements or 'voxels') as opposed to 1-dimensional histogram binning in the case of the radial distribution function (averaging the spatial probability density spherically gives the standard radial distribution function). **pdens** uses the defined axis origins to represent the positions of the surrounding molecules or, if one has not beeb given, the centre-of-mass is used instead. Different points on the surrounding molecules may be defined with the `-otherpair` option.

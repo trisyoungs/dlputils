@@ -1,12 +1,10 @@
 ---
 title: dlp2dlp
 brief: Convert between formatted and unformatted HISTORY files
-visible: true
 taxonomy:
   category: docs
   classification: "History File Conversion / Manipulation"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **dlp2dlp** allows conversion of a formatted HISTORY file to its unformatted analogue, and vice versa. Note that converting unformatted HISTORY files created on an architecture different from the one you are running **dlp2dlp** will fail.

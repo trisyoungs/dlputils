@@ -1,12 +1,10 @@
 ---
 title: codf
 brief: Calculate orientation-dependent cylindrical distribution functions
-visible: true
 taxonomy:
   category: docs
   classification: "Other Distribution Functions"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **codf** acts in a similar manner to [**cdf**](/dlputils/docs/utilities/cdf), calculating cylindrical distribution functions of molecules. However, instead of the normalised 2D equivalent to the [**rdf**](/dlputils/docs/utilities/rdf), **codf** gives information on the orientation of species as a function of distance from the defining vector, given defining sets of axes on the individual species.

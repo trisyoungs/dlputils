@@ -1,12 +1,10 @@
 ---
 title: getcell
 brief: Retrieve and display cell information from history file
-visible: true
 taxonomy:
   category: docs
   classification: "Miscellaneous"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 ## Basic Usage

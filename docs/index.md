@@ -29,36 +29,67 @@ Although specific read-write routines for DL_POLY trjectories are the only ones 
 ## List of Utilities
 
 [`addheader`](addheader) - Add a header to a history file
+
 [`ardf`](ardf) - Calculate angle-dependent radial distribution functions
+
 [`bident2`](bident2) - Calculate contact types between sites on different molecules
+
 [`bident3`](bident3) - Calculate contact types between sites on different molecules, with distance and angle maps
+
 [`cdf`](cdf) - Calculate cylindrical distribution functions
+
 [`cluster`](cluster) - Calculate cluster sizes of molecules
+
 [`clusterab`](clusterab) - Calculate continuous cluster sizes or paths of molecules
+
 [`codf`](codf) - Calculate orientation-dependent cylindrical distribution functions
+
 [`dahist`](dahist) - Calculate distance-angle map between atoms on two species
+
 [`dlp2config`](dlp2config) - Convert a history file into individual CONFIG files
+
 [`dlp2dlp`](dlp2dlp) - Convert between formatted and unformatted HISTORY files
+
 [`dlp2xyzf`](dlp2xyzf) - Convert a history file into a sequential XYZ file (including forces)
+
 [`dlp2xyzs`](dlp2xyzs) - Convert a history file into individual XYZ files
+
 [`dlpfilter`](dlpfilter) - Prune frames from a HIStory file
+
 [`dlpreorder`](dlpreorder) - Reorder / remove species in / from a history file
+
 [`dlpsize`](dlpsize) - Count the frames in a DL_POLY HISTORY file
+
 [`gengg`](gengg) - Generate van der Waals cross terms using geometric mixing rules
+
 [`genlb`](genlb) - Generate van der Waals cross terms using Lorentz-Berthelot mixing rules
+
 [`geom`](geom) - Calculate average geometric parameters
+
 [`getcell`](getcell) - Retrieve and display cell information from history file
+
 [`intertorsion`](intertorsion) - Calculate torsion histogram for a single torsion defined over two species
+
 [`intratorsion`](intratorsion) - Calculate torsion histogram for a single torsion angle defined in one species
+
 [`intratorsion2`](intratorsion2) - Calculate torsion angle map between two torsions defined in one species
+
 [`pdens`](pdens) - Calculate three-dimensional (spatial) probability densities
+
 [`pdensgauss`](pdensgauss) - Apply Gaussian smooth to probability density
+
 [`rdf`](rdf) - Calculate centre-of-mass radial distribution functions
+
 [`rdfaa`](rdfaa) - Calculate atomic partial radial distribution functions involving a single species
+
 [`rdfdep`](rdfdep) - Calculate site-site radial distribution functions dependent on other contacts
+
 [`rdfss`](rdfss) - Calculate partial radial distribution functions from atoms of one species to the centre-of-mass of another
+
 [`sq`](sq) - Calculate neutron-weighted structure factors
+
 [`xyz2his`](xyz2his) - Convert a sequence of xyz trajectory frames to an unformatted DL_POLY HISTORY file
+
 [`zdens`](zdens) - Calculate z-dependent distribution functions
 
 ## Compilation

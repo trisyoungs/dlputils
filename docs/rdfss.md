@@ -1,12 +1,10 @@
 ---
 title: rdfss
 brief: Calculate partial radial distribution functions from atoms of one species to the centre-of-mass of another
-visible: true
 taxonomy:
   category: docs
   classification: "Radial Distribution Functions"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **rdfss** calculates calculates atomic, partial radial distribution functions between all individual atoms of one species, to the centre-of-mass (or another specified point) of another).

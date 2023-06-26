@@ -1,12 +1,10 @@
 ---
 title: geom
 brief: Calculate average geometric parameters
-visible: true
 taxonomy:
   category: docs
   classification: "Intramolecular (Bound) Geometry"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **geom** calculates specific geometric parameters (i.e. bond distances, bond angles, and torsion angles) for a given species, reporting the average, minimum, and maximum values it finds, along with the standard deviation. It can be useful when a quick check on the 'rigidity' of the intramolecular structure is required. Either specific bonds, angles, and torsions may be specified on the command line, or a file containing the required data can be provided.

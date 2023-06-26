@@ -1,11 +1,9 @@
 ---
 title: dahist
 brief: Calculate distance-angle map between atoms on two species
-visible: true
 taxonomy:
   category: docs
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **dahist** calculates a distance-angle map for an A...B-C interaction, giving both the A-B-C angle map and the A-B distance histrogram as output.

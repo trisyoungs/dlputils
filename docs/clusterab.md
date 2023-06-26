@@ -1,12 +1,10 @@
 ---
 title: clusterab
 brief: Calculate continuous cluster sizes or paths of molecules
-visible: true
 taxonomy:
   category: docs
   classification: "Coordination / Contact Numbers"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **clusterab** calculates the sizes of clusters (or semi-continuous networks) of molecules in a similar manner to [**cluster**](/dlputils/docs/utilities/cluster), but focuses specifically on 'A-B' contacts between the various molecules. Thus, rather than giving the cluster size of a group of molecules based on a single common site between them, **clusterab** allow true networks to be probed. The best example of this is a hydrogen bonding network, where the hydrogen (A) atoms of one molecule donate a hydrogen bond to an oxygen or nitrogen (B) atom on another (possibly different) molecule. Also, multiple A and B sites may be specified for each molecule type involved, allowing diols, for instance, to be treated in the same manner.

@@ -1,12 +1,10 @@
 ---
 title: ardf
 brief: Calculate angle-dependent radial distribution functions
-visible: true
 taxonomy:
   category: docs
   classification: "Radial Distribution Functions"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **ardf** calculates the radial distribution function of sites, binning the results by the angle defined by vectors on each target molecule. The result, then, is a standard [**rdf**](/dlputils/docs/utilities/rdf) split up into functions of individual vector angles. Such functions can be useful when studying, for instance, the variation in approach distance of planar molecules.

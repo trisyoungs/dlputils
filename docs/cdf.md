@@ -1,12 +1,10 @@
 ---
 title: cdf
 brief: Calculate cylindrical distribution functions
-visible: true
 taxonomy:
   category: docs
   classification: "Other Distribution Functions"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **cdf** calculates the distribution function of molecules from a reference vector - as such, it allows one to calculate the distribution function of species confined within cylindrical geometries, for instance, or at the surface of cylindrical objects. Typically, one may use this to calculate distributions of molecules in cylindrical pores, nanotubes etc.

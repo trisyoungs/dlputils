@@ -1,12 +1,10 @@
 ---
 title: dlpreorder
 brief: Reorder / remove species in / from a history file
-visible: true
 taxonomy:
   category: docs
   classification: "History File Conversion / Manipulation"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **dlpreorder** reorders the species in a history file, writing a new history file in the process. If a particular species number is omitted from the list, this species will not appear in the new history file, and so can be used to delete species from a simulation.

@@ -1,12 +1,10 @@
 ---
 title: pdensgauss
 brief: Apply Gaussian smooth to probability density
-visible: true
 taxonomy:
   category: docs
   classification: "Spatial Probability Densities"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **pdensgauss** applies a Gaussian smooth to an existing probability density, writing a new probability density file in the process. Probability density files calculated from [a]**pdens**,dlputils,manual,pdens[/a] can be noisy, depending on the number of frames / molecules used in the underlying averaging. Applying a Gaussian smooth can help to eliminate voxel noise, as well as smooth larger regions.

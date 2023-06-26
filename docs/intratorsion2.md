@@ -1,12 +1,10 @@
 ---
 title: intratorsion2
 brief: Calculate torsion angle map between two torsions defined in one species
-visible: true
 taxonomy:
   category: docs
   classification: "Intramolecular (Bound) Geometry"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 Calculates a 2D map (histogram) between two torsion angles on the same species.

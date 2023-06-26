@@ -1,12 +1,10 @@
 ---
 title: dlp2config
 brief: Convert a history file into individual CONFIG files
-visible: true
 taxonomy:
   category: docs
   classification: "History File Conversion / Manipulation"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **dlp2config** converts a DL_POLY history file into one or more CONFIG files

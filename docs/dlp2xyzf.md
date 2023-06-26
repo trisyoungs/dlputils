@@ -1,12 +1,10 @@
 ---
 title: dlp2xyzf
 brief: Convert a history file into a sequential XYZ file (including forces)
-visible: true
 taxonomy:
   category: docs
   classification: "History File Conversion / Manipulation"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **dlp2xyzf** converts a DL_POLY history file into a sequential XYZ file, with atomic positions and forces contained in the file.

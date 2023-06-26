@@ -1,12 +1,10 @@
 ---
 title: zdens
 brief: Calculate z-dependent distribution functions
-visible: true
 taxonomy:
   category: docs
   classification: "Other Distribution Functions"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **zdens** calculates the distribution of the centres-of-mass (averaged over species) of all molecules in the system as a function of z-coordinate.

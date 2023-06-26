@@ -1,12 +1,10 @@
 ---
 title: intratorsion
 brief: Calculate torsion histogram for a single torsion angle defined in one species
-visible: true
 taxonomy:
   category: docs
   classification: "Intramolecular (Bound) Geometry"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **intratorsion** calculates a histogram of angles, from -180 to +180, for a single torsion angle in a given species.

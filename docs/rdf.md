@@ -1,12 +1,10 @@
 ---
 title: rdf
 brief: Calculate centre-of-mass radial distribution functions
-visible: true
 taxonomy:
   category: docs
   classification: "Radial Distribution Functions"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **rdf** calculates, by default, the centre-of-mass radial distribution functions between all species in the system, although the options allow a point other than the centre-of-mass to be used in the calculation. In addition, for surrounding molecules a different point can be defined to the central molecule.

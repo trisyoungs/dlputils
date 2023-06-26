@@ -1,12 +1,10 @@
 ---
 title: bident3
 brief: Calculate contact types between sites on different molecules, with distance and angle maps
-visible: true
 taxonomy:
   category: docs
   classification: "Coordination / Contact Numbers"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **bident3** calculates contact types (e.g. monodentate, bidentate etc.) between defined sites on two species, as described for [**bident2**](/dlputils/docs/utilities/bident2), but in addition outputs distance histograms and distance-angle maps for each site and contact type.

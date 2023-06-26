@@ -1,11 +1,9 @@
 ---
 title: sq
 brief: Calculate neutron-weighted structure factors
-visible: true
 taxonomy:
   category: docs
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **sq** calculates the neutron-weighted F(Q) (coherent bound cross-section I(Q), differential cross section, static structure factor etc.) of the system, using partials in line with the Faber-Ziman formulism. 

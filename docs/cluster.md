@@ -1,12 +1,10 @@
 ---
 title: cluster
 brief: Calculate cluster sizes of molecules
-visible: true
 taxonomy:
   category: docs
   classification: "Coordination / Contact Numbers"
 docroot: /dlputils/docs
-template: manpage
 ---
 
 **cluster** calculates the sizes of clusters (or semi-continuous networks) of molecules, given some distance criteria and a specific site on the molecule. By default, the centre-of-mass is used as the point of interest, but this can be defined to be any point on the molecule. Typically one may choose, for instance, the oxygen atom of an OH group as the site of interest, and set the cutoff to be sensible with respect to O-O distances in typical hydrogen bonds (e.g. 3.1 Angstroms or slightly less).

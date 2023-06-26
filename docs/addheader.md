@@ -1,12 +1,7 @@
 ---
 title: addheader
 brief: Add a header to a history file
-visible: true
-taxonomy:
-  category: docs
-  classification: "History File Conversion / Manipulation"
-docroot: /dlputils/docs
-template: manpage
+classification: "History File Conversion / Manipulation"
 ---
 
 For a couple of reasons, trajectory files generated from DL_POLY occasionally have no header - **addheader** allows one to be copied from an existing history file, and prepended to the target history file.
