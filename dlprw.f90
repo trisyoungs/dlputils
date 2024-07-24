@@ -300,10 +300,10 @@
 !	dlpun_his = Fortran unit number to read from.
 !	his_out_format = Format of history file: 0 = Unformatted, 1 = Formatted.
 	integer :: n
-12	FORMAT (3e12.4)		 ! coordinate, velocity, or force line
+12	FORMAT (3e20.12)	 ! coordinate, velocity, or force line
 13	FORMAT (A8,4I10,2F12.6)	 ! 'timestep' line
 14	FORMAT (A8,I10,2F12.6)	 ! 'atom' line
-15	FORMAT (3g12.4)		 ! 'cell' lines
+15	FORMAT (3g20.12)	 ! 'cell' lines
 	if (his_out_format.EQ.-1) stop "HISfile format not yet determined / file not yet opened!"
 	if (his_out_format.EQ.0) then   ! Write unformatted history file.....
 	  write(dlpun_newhis,ERR=91) DBLE(nstep),DBLE(NATMS),DBLE(keytrj),DBLE(imcon),tstep
