@@ -90,7 +90,7 @@
 	  !
 	  ! Angle ri-rj-rl
 	  dp = dot_product(rji, rjk)
-	  angle = acos(dp) * (180.0 / pi)
+	  angle = safeAngle(dp)
 	  bin = int(angle * (1.0 / anglebin)) + 1
 	  ijk(bin) = ijk(bin)+1
 

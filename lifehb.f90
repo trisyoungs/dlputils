@@ -147,8 +147,7 @@
 		
 		! Calculate angle
 		dp = sum(vhx*vhy)
-		if (dp.gt.1.0d0) dp = 1.0d0
-		angle = dacos(dp) * 57.29577951d0
+		angle = safeAngle(dp)
 
 		! Geometry check - is it a hydrogen bond by our definition?
 		if ((dxy.gt.maxdist).or.(angle.lt.minang)) then

@@ -187,7 +187,7 @@
 
 	      ! -- X
 	      dp = vec3DotProduct(t1, axesA(sp,m1,1:3))
-	      angle = acos(dp) * radcon
+	      angle = safeAngle(dp)
 	      angleBin = INT( angle / angleBinWidth) + 1
 	!write(0,*) sp, m1, dist, dp, angleBin
 	      cdf(n,distBin,1) = cdf(n,distBin,1) + dp
@@ -196,7 +196,7 @@
 
 	      ! -- Y
 	      dp = vec3DotProduct(t1, axesA(sp,m1,4:6))
-	      angle = acos(dp) * radcon
+	      angle = safeAngle(dp)
 	      angleBin = INT( angle / angleBinWidth) + 1
 	      cdf(n,distBin,2) = cdf(n,distBin,2) + dp
 	      cdf(n,distBin,5) = cdf(n,distBin,5) + dabs(dp)
@@ -204,7 +204,7 @@
 
 	      ! -- Z
 	      dp = vec3DotProduct(t1, axesA(sp,m1,7:9))
-	      angle = acos(dp) * radcon
+	      angle = safeAngle(dp)
 	      angleBin = INT( angle / angleBinWidth) + 1
 	      cdf(n,distBin,3) = cdf(n,distBin,3) + dp
 	      cdf(n,distBin,6) = cdf(n,distBin,6) + dabs(dp)

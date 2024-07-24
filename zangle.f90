@@ -174,7 +174,7 @@
 	    if (dist.gt.maxdist) cycle
 
 	    ! This molecule is within the limits defined, so get dot product of z-axes
-	    angle = acos( axesA(sp2,m2,7)*axesA(sp1,m1,7) + axesA(sp2,m2,8)*axesA(sp1,m1,8) + axesA(sp2,m2,9)*axesA(sp1,m1,9) ) * 57.29577951d0
+	    angle = safeAngle( axesA(sp2,m2,7)*axesA(sp1,m1,7) + axesA(sp2,m2,8)*axesA(sp1,m1,8) + axesA(sp2,m2,9)*axesA(sp1,m1,9) )
 	    bin = int(angle) 
 	    ahist(bin) = ahist(bin) + 1.0
 

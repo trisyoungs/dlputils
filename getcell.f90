@@ -2,7 +2,7 @@
 !	Retrieves the cell dimensions from a HISTORY file and outputs them to stdout
 
 	program getcell
-	use dlprw; implicit none
+	use dlprw; use utility; implicit none
 	character*80 :: hisfile, headerfile, outfile
 	character*8 :: discard
 	integer :: success, nargs
@@ -68,9 +68,9 @@
 	celldata(4) = cell(4)*cell(7) + cell(5)*cell(8) + cell(6)*cell(9)
 	celldata(5) = cell(1)*cell(7) + cell(2)*cell(8) + cell(3)*cell(9)
 	celldata(6) = cell(1)*cell(4) + cell(2)*cell(5) + cell(3)*cell(6)
-	celldata(4) = acos(celldata(4)) * radcon
-	celldata(5) = acos(celldata(5)) * radcon
-	celldata(6) = acos(celldata(6)) * radcon
+	celldata(4) = safeAngle(celldata(4))
+	celldata(5) = safeAngle(celldata(5))
+	celldata(6) = safeAngle(celldata(6))
 
 	! Store min, max, and average
 	do n=1,7

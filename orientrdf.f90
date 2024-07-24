@@ -216,7 +216,7 @@
 		  else
 		    ax = axesA(sp2,m2,(n-1)*3+1)*axesA(centresp,m1,(n-1)*3+1) + axesA(sp2,m2,(n-1)*3+2)*axesA(centresp,m1,(n-1)*3+2) + axesA(sp2,m2,(n-1)*3+3)*axesA(centresp,m1,(n-1)*3+3)
 		  end if
-	          angdelta = acos(ax) * radcon
+	          angdelta = safeAngle(ax)
 	          ! If delta is negative, map delta onto +/-90
 	          if ((orientdelta(sp2,n).lt.0.0).and.(angdelta.gt.90.0)) angdelta = angdelta - 180.0
 	          if (dabs(angdelta-orientangle(sp2,n)).gt.dabs(orientdelta(sp2,n))) failed = .true.

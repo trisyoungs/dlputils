@@ -147,7 +147,7 @@
 		! Angle check
 		dp = sum(vhx*vhy)
 		if (dp.gt.1.0d0) dp = 1.0d0
-		angle = dacos(dp) * 57.29577951d0
+		angle = safeAngle(dp)
 		if (angle.lt.minang) cycle
 	!write(0,*) "Adding angle", angle, dp, i, j
 		

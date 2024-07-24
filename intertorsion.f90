@@ -143,7 +143,7 @@
 	    mag2 = magnitude(xp2)
 	    ! Calculate dot product and angle...
 	    dp = dotproduct(xp1, xp2) / (mag1 * mag2)
-	    torsion = acos(dp)*radcon
+	    torsion = safeAngle(dp)
 	    ! Calculate sign and bin
 	    dp = dotproduct(xp1, veckl)
 	    if (dp.lt.0) then
@@ -169,13 +169,13 @@
 	    !
 	    ! i-j-k
 	    dp = dotproduct(vecji,vecjk) / (magnitude(vecji) * magnitude(vecjk))
-	    angle = acos(dp) * radcon
+	    angle = safeAngle(dp)
 	    bin2 = int(angle * (1.0/anglebin)) + 1
 	    ijk(bin2) = ijk(bin2) + 1
 	    ijkl_ijk(bin,bin2) = ijkl_ijk(bin,bin2) + 1
 	    ! j-k-l
 	    dp = dotproduct(veckj,veckl) / (magnitude(veckj) * magnitude(veckl))
-	    angle = acos(dp) * radcon
+	    angle = safeAngle(dp)
 	    bin2 = int(angle * (1.0/anglebin)) + 1
 	    jkl(bin2) = jkl(bin2) + 1
 

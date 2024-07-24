@@ -540,7 +540,7 @@
 	
 	! Calculate dot product and angle...
 	dp = vec3DotProduct(xp1, xp2) / (mag1 * mag2)
-	calculateTorsion = acos(dp)*radcon
+	calculateTorsion = safeAngle(dp)
 
 	! Calculate sign
 	dp = vec3DotProduct(xp1, veckl)
@@ -573,7 +573,7 @@
 
 	! Calculate dot product and angle...
 	dp = vec3DotProduct(vecji, vecjk) / (mag1 * mag2)
-	calculateAngle = acos(dp)*radcon
+	calculateAngle = safeAngle(dp)
 
 	end function calculateAngle
 

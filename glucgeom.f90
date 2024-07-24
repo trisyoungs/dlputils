@@ -488,7 +488,7 @@
 	v2 = v2 / v2mag
 	  ! Calculate dot product and angle...
 	  dp = (v1(1)*v2(1) + v1(2)*v2(2) + v1(3)*v2(3))
-	  calcangle = acos(dp)* 57.29577951d0
+	  calcangle = safeAngle(dp)
 	end function calcangle
 
 

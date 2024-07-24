@@ -122,7 +122,7 @@
 	    dist = sqrt(v(1)*v(1) + v(2)*v(2) + v(3)*v(3))
 	    v = v / dist
 	    dp = ij1(1)*v(1) + ij1(2)*v(2) + ij1(3)*v(3)
-	    angle = acos(dp) * (180.0 / pi)
+	    angle = safeAngle(dp)
 	    bin = int(angle * (1.0 / anglebin)) + 1
 	    ijj(bin) = ijj(bin)+1
 	    ! write(0,*) dp,angle,dist
@@ -138,13 +138,13 @@
 	    dist = sqrt(v(1)*v(1) + v(2)*v(2) + v(3)*v(3))
 	    v = v / dist
 	    dp = ij1(1)*v(1) + ij1(2)*v(2) + ij1(3)*v(3)
-	    angle = acos(dp) * (180.0 / pi)
+	    angle = safeAngle(dp)
 	    bin = int(angle * (1.0 / anglebin)) + 1
 	    iji(bin) = iji(bin)+1
 
 	    ! 4) Angle j1-i1/2-j2
 	    dp = ij1(1)*ij2(1) + ij1(2)*ij2(2) + ij1(3)*ij2(3)
-	    angle = acos(dp) * (180.0 / pi)
+	    angle = safeAngle(dp)
 	    bin = int(angle * (1.0 / anglebin)) + 1
 	    jij(bin) = jij(bin)+1
 

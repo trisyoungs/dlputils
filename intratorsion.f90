@@ -103,7 +103,7 @@
 	  mag2 = magnitude(xp2)
 	  ! Calculate dot product and angle...
 	  dp = dotproduct(xp1, xp2) / (mag1 * mag2)
-	  torsion = acos(dp)*radcon
+	  torsion = safeAngle(dp)
 	  ! Calculate sign
 	  dp = dotproduct(xp1, veckl)
 	    if (dp.lt.0) then

@@ -205,7 +205,7 @@
 		else if (ax.lt.-1.0d0) then
 		  angles(element) = 180.0
 		else
-		  angles(element) = acos(ax) * radcon
+		  angles(element) = safeAngle(ax)
 		end if
 
 	      end do
