@@ -44,4 +44,4 @@ USAGE
 -----
 
 Brief descriptions of individual program usage can be found by running the code in question
-with no arguments. See http://www.projectaten.net/dlputils for detailed instructions.
+with no arguments. See http://trisyoungs.github.io/dlputils for detailed instructions.
