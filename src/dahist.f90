@@ -119,7 +119,6 @@
 	        r12 = r12 / dist
 	        r23 = r23 / sqrt(sum(r23*r23))
 	        angle = safeAngle(sum(r12*r23))
-		write(0,*) aoff1+a1(n)-1, aoff2+a2(n)-1, aoff2+a3(n)-1, sum(r12*r23)
 
 	        angbin = int(angle)+1
 	        anglehist(angbin) = anglehist(angbin)+1.0
