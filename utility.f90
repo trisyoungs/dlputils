@@ -481,6 +481,25 @@
 	z1 = z2
 	end subroutine vmatmult
 
+
+	! ========================================
+	! Safe Angle
+	! ========================================
+	real*8 function safeAngle(dp)
+	implicit none
+	real*8 :: dp
+	real*8, parameter :: radcon = 57.29577951d0
+	! Clamp dot product to -1 <= dp <= 1.0 and return angle in degrees
+	if (dp.lt.-1) then
+	  write(0,*) "safeAngle: Clamped dot product to -1 from ", dp
+	  dp = -1
+	else if (dp.gt.1) then
+	  write(0,*) "safeAngle: Clamped dot product to 1 from ", dp
+	  dp = 1
+	endif
+	safeAngle = acos(dp) * radcon
+	end function safeAngle
+
 	! ========================================
 	! Geometry
 	! ========================================
@@ -518,7 +537,7 @@
 	mag1 = vec3Magnitude(xp1)
 	call vec3CrossProduct(veckj,veckl,xp2)
 	mag2 = vec3Magnitude(xp2)
-		  
+	
 	! Calculate dot product and angle...
 	dp = vec3DotProduct(xp1, xp2) / (mag1 * mag2)
 	calculateTorsion = acos(dp)*radcon
