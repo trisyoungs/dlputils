@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "dlputils"
-#define MyAppVersion "1.4.6"
+#define MyAppVersion GetEnv('DLPUTILS_VERSION')
 #define MyAppPublisher "Tristan Youngs"
 #define MyAppURL "https://www.projectdissolve.com"
 #define MyAppExeName "dlputils.exe"
@@ -10,7 +10,6 @@
 ; Locations of bin directories of MinGW(64)
 #define DLPUtilsDir GetEnv('DLPUTILS_DIR')
 #define MinGWLibDir GetEnv('MINGW_LIB_DIR')
-#define DLPUtilsVersion GetEnv('DLPUTILS_VERSION')
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -29,7 +28,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes          
 LicenseFile=..\..\COPYING
 SetupIconFile=.\dlputils.ico
-OutputBaseFilename=dlputils-Win32-{#DLPUtilsVersion}
+OutputBaseFilename=dlputils-Win32-{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 ChangesEnvironment=true
